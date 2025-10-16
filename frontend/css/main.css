@@ -1,0 +1,8 @@
+:root {
+  --bg: #f6f8fa;
+  --accent: #0066cc;
+  --text: #222;
+}
+body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin:0; padding:20px; }
+header img { height:40px; }
+main { max-width:900px; margin:0 auto; }
