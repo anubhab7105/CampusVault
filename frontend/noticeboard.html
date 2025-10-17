@@ -1,21 +1,35 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Noticeboard</title>
-<link rel="stylesheet" href="css/main.css"></head>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CampusVault — Noticeboard</title>
+
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/pages/noticeboard.css" />
+</head>
 <body>
-<nav><a href="dashboard.html">Back</a></nav>
-<main class="container">
-  <h2>Noticeboard</h2>
-  <div id="notices">Loading...</div>
-</main>
-<script src="js/api.js"></script>
-<script>
-async function loadNotices(){
-  const res = await api.get('/notices');
-  const out = document.getElementById('notices');
-  if(!res || res.length==0) out.textContent='No notices yet.';
-  else out.innerHTML = res.map(n=>`<div class="card"><h4>${n.title}</h4><p>${n.content}</p><small>By ${n.created_by} at ${n.created_at}</small></div>`).join('');
-}
-loadNotices();
-</script>
-</body></html>
+  <header class="cv-header-small">
+    <div class="cv-header-inner">
+      <a class="cv-back" href="dashboard.html">&larr; Back</a>
+      <h1>Noticeboard</h1>
+      <div></div>
+    </div>
+  </header>
+
+  <main class="cv-container">
+    <section class="cv-card" id="notices-list">
+      <!-- JS will render notices here -->
+    </section>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/lib/dom.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/ui.js"></script>
+
+  <script src="js/pages/noticeboard.page.js"></script>
+</body>
+</html>

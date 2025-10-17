@@ -1,25 +1,50 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
-<title>Complaint</title><link rel='stylesheet' href='css/main.css'></head>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CampusVault — Complaint</title>
+
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/pages/complaint.css" />
+</head>
 <body>
-<nav><a href='dashboard.html'>Back</a></nav>
-<main class='container'>
-<h2>Send a Complaint</h2>
-<form id='complaint-form'>
-  <label>Subject<input id='subject' required></label>
-  <label>Message<textarea id='message' required></textarea></label>
-  <button type='submit'>Send</button>
-</form>
-<div id='status'></div>
-</main>
-<script src='js/api.js'></script>
-<script>
-document.getElementById('complaint-form').addEventListener('submit', async e=>{
-  e.preventDefault();
-  const subject = document.getElementById('subject').value;
-  const message = document.getElementById('message').value;
-  const res = await api.post('/complaints', {subject, message});
-  document.getElementById('status').textContent = res && res.id ? 'Complaint submitted.' : 'Error';
-});
-</script></body></html>
+  <header class="cv-header-small">
+    <div class="cv-header-inner">
+      <a class="cv-back" href="dashboard.html">&larr; Back</a>
+      <h1>Complaint Box</h1>
+      <div></div>
+    </div>
+  </header>
+
+  <main class="cv-container">
+    <section class="cv-card">
+      <form id="complaint-form" class="cv-form" novalidate>
+        <label class="cv-field">
+          <span class="cv-label">Subject</span>
+          <input id="complaint-subject" required />
+        </label>
+
+        <label class="cv-field">
+          <span class="cv-label">Message</span>
+          <textarea id="complaint-message" rows="5" required></textarea>
+        </label>
+
+        <div class="cv-actions">
+          <button id="complaint-submit" class="cv-btn cv-btn-primary" type="submit">Send</button>
+          <span id="complaint-status" class="cv-small"></span>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/lib/dom.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/ui.js"></script>
+
+  <script src="js/pages/complaint.page.js"></script>
+</body>
+</html>
