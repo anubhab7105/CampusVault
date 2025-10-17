@@ -1,9 +1,23 @@
 FROM python:3.11-slim
+
 WORKDIR /app
+
+# system deps
+RUN apt-get update && apt-get install -y build-essential && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY . .
-ENV FLASK_APP=app.main
-ENV FLASK_RUN_HOST=0.0.0.0
+
+# copy app
+COPY app ./app
+
+# create upload dir
+RUN mkdir -p /app/app/static_uploads
+
+ENV PYTHONUNBUFFERED=1
+ENV APP_ENV=production
+ENV PORT=8000
+
 EXPOSE 8000
-CMD ["python", "-m", "app.main"]
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
