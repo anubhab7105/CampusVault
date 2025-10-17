@@ -18,7 +18,7 @@ def init_db():
     ensure_initial_admins(session)
     session.close()
 
-class User(Base):
+class user(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
     unique_id = Column(String, unique=True, index=True, nullable=False)
@@ -33,7 +33,7 @@ class User(Base):
     uploads = relationship("Upload", back_populates="faculty", cascade="all, delete-orphan")
     sent_messages = relationship("ChatMessage", back_populates="sender", foreign_keys="ChatMessage.sender_unique_id", primaryjoin="User.unique_id==ChatMessage.sender_unique_id")
 
-class Upload(Base):
+class upload(Base):
     __tablename__ = "uploads"
     id = Column(Integer, primary_key=True)
     faculty_unique_id = Column(String, ForeignKey("users.unique_id"), nullable=False)
@@ -49,7 +49,7 @@ class Upload(Base):
     faculty = relationship("User", back_populates="uploads")
     notice = relationship("Notice", back_populates="upload", uselist=False)
 
-class Notice(Base):
+class notice(Base):
     __tablename__ = "notices"
     id = Column(Integer, primary_key=True)
     upload_id = Column(Integer, ForeignKey("uploads.id"), nullable=True)
@@ -61,7 +61,7 @@ class Notice(Base):
 
     upload = relationship("Upload", back_populates="notice")
 
-class Complaint(Base):
+class complaint(Base):
     __tablename__ = "complaints"
     id = Column(Integer, primary_key=True)
     sender_unique_id = Column(String, nullable=False)
@@ -71,7 +71,7 @@ class Complaint(Base):
     status = Column(String, default="open")  # open / in_progress / resolved
     admin_response = Column(Text, nullable=True)
 
-class ChatMessage(Base):
+class chatMessage(Base):
     __tablename__ = "chat_messages"
     id = Column(Integer, primary_key=True)
     sender_unique_id = Column(String, nullable=False, index=True)  # e.g., F000001
