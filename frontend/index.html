@@ -1,28 +1,24 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Online Library - Login</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="stylesheet" href="css/main.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CampusVault - Login</title>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <header>
-    <h1>College Online Library</h1>
-  </header>
-
-  <main class="container">
-    <section id="auth-box">
-      <h2>Login</h2>
-      <form id="login-form">
-        <label>Email<input type="email" id="email" required></label>
-        <label>Password<input type="password" id="password" required></label>
+  <div class="container">
+    <div class="login-box">
+      <img src="assets/logo.png" alt="CampusVault Logo" class="logo">
+      <h2>CampusVault Library</h2>
+      <form id="loginForm">
+        <input type="email" id="email" placeholder="Email" required />
+        <input type="password" id="password" placeholder="Password" required />
         <button type="submit">Login</button>
       </form>
-      <p>Use demo accounts if backend running locally.</p>
-      <p><a href="dashboard.html">Open Dashboard (demo)</a></p>
-    </section>
-  </main>
+      <p id="error-msg"></p>
+    </div>
+  </div>
 
   <script src="js/api.js"></script>
   <script src="js/auth.js"></script>
