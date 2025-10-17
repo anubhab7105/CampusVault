@@ -1,16 +1,30 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>CampusVault - Chat</title>
-  <link rel="stylesheet" href="css/main.css" />
-</head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chat</title><link rel="stylesheet" href="css/main.css"></head>
 <body>
-  <main>
-    <h2>Chat</h2>
-    <div id="chatWindow">...</div>
-    <form id="chatForm"><input name="message"/><button>Send</button></form>
-  </main>
-  <script src="js/chat.js"></script>
-</body>
-</html>
+<nav><a href="dashboard.html">Back</a></nav>
+<main class="container">
+  <h2>Global Chat (demo)</h2>
+  <div id="messages" style="height:300px;overflow:auto;border:1px solid #ccc;padding:8px"></div>
+  <form id="chat-form"><input id="msg" required placeholder="Type..."><button>Send</button></form>
+</main>
+<script src="js/api.js"></script>
+<script>
+const messagesEl = document.getElementById('messages');
+document.getElementById('chat-form').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const text = document.getElementById('msg').value;
+  if(!text) return;
+  await api.post('/chat/send', {to_unique_id:null, message:text, context_type:'global'});
+  document.getElementById('msg').value='';
+  loadMessages();
+});
+async function loadMessages(){
+  const res = await api.get('/chat/history?limit=50');
+  messagesEl.innerHTML = res.map(m=>`<div><strong>${m.sender_unique_id||'Anon'}:</strong> ${m.message} <small>${m.created_at}</small></div>`).join('');
+}
+setInterval(loadMessages, 3000);
+loadMessages();
+</script>
+</body></html>

@@ -1,2 +1,4 @@
 #!/usr/bin/env bash
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+export FLASK_ENV=development
+export FLASK_APP=app.main
+python -m app.main

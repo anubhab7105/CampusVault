@@ -1,15 +1,28 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>CampusVault - Library</title>
-  <link rel="stylesheet" href="css/main.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Library</title>
+  <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
-  <main>
+  <nav><a href="dashboard.html">Back</a></nav>
+  <main class="container">
     <h2>Library</h2>
-    <div id="fileList">Loading...</div>
+    <div id="library-list">Loading...</div>
   </main>
   <script src="js/api.js"></script>
+  <script>
+    async function load() {
+      const list = await api.get('/uploads');
+      const target = document.getElementById('library-list');
+      if (!list || list.length===0) target.textContent = 'No uploads yet.';
+      else {
+        target.innerHTML = list.map(u=>`<div class="card"><h4>${u.title}</h4><p>By: ${u.faculty_unique_id}</p><a href="/uploads/${u.filename}" download>Download</a></div>`).join('');
+      }
+    }
+    load();
+  </script>
 </body>
 </html>

@@ -1,15 +1,50 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>CampusVault - Dashboard</title>
-  <link rel="stylesheet" href="css/main.css" />
+  <meta charset="utf-8">
+  <title>Dashboard - Online Library</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
-  <main>
-    <h2>Dashboard</h2>
-    <div id="widgets">...placeholder...</div>
+  <nav class="topnav">
+    <a href="index.html">Home</a>
+    <a href="library.html">Library</a>
+    <a href="noticeboard.html">Noticeboard</a>
+    <a href="chat.html">Chat</a>
+    <a href="complaint.html">Complaint</a>
+    <span id="user-info"></span>
+  </nav>
+
+  <main class="container">
+    <h2 id="role-title">Dashboard</h2>
+
+    <section id="faculty-actions" style="display:none;">
+      <h3>Upload Material</h3>
+      <form id="upload-form">
+        <label>Title<input id="title" required></label>
+        <label>File<input id="file" type="file" required></label>
+        <button type="submit">Upload</button>
+      </form>
+      <div id="my-uploads"></div>
+    </section>
+
+    <section id="student-actions">
+      <h3>Library</h3>
+      <div id="library-list">Loading...</div>
+    </section>
   </main>
+
   <script src="js/api.js"></script>
+  <script src="js/uploads.js"></script>
+  <script>
+    // Demo wiring: show simple UI behavior
+    document.addEventListener('DOMContentLoaded', ()=>{
+      document.getElementById('user-info').textContent = 'Demo User (not logged in)';
+      // Show faculty actions for demo: toggle off in real auth
+      document.getElementById('faculty-actions').style.display = 'block';
+      fetchLibrary();
+    });
+  </script>
 </body>
 </html>

@@ -1,18 +1,25 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>CampusVault - Complaint</title>
-  <link rel="stylesheet" href="css/main.css" />
-</head>
+<head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>Complaint</title><link rel='stylesheet' href='css/main.css'></head>
 <body>
-  <main>
-    <h2>File a Complaint</h2>
-    <form id="complaintForm">
-      <textarea name="message" placeholder="Describe your issue" required></textarea>
-      <button type="submit">Submit</button>
-    </form>
-  </main>
-  <script src="js/complaints.js"></script>
-</body>
-</html>
+<nav><a href='dashboard.html'>Back</a></nav>
+<main class='container'>
+<h2>Send a Complaint</h2>
+<form id='complaint-form'>
+  <label>Subject<input id='subject' required></label>
+  <label>Message<textarea id='message' required></textarea></label>
+  <button type='submit'>Send</button>
+</form>
+<div id='status'></div>
+</main>
+<script src='js/api.js'></script>
+<script>
+document.getElementById('complaint-form').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const subject = document.getElementById('subject').value;
+  const message = document.getElementById('message').value;
+  const res = await api.post('/complaints', {subject, message});
+  document.getElementById('status').textContent = res && res.id ? 'Complaint submitted.' : 'Error';
+});
+</script></body></html>

@@ -1,15 +1,21 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>CampusVault - Notices</title>
-  <link rel="stylesheet" href="css/main.css" />
-</head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Noticeboard</title>
+<link rel="stylesheet" href="css/main.css"></head>
 <body>
-  <main>
-    <h2>Notices</h2>
-    <div id="notices">Loading...</div>
-  </main>
-  <script src="js/notices.js"></script>
-</body>
-</html>
+<nav><a href="dashboard.html">Back</a></nav>
+<main class="container">
+  <h2>Noticeboard</h2>
+  <div id="notices">Loading...</div>
+</main>
+<script src="js/api.js"></script>
+<script>
+async function loadNotices(){
+  const res = await api.get('/notices');
+  const out = document.getElementById('notices');
+  if(!res || res.length==0) out.textContent='No notices yet.';
+  else out.innerHTML = res.map(n=>`<div class="card"><h4>${n.title}</h4><p>${n.content}</p><small>By ${n.created_by} at ${n.created_at}</small></div>`).join('');
+}
+loadNotices();
+</script>
+</body></html>

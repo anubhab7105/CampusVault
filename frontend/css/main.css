@@ -1,8 +1,8 @@
-:root {
-  --bg: #f6f8fa;
-  --accent: #0066cc;
-  --text: #222;
-}
-body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin:0; padding:20px; }
-header img { height:40px; }
-main { max-width:900px; margin:0 auto; }
+body{font-family:Arial,Helvetica,sans-serif;margin:0;background:#f7f7f7;color:#222}
+header{background:#00539C;color:#fff;padding:12px}
+.container{max-width:900px;margin:20px auto;padding:12px;background:#fff;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,0.06)}
+.topnav{display:flex;gap:12px;padding:12px;background:#eee}
+.card{padding:8px;border-bottom:1px solid #eee;margin-bottom:8px}
+label{display:block;margin:8px 0}
+input,textarea,button,select{padding:8px;border:1px solid #ccc;border-radius:4px;width:100%;box-sizing:border-box}
+button{cursor:pointer;background:#00539C;color:#fff;border:none;padding:10px}

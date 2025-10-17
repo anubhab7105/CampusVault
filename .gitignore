@@ -1,9 +1,7 @@
 __pycache__/
+venv/
 *.pyc
-node_modules/
-dist/
-.env
-.vscode/
+instance/
+backend/app/static_uploads/
 *.sqlite3
-backend/app/static_uploads/*
-frontend/assets/*
+.env
