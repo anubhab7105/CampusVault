@@ -1,0 +1,66 @@
+/* ===============================
+   chat.css
+   In-web chat page
+   =============================== */
+
+.cv-chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 75vh;
+  max-width: 900px;
+  margin: 0 auto;
+  background: var(--color-white);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 20px rgba(16,24,40,0.06);
+  overflow: hidden;
+}
+
+.cv-chat-messages {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cv-chat-message {
+  max-width: 70%;
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius-md);
+  background: rgba(0,188,212,0.08);
+  word-wrap: break-word;
+}
+
+.cv-chat-message.self {
+  align-self: flex-end;
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+.cv-chat-input {
+  display: flex;
+  border-top: 1px solid rgba(16,24,40,0.08);
+}
+
+.cv-chat-input input {
+  flex: 1;
+  border: none;
+  padding: 0.65rem 1rem;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.cv-chat-input button {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border: none;
+  padding: 0 1.2rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s;
+}
+
+.cv-chat-input button:hover {
+  background: var(--color-accent);
+}
