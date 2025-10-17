@@ -1,4 +1,3 @@
 #!/usr/bin/env bash
-export FLASK_ENV=development
-export FLASK_APP=app.main
-python -m app.main
+export PYTHONPATH=.
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
