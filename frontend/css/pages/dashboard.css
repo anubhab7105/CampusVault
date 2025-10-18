@@ -1,42 +1,69 @@
-/* ===============================
-   dashboard.css
-   Dashboard page for users
-   =============================== */
+/* dashboard.css - Shared styles for all dashboards */
 
-.cv-dashboard-container {
-  display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 1.25rem;
+/* container/layout */
+.cv-container {
+  max-width: 1100px;
+  margin: 1.5rem auto;
+  padding: 0 1rem;
 }
 
-.cv-dashboard-widgets {
+/* card */
+.cv-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 6px 18px rgba(11,14,20,0.06);
+  margin-bottom: 1rem;
+}
+
+/* grid for small overview cards */
+.cv-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-top: 0.75rem;
 }
 
-.cv-dashboard-widget {
-  background: var(--color-white);
-  padding: 1rem;
-  border-radius: var(--radius-md);
-  text-align: center;
-  box-shadow: 0 6px 18px rgba(16,24,40,0.04);
+/* small overview tile */
+.cv-tile {
+  padding: 0.75rem;
+  border-radius: 10px;
+  background: #fafafa;
+  border: 1px solid #eee;
+  text-align: left;
 }
+.cv-tile h4 { margin: 0 0 0.4rem 0; font-size: 0.95rem; }
+.cv-tile p { margin: 0; color: #555; font-size: 0.85rem; }
 
-.cv-dashboard-widget h3 {
-  font-size: 1.1rem;
-  margin-bottom: 0.5rem;
-}
-
-.cv-dashboard-widget p {
-  font-size: 0.9rem;
-  color: var(--color-grey);
-}
-
-/* Sidebar for notices or recent uploads */
-.cv-dashboard-sidebar {
+/* lists */
+.cv-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.5rem;
+}
+.cv-item {
+  padding: 0.6rem;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* actions */
+.cv-actions { display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:.75rem; }
+.cv-btn { padding: .55rem .9rem; border-radius:8px; border: none; cursor:pointer; background: #0b69ff; color: white; }
+.cv-btn-link { background: transparent; border: none; color: #0b69ff; cursor:pointer; }
+
+/* header tweaks */
+.cv-header { background: #fff; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 20; }
+.cv-header-inner { display:flex; align-items:center; justify-content:space-between; padding: .5rem 1rem; max-width:1100px; margin:0 auto; }
+.cv-brand { display:flex; align-items:center; gap: .6rem; }
+.cv-logo-sm { width: 44px; height:44px; border-radius:50%; object-fit:cover; }
+
+/* responsive */
+@media (max-width:720px) {
+  .cv-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+  .cv-header-inner { padding: .5rem; }
 }
