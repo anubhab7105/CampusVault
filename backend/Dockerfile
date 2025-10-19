@@ -1,23 +1,24 @@
 FROM python:3.11-slim
 
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
 WORKDIR /app
 
 # system deps
-RUN apt-get update && apt-get install -y build-essential && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y build-essential libssl-dev --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+# copy
+COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-# copy app
-COPY app ./app
+COPY app /app/app
 
-# create upload dir
-RUN mkdir -p /app/app/static_uploads
-
-ENV PYTHONUNBUFFERED=1
-ENV APP_ENV=production
-ENV PORT=8000
+# create runtime directories
+RUN mkdir -p /app/app/static_uploads /app/data
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+ENV FLASK_APP=app.main
+ENV FLASK_RUN_PORT=8000
+CMD ["python", "-u", "app/main.py"]
