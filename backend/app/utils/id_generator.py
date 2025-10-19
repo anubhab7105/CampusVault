@@ -1,54 +1,38 @@
-from sqlalchemy import select, func
-from ..models import db_models
-from ..models.db_models import User
 import re
+from app.models.db_models import db, User
+from sqlalchemy import func
 
-def _extract_number(unique_id: str):
-    m = re.search(r'(\d+)$', unique_id or "")
-    return int(m.group(1)) if m else 0
+def _extract_number(unique_id: str) -> int:
+    # remove leading letter(s) and leading zeros
+    m = re.search(r'([A-Za-z]+)(0*)(\d+)$', unique_id)
+    if not m:
+        return 0
+    return int(m.group(3))
 
-def generate_unique_id(session, role_char: str, width: int = 6):
+def next_unique_id(role_char: str) -> str:
     """
-    Generate unique id like F000001 or S000123. role_char single char.
+    role_char: 'F' or 'S' or 'A'
+    Format: <role_char><zero-padded number>
+    Faculty & Student use 6 digits after letter, e.g., F000001
+    Admin: A001 (keep as A001... we pre-create)
     """
-    # find max numeric suffix for role
-    stmt = select(User.unique_id).where(User.unique_id.like(f"{role_char}%"))
-    results = session.execute(stmt).scalars().all()
-    max_n = 0
-    for uid in results:
-        n = _extract_number(uid)
-        if n > max_n:
-            max_n = n
-    new_num = max_n + 1
-    formatted = f"{role_char}{str(new_num).zfill(width)}"
-    # ensure uniqueness - double check DB
-    exists = session.query(User).filter_by(unique_id=formatted).first()
-    if exists:
-        # fallback loop
-        while True:
-            new_num += 1
-            formatted = f"{role_char}{str(new_num).zfill(width)}"
-            if not session.query(User).filter_by(unique_id=formatted).first():
-                break
-    return formatted
-
-def ensure_initial_admins(session):
-    """
-    Ensure at least 3 admin users exist A001..A003 (or A0001 style).
-    If none exist, create A001..A003 with a default password 'adminpass' (hashed by caller)
-    Note: For security, in production supply real admin creation.
-    """
-    # check any admin exists
-    if session.query(User).filter_by(role="admin").count() == 0:
-        from ..utils.security import hash_password
-        for i in range(1, 4):
-            uid = f"A{str(i).zfill(3)}"
-            user = User(
-                unique_id=uid,
-                name=f"Admin {i}",
-                email=f"admin{i}@example.com",
-                password_hash=hash_password("adminpass"),
-                role="admin",
-            )
-            session.add(user)
-        session.commit()
+    role_char = role_char.upper()
+    if role_char == "A":
+        # For admin we follow A001, A002, ...
+        # find max numeric suffix of existing A* ids
+        max_id = db.session.query(func.max(User.unique_id)).filter(User.unique_id.like("A%")).scalar()
+        if not max_id:
+            n = 1
+        else:
+            # get numeric suffix
+            n = _extract_number(max_id) + 1
+        return f"A{n:03d}"
+    else:
+        # Students and Faculty: 6-digit suffix
+        pattern = f"{role_char}%"
+        max_id = db.session.query(func.max(User.unique_id)).filter(User.unique_id.like(pattern)).scalar()
+        if not max_id:
+            n = 1
+        else:
+            n = _extract_number(max_id) + 1
+        return f"{role_char}{n:06d}"
