@@ -9,7 +9,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #004aad 0%, #ffffff 100%);
+  background: linear-gradient(135deg, #459ddf 0%, #ffffff 100%);
   padding: 2rem;
 }
 
@@ -34,7 +34,6 @@
 .cv-logo {
   width: 100px;
   height: 100px;
-  /* border-radius: 50%; */
   object-fit: cover;
   display: block;
   margin: 0 auto 1rem auto;
@@ -43,7 +42,6 @@
 
 .cv-logo:hover {
   transform: scale(1.20);
-  /* box-shadow: 0 6px 16px rgba(0, 123, 255, 0.3); */
 }
 
 /* Heading */
