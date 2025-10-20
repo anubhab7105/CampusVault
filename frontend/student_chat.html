@@ -12,24 +12,28 @@
 <body>
   <header class="cv-header-small">
     <div class="cv-header-inner">
-      <a class="cv-back" href="dashboard.html">&larr; Back</a>
-      <h1>Chat</h1>
-      <div></div>
+      <a class="cv-back" href="student-dashboard.html">&larr; Back</a>
     </div>
   </header>
 
-  <main class="cv-container">
-    <section class="cv-card">
-      <div id="chat-area" class="cv-chat-area">
-        <div id="chat-messages" class="cv-chat-messages" aria-live="polite"></div>
-
-        <form id="chat-form" class="cv-chat-form" aria-label="Send message">
-          <input id="chat-input" type="text" placeholder="Type a message..." autocomplete="off" required />
-          <button class="cv-btn" type="submit">Send</button>
-        </form>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">Global Chat</div>
+      <div class="users-section">
+        <h4>Participants</h4>
+        <div id="usersList" class="users-list"></div>
       </div>
-    </section>
-  </main>
+    </aside>
+
+    <main class="chat-area">
+      <section id="messages" class="messages"></section>
+
+      <form id="messageForm" class="composer" autocomplete="off">
+        <input id="messageInput" type="text" placeholder="Write a message and press Enter" />
+        <button type="submit">Send</button>
+      </form>
+    </main>
+  </div>
 
   <script type="module" src="js/config.js"></script>
   <script type="module" src="js/lib/dom.js"></script>
