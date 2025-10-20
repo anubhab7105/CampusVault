@@ -5,7 +5,7 @@ from werkzeug.utils import secure_filename
 from app.config import UPLOAD_FOLDER
 
 ALLOWED_EXTENSIONS = {
-    "pdf", "pptx", "ppt", "docx", "doc", "xlsx", "xls", "txt", "png", "jpg", "jpeg", "gif", "zip"
+    "pdf", "pptx", "ppt", "docx", "doc", "exel", "word", "txt", 
 }
 
 def ensure_upload_folder():
