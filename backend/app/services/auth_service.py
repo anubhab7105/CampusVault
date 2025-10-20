@@ -1,67 +1,73 @@
-from flask import Blueprint, request, jsonify, current_app
-from app.services.auth_service import create_user, authenticate_user
 from app.models.db_models import db, User
-from app.utils.security import create_jwt_token
-from functools import wraps
+from app.utils.security import hash_password, verify_password, create_jwt_token
+from app.utils.id_generator import next_unique_id
+from app.config import SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, SMTP_FROM, SMTP_USE_TLS
+import smtplib
+from email.message import EmailMessage
+import traceback
 
-bp = Blueprint("auth", __name__, url_prefix="/api/auth")
-
-def json_required(*fields):
-    def decorator(fn):
-        @wraps(fn)
-        def wrapper(*args, **kwargs):
-            data = request.get_json() or {}
-            for f in fields:
-                if f not in data:
-                    return jsonify({"error": f"Missing field: {f}"}), 400
-            return fn(*args, **kwargs)
-        return wrapper
-    return decorator
-
-@bp.route("/signup", methods=["POST"])
-@json_required("name", "email", "password", "college_id", "role")
-def signup():
+def create_user(name: str, email: str, password: str, college_id: str, role: str):
     """
-    Public signup route per user request:
-    Body JSON:
-    { name, email, password, college_id, role }  # role: 'student' or 'faculty'
-    On success: creates user, emails credentials, returns user unique_id (but not password)
+    Create a user; role should be 'student' or 'faculty' (or 'admin').
+    college_id is stored in extra_json if desired.
+    Returns created user object.
     """
-    data = request.get_json()
-    name = data["name"].strip()
-    email = data["email"].strip().lower()
-    password = data["password"]
-    college_id = data["college_id"].strip()
-    role = data["role"].strip().lower()
-    if role not in ("student", "faculty"):
-        return jsonify({"error": "role must be 'student' or 'faculty'"}), 400
-    # check if email exists
-    if User.query.filter_by(email=email).first():
-        return jsonify({"error": "Email already registered"}), 400
+    # Determine role character for unique id
+    role = role.lower()
+    if role == "student":
+        rc = "S"
+    elif role == "faculty":
+        rc = "F"
+    elif role == "admin":
+        rc = "A"
+    else:
+        raise ValueError("Invalid role. Must be student, faculty, or admin.")
+    unique_id = next_unique_id(rc)
+    pwd_hash = hash_password(password)
+    extra = {"college_id": college_id} if college_id else None
+    user = User(unique_id=unique_id, name=name, email=email, password_hash=pwd_hash, role=role, extra_json=str(extra) if extra else None)
+    db.session.add(user)
+    db.session.commit()
+    # Send email with credentials
     try:
-        user = create_user(name=name, email=email, password=password, college_id=college_id, role=role)
+        send_signup_email(email, name, unique_id, password)
     except Exception as ex:
-        current_app.logger.exception("Failed to create user")
-        return jsonify({"error": "Failed to create user", "details": str(ex)}), 500
-    return jsonify({"message": "User created", "unique_id": user.unique_id}), 201
+        # Log but don't fail creation
+        print("Failed to send signup email:", ex)
+        traceback.print_exc()
+    return user
 
-@bp.route("/login", methods=["POST"])
-@json_required("email", "password")
-def login():
-    data = request.get_json()
-    email = data["email"].strip().lower()
-    password = data["password"]
-    auth = authenticate_user(email, password)
-    if not auth:
-        return jsonify({"error": "Invalid credentials"}), 401
-    user = auth["user"]
-    token = auth["token"]
-    return jsonify({
-        "token": token,
-        "user": {
-            "unique_id": user.unique_id,
-            "name": user.name,
-            "email": user.email,
-            "role": user.role
-        }
-    })
+def authenticate_user(email: str, password: str):
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return None
+    if not verify_password(password, user.password_hash):
+        return None
+    token = create_jwt_token(identity=user.unique_id, role=user.role)
+    return {"user": user, "token": token}
+
+def send_signup_email(to_email: str, name: str, unique_id: str, password_plain: str):
+    msg = EmailMessage()
+    msg["Subject"] = "Welcome — Your account details"
+    msg["From"] = SMTP_FROM
+    msg["To"] = to_email
+    body = f"""Hello {name},
+
+Your account has been created.
+
+Unique ID: {unique_id}
+Password: {password_plain}
+
+Please keep these credentials secure. You may change your password in profile after first login.
+
+Regards,
+Campus Vault Team
+"""
+    msg.set_content(body)
+    # send
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as server:
+        if SMTP_USE_TLS:
+            server.starttls()
+        if SMTP_USERNAME and SMTP_PASSWORD:
+            server.login(SMTP_USERNAME, SMTP_PASSWORD)
+        server.send_message(msg)
