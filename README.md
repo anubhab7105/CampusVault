@@ -15,9 +15,8 @@ Quick start (development):
 2. Frontend
    - open frontend/index.html in your browser
    - or deploy frontend/ to Vercel
-   - Developer: Anubhab
+   - Developer: Anubhab[github.com/anubhab7105]
 
 Demo accounts created on first backend run:
-- Admin: admin@college.edu / adminpass (A000001)
 - Faculty: prof@college.edu / facpass (F000001)
 - Student: student@college.edu / studpass (S000001)
