@@ -1,0 +1,174 @@
+/* css/pages/profile.css
+   CampusVault — Profile page styles (updated for expanded profile)
+   Clean, responsive, blue-themed, accessible
+*/
+
+/* Container */
+.cv-container {
+  max-width: 1100px;
+  margin: 20px auto;
+  padding: 18px;
+  box-sizing: border-box;
+}
+
+/* Cards */
+.cv-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+  border: 1px solid rgba(28, 64, 128, 0.06);
+  box-shadow: 0 8px 30px rgba(19, 43, 77, 0.04);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+/* Header small */
+.cv-header-small {
+  background: linear-gradient(90deg, #0f5ab8 0%, #2979ff 100%);
+  color: #fff;
+  padding: 12px 0;
+  box-shadow: 0 4px 14px rgba(9, 30, 66, 0.12);
+}
+.cv-header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cv-back {
+  color: rgba(255,255,255,0.95);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* Top profile area */
+#profile-top { padding: 14px; }
+#profile-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(180deg,#e8f2ff,#ffffff);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:700;
+  color:#0f67d3;
+  font-size:28px;
+  border: 1px solid rgba(15,103,211,0.08);
+  box-shadow: 0 8px 22px rgba(15,103,211,0.06);
+}
+#profile-avatar img {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+/* Buttons (consistent with existing) */
+.cv-btn {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:88px;
+  height:38px;
+  padding:0 12px;
+  border-radius:10px;
+  border:1px solid transparent;
+  font-weight:700;
+  cursor:pointer;
+  font-size:14px;
+  background:white;
+}
+.cv-btn:focus { outline: 3px solid rgba(47,155,255,0.12); outline-offset:2px; }
+.cv-btn-primary {
+  background: linear-gradient(90deg, #0f67d3 0%, #2f9bff 100%);
+  color: white;
+  box-shadow: 0 8px 18px rgba(47,155,255,0.12);
+  border: none;
+}
+
+/* Layout for main profile section (form + sidebar) */
+section[style*="grid-template-columns"] {
+  /* keep the inline grid from HTML; ensure spacing on smaller screens */
+}
+
+/* Form grid */
+.cv-form {
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* Allow full-width fields */
+.cv-form > .cv-field[style*="grid-column: 1 / -1"] {
+  grid-column: 1 / -1;
+}
+
+/* Field styles */
+.cv-field {
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.cv-label { font-size:13px; color:#14406b; font-weight:600; }
+.cv-field input,
+.cv-field select,
+.cv-field textarea {
+  padding:10px 12px;
+  border:1px solid #d9e8ff;
+  border-radius:8px;
+  height:42px;
+  font-size:15px;
+  color:#06263a;
+  background:#fff;
+  box-sizing:border-box;
+}
+.cv-field textarea { height:auto; min-height:92px; resize:vertical; padding-top:10px; padding-bottom:10px; }
+.cv-field input::placeholder { color:#9fb7d9; }
+
+/* Focus states */
+.cv-field input:focus,
+.cv-field select:focus,
+.cv-field textarea:focus {
+  border-color: #4b8cff;
+  box-shadow: 0 8px 22px rgba(75,140,255,0.12);
+  outline: none;
+}
+
+/* Error text */
+.cv-error { color:#b02a37; font-size:13px; margin-top:6px; }
+
+/* Status chip */
+.cv-status { font-size:13px; padding:6px 10px; border-radius:8px; display:inline-block; }
+.cv-status.success { color:#064e3b; background:#e6f9ef; border:1px solid #b7f0cf; }
+.cv-status.error { color:#7f1d1d; background:#fff1f2; border:1px solid #fecaca; }
+
+/* Summary aside */
+#profile-summary h3 { margin-top:0; font-size:16px; }
+#profile-summary dl { margin: 10px 0 0 0; }
+#profile-summary dt { font-size:13px; color:#4b6b8a; font-weight:600; }
+#profile-summary dd { margin:4px 0 12px 0; color:#0b2b3e; font-size:14px; }
+
+/* Small helper text */
+.cv-small { font-size:13px; color:#4b6b8a; }
+
+/* Download button style */
+#profile-download-json { margin-top:8px; }
+
+/* Debug pre */
+#profile-json { font-size:13px; color:#072033; }
+
+/* Responsive */
+@media (max-width: 920px) {
+  .cv-form { grid-template-columns: 1fr; }
+  section[style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+  #profile-top { padding:12px; }
+  #profile-avatar { width:80px; height:80px; font-size:22px; }
+}
+
+/* Very small screens */
+@media (max-width: 420px) {
+  .cv-card { padding:14px; border-radius:10px; }
+  .cv-btn { min-width:72px; height:36px; font-size:13px; }
+}
