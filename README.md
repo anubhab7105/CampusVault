@@ -10,12 +10,12 @@ Quick start (development):
    - source venv/bin/activate   # or venv\Scripts\activate on Windows
    - pip install -r requirements.txt
    - python -m app.main
-   - Developers: Soumyajit & Dipanjan
+   - Developers: [Soumyajit](https://github.com/soumyajit-cys) & [Dipanjan](https://github.com/DipanjanChakraborty-hub)
 
 2. Frontend
    - open frontend/index.html in your browser
    - or deploy frontend/ to Vercel
-   - Developer: Anubhab[github.com/anubhab7105]
+   - Developer: [Anubhab](https://github.com/anubhab7105)
 
 Demo accounts created on first backend run:
 - Faculty: prof@college.edu / facpass (F000001)
