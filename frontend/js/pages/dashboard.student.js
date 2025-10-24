@@ -5,12 +5,12 @@
 
   async function apiFetch(path, opts = {}) {
     const headers = opts.headers || {};
-    headers['Authorization'] = Bearer ${AUTH_TOKEN};
+    headers['Authorization'] = `Bearer ${AUTH_TOKEN}`;
     headers['Content-Type'] = headers['Content-Type'] || 'application/json';
-    const res = await fetch(/api${path}, { ...opts, headers });
+    const res = await fetch(`/api${path}`, { ...opts, headers });
     if (!res.ok) {
       console.error('API error', res.status, await res.text());
-      throw new Error(API ${path} failed: ${res.status});
+      throw new Error(`API ${path} failed: ${res.status}`);
     }
     return res.json();
   }
@@ -32,7 +32,7 @@
     return;
   }
 
-  document.getElementById('greeting').textContent = Welcome, ${user.name}!;
+  document.getElementById('greeting').textContent = `Welcome, ${user.name}!`;
 
   // fetch student's enrolled courses/resources
   try {
@@ -74,15 +74,86 @@
     console.error('Failed to load uploads', err);
   }
 
-  // Actions
+  // Actions (keep navigation for Search & Chat)
   document.getElementById('btn-search-library').addEventListener('click', () => {
     window.location.href = 'student_library.html';
   });
   document.getElementById('btn-open-chat').addEventListener('click', () => {
     window.location.href = 'student_chat.html';
   });
-  document.getElementById('btn-raise-complaint').addEventListener('click', () => {
-    window.location.href = 'complaint.html';
-  });
+
+  // NOTE: don't redirect 'Raise Complaint' button if you want the floating button to open modal.
+  // Leave this element to open the modal if the static button also exists:
+  const staticRaiseBtn = document.getElementById('btn-raise-complaint');
+  if (staticRaiseBtn) {
+    staticRaiseBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const modal = document.getElementById('complaint-modal');
+      if (modal) modal.style.display = 'block';
+    });
+  }
 
 })();
+
+// Complaint modal & floating button logic — run after DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+  // Elements
+  const floatBtn = document.getElementById('complaint-float-btn');
+  const complaintModal = document.getElementById('complaint-modal');
+  const closeComplaintBtn = document.getElementById('close-complaint-modal');
+  const complaintForm = document.getElementById('complaint-form');
+  const feedbackEl = document.getElementById('complaint-feedback');
+
+  // If your HTML doesn't include the floating button & modal, nothing happens — but this avoids errors
+  if (!floatBtn && !complaintModal) {
+    // nothing to do
+    return;
+  }
+
+  if (floatBtn) {
+    floatBtn.addEventListener('click', () => {
+      if (complaintModal) complaintModal.style.display = 'block';
+    });
+  }
+
+  if (closeComplaintBtn) {
+    closeComplaintBtn.addEventListener('click', () => {
+      if (complaintModal) complaintModal.style.display = 'none';
+    });
+  }
+
+  // Close when clicking outside content
+  window.addEventListener('click', (e) => {
+    if (e.target === complaintModal) {
+      complaintModal.style.display = 'none';
+    }
+  });
+
+  // Form submission via Formspree
+  if (complaintForm) {
+    complaintForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (feedbackEl) feedbackEl.textContent = "Sending...";
+
+      const formData = new FormData(complaintForm);
+      const action = complaintForm.action;
+
+      try {
+        const response = await fetch(action, {
+          method: 'POST',
+          body: formData,
+          headers: { 'Accept': 'application/json' }
+        });
+
+        if (response.ok) {
+          if (feedbackEl) feedbackEl.textContent = "Complaint sent successfully!";
+          complaintForm.reset();
+        } else {
+          if (feedbackEl) feedbackEl.textContent = "Oops! Something went wrong.";
+        }
+      } catch (err) {
+        if (feedbackEl) feedbackEl.textContent = "Error sending complaint.";
+      }
+    });
+  }
+});

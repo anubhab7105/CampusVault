@@ -175,3 +175,87 @@
   .cv-course-avatar { width:48px; height:48px; }
   .cv-course-title { font-size: 0.95rem; }
 }
+
+/* Floating Complaint Button */
+.cv-float-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #0066cc;
+  color: #fff;
+  font-size: 32px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  z-index: 1100;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.cv-float-btn:hover {
+  background-color: #005bb5;
+  transform: scale(1.1);
+}
+
+/* Modal Styles */
+.cv-modal {
+  display: none;
+  position: fixed;
+  z-index: 1200;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  backdrop-filter: blur(6px);
+  background-color: rgba(0,0,0,0.5);
+}
+
+.cv-modal-content {
+  background-color: #fff;
+  margin: 8% auto;
+  padding: 20px;
+  border-radius: 12px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  position: relative;
+}
+
+.cv-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.cv-modal h3 {
+  margin-top: 0;
+}
+
+.cv-modal form label {
+  display: block;
+  margin: 10px 0 4px;
+  font-weight: 500;
+}
+
+.cv-modal form input,
+.cv-modal form textarea {
+  width: 100%;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.cv-modal form textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.cv-feedback {
+  color: green;
+  margin-top: 8px;
+  font-size: 14px;
+}
