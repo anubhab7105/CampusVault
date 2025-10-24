@@ -14,3 +14,8 @@ PyJWT==2.9.0
 bcrypt==4.0.1
 Werkzeug==2.3.6
 python-dotenv==1.0.0
+Flask
+Flask-CORS
+Flask-JWT-Extended
+Flask-SQLAlchemy
+Werkzeug
