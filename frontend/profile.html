@@ -19,34 +19,24 @@
   </header>
 
   <main class="cv-container">
-    <!-- Top card: avatar + primary info -->
+    <!-- Top card: primary info (no avatar) -->
     <section class="cv-card" id="profile-top">
       <div style="display:flex; gap:18px; align-items:center; flex-wrap:wrap;">
-        <div style="min-width:96px; text-align:center;">
-          <div id="profile-avatar" style="width:96px;height:96px;border-radius:12px;overflow:hidden;background:#e9f2ff;display:flex;align-items:center;justify-content:center;font-weight:700;color:#0f67d3;">
-            <!-- JS may insert <img> here or initials -->
-            <span id="profile-initials">AD</span>
-          </div>
-          <label for="profile-avatar-input" class="cv-small" style="display:block;margin-top:8px;cursor:pointer;">Change photo</label>
-          <input id="profile-avatar-input" type="file" accept="image/*" style="display:none" />
-        </div>
-
-        <div style="flex:1; min-width:220px;">
+        <div style="flex:1; min-width:200px;">
           <h2 id="profile-display-name" style="margin:0 0 6px 0; font-size:20px">Your name</h2>
-          <div id="profile-role" class="cv-small" style="margin-bottom:8px;">Role: <strong>student</strong></div>
+          <div id="profile-role-text" class="cv-small" style="margin-bottom:8px;">Role: <strong>student</strong></div>
           <div id="profile-bio" class="cv-small" style="color:#274060">Short bio or tagline goes here — set in signup.</div>
         </div>
 
         <div style="display:flex; gap:10px; align-items:center;">
-          <button id="profile-edit" class="cv-btn">Edit</button>
+          <button id="profile-edit" class="cv-btn" type="button">Edit</button>
           <button id="profile-logout" class="cv-btn" type="button">Log out</button>
         </div>
       </div>
     </section>
 
-    <!-- Two-column layout: left = form/editable, right = summary/read-only -->
-    <section class="cv-card" style="display:grid; grid-template-columns:1fr 320px; gap:18px; margin-top:18px;">
-      <!-- Left: editable profile form -->
+    <!-- Main card: editable form only (no summary) -->
+    <section class="cv-card" style="margin-top:18px;">
       <form id="profile-form" class="cv-form" novalidate autocomplete="off">
         <!-- Row 1 -->
         <label class="cv-field">
@@ -135,83 +125,6 @@
           <span id="profile-status" class="cv-small" aria-live="polite"></span>
         </div>
       </form>
-
-      <!-- Right: summary / signup details (read-only) -->
-      <aside id="profile-summary" style="min-width:260px;">
-        <h3 style="margin-top:0;">Account summary</h3>
-
-        <dl style="margin:10px 0 0 0; line-height:1.6;">
-          <div>
-            <dt class="cv-small">Full name</dt>
-            <dd id="summary-name"></dd>
-          </div>
-
-          <div>
-            <dt class="cv-small">Email</dt>
-            <dd id="summary-email"></dd>
-          </div>
-
-          <div>
-            <dt class="cv-small">Phone</dt>
-            <dd id="summary-phone"></dd>
-          </div>
-
-          <div>
-            <dt class="cv-small">Role</dt>
-            <dd id="summary-role"></dd>
-          </div>
-
-          <div>
-            <dt class="cv-small">College</dt>
-            <dd id="summary-college"></dd>
-          </div>
-
-          <div>
-            <dt class="cv-small">Department</dt>
-            <dd id="summary-department"></dd>
-          </div>
-
-          <div>
-            <dt class="cv-small">Program</dt>
-            <dd id="summary-degree"></dd>
-          </div>
-
-          <div>
-            <dt class="cv-small">Year</dt>
-            <dd id="summary-year"></dd>
-          </div>
-
-          <div>
-            <dt class="cv-small">Registration</dt>
-            <dd id="summary-registration"></dd>
-          </div>
-
-          <div>
-            <dt class="cv-small">GitHub</dt>
-            <dd id="summary-github"></dd>
-          </div>
-
-          <div>
-            <dt class="cv-small">LinkedIn</dt>
-            <dd id="summary-linkedin"></dd>
-          </div>
-
-          <div>
-            <dt class="cv-small">Bio</dt>
-            <dd id="summary-bio" style="white-space:pre-wrap"></dd>
-          </div>
-
-          <div style="margin-top:12px;">
-            <button id="profile-download-json" class="cv-btn" type="button">Download JSON</button>
-          </div>
-        </dl>
-      </aside>
-    </section>
-
-    <!-- Optional: raw debug JSON (hidden by default, useful in dev) -->
-    <section id="profile-debug" class="cv-card" style="display:none; margin-top:18px;">
-      <h4>Raw profile payload</h4>
-      <pre id="profile-json" style="max-height:220px; overflow:auto; background:#f7fbff; padding:10px; border-radius:8px;"></pre>
     </section>
   </main>
 

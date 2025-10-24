@@ -1,6 +1,6 @@
 /* css/pages/profile.css
-   CampusVault — Profile page styles (updated for expanded profile)
-   Clean, responsive, blue-themed, accessible
+   CampusVault — Profile page styles (trimmed)
+   Focused on the editable form (no avatar, no summary)
 */
 
 /* Container */
@@ -41,31 +41,10 @@
   font-weight: 600;
 }
 
-/* Top profile area */
+/* Top profile area (no avatar) */
 #profile-top { padding: 14px; }
-#profile-avatar {
-  width: 96px;
-  height: 96px;
-  border-radius: 12px;
-  overflow: hidden;
-  background: linear-gradient(180deg,#e8f2ff,#ffffff);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:700;
-  color:#0f67d3;
-  font-size:28px;
-  border: 1px solid rgba(15,103,211,0.08);
-  box-shadow: 0 8px 22px rgba(15,103,211,0.06);
-}
-#profile-avatar img {
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  display:block;
-}
 
-/* Buttons (consistent with existing) */
+/* Buttons */
 .cv-btn {
   display:inline-flex;
   align-items:center;
@@ -88,11 +67,6 @@
   border: none;
 }
 
-/* Layout for main profile section (form + sidebar) */
-section[style*="grid-template-columns"] {
-  /* keep the inline grid from HTML; ensure spacing on smaller screens */
-}
-
 /* Form grid */
 .cv-form {
   display:grid;
@@ -100,7 +74,7 @@ section[style*="grid-template-columns"] {
   gap: 14px;
 }
 
-/* Allow full-width fields */
+/* Full-width fields */
 .cv-form > .cv-field[style*="grid-column: 1 / -1"] {
   grid-column: 1 / -1;
 }
@@ -144,30 +118,15 @@ section[style*="grid-template-columns"] {
 .cv-status.success { color:#064e3b; background:#e6f9ef; border:1px solid #b7f0cf; }
 .cv-status.error { color:#7f1d1d; background:#fff1f2; border:1px solid #fecaca; }
 
-/* Summary aside */
-#profile-summary h3 { margin-top:0; font-size:16px; }
-#profile-summary dl { margin: 10px 0 0 0; }
-#profile-summary dt { font-size:13px; color:#4b6b8a; font-weight:600; }
-#profile-summary dd { margin:4px 0 12px 0; color:#0b2b3e; font-size:14px; }
-
 /* Small helper text */
 .cv-small { font-size:13px; color:#4b6b8a; }
-
-/* Download button style */
-#profile-download-json { margin-top:8px; }
-
-/* Debug pre */
-#profile-json { font-size:13px; color:#072033; }
 
 /* Responsive */
 @media (max-width: 920px) {
   .cv-form { grid-template-columns: 1fr; }
-  section[style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
   #profile-top { padding:12px; }
-  #profile-avatar { width:80px; height:80px; font-size:22px; }
 }
 
-/* Very small screens */
 @media (max-width: 420px) {
   .cv-card { padding:14px; border-radius:10px; }
   .cv-btn { min-width:72px; height:36px; font-size:13px; }
