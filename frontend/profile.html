@@ -19,107 +19,116 @@
   </header>
 
   <main class="cv-container">
-    <!-- Top card: primary info (no avatar) -->
-    <section class="cv-card" id="profile-top">
-      <div style="display:flex; gap:18px; align-items:center; flex-wrap:wrap;">
-        <div style="flex:1; min-width:200px;">
-          <h2 id="profile-display-name" style="margin:0 0 6px 0; font-size:20px">Your name</h2>
-          <div id="profile-role-text" class="cv-small" style="margin-bottom:8px;">Role: <strong>student</strong></div>
-          <div id="profile-bio" class="cv-small" style="color:#274060">Short bio or tagline goes here — set in signup.</div>
+    <!-- Visible by default: profile display -->
+    <section class="cv-card fullwidth" id="profile-top">
+      <div class="profile-display">
+        <h2 id="profile-display-name">Your Name</h2>
+
+        <div class="profile-grid">
+          <div><strong>Email:</strong> <span id="profile-display-email">example@email.com</span></div>
+          <div><strong>Phone:</strong> <span id="profile-display-phone">+91 90000 00000</span></div>
+          <div><strong>Role:</strong> <span id="profile-display-role">Student</span></div>
+          <div><strong>College:</strong> <span id="profile-display-college">Your College</span></div>
+          <div><strong>Department:</strong> <span id="profile-display-department">Cyber Security</span></div>
+          <div><strong>Degree:</strong> <span id="profile-display-degree">B.Sc</span></div>
+          <div><strong>Year:</strong> <span id="profile-display-year">2nd Year</span></div>
+          <div><strong>Registration:</strong> <span id="profile-display-reg">CV2025XXXX</span></div>
+          <div><strong>GitHub:</strong> <a id="profile-display-github" href="#" target="_blank" rel="noopener">github.com/username</a></div>
+          <div><strong>LinkedIn:</strong> <a id="profile-display-linkedin" href="#" target="_blank" rel="noopener">linkedin.com/in/username</a></div>
+          <div class="bio-col"><strong>Bio:</strong> <span id="profile-display-bio">Passionate about cybersecurity and cloud security.</span></div>
         </div>
 
-        <div style="display:flex; gap:10px; align-items:center;">
-          <button id="profile-edit" class="cv-btn" type="button">Edit</button>
-          <button id="profile-logout" class="cv-btn" type="button">Log out</button>
+        <div class="cv-actions">
+          <button id="profile-edit" class="cv-btn cv-btn-primary" type="button">Edit</button>
+          <button id="profile-logout" class="cv-btn" type="button">Logout</button>
         </div>
       </div>
     </section>
 
-    <!-- Main card: editable form only (no summary) -->
-    <section class="cv-card" style="margin-top:18px;">
+    <!-- Hidden by default: edit form -->
+    <section class="cv-card fullwidth hidden" id="profile-edit-section" aria-hidden="true">
       <form id="profile-form" class="cv-form" novalidate autocomplete="off">
-        <!-- Row 1 -->
-        <label class="cv-field">
-          <span class="cv-label">Full name</span>
-          <input id="profile-name" data-field="name" name="name" type="text" required />
-        </label>
+        <div class="grid-2">
+          <label class="cv-field">
+            <span class="cv-label">Full name</span>
+            <input id="profile-name" data-field="name" type="text" required />
+          </label>
+
+          <label class="cv-field">
+            <span class="cv-label">Email</span>
+            <input id="profile-email" data-field="email" type="email" required />
+          </label>
+        </div>
+
+        <div class="grid-2">
+          <label class="cv-field">
+            <span class="cv-label">Phone</span>
+            <input id="profile-phone" data-field="phone" type="tel" />
+          </label>
+
+          <label class="cv-field">
+            <span class="cv-label">Role</span>
+            <select id="profile-role-select" data-field="role">
+              <option value="student">Student</option>
+              <option value="faculty">Faculty</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="grid-2">
+          <label class="cv-field">
+            <span class="cv-label">College</span>
+            <input id="profile-college" data-field="college" type="text" />
+          </label>
+
+          <label class="cv-field">
+            <span class="cv-label">Department</span>
+            <input id="profile-department" data-field="department" type="text" />
+          </label>
+        </div>
+
+        <div class="grid-2">
+          <label class="cv-field">
+            <span class="cv-label">Degree</span>
+            <input id="profile-degree" data-field="degree" type="text" />
+          </label>
+
+          <label class="cv-field">
+            <span class="cv-label">Year</span>
+            <input id="profile-year" data-field="year" type="text" />
+          </label>
+        </div>
+
+        <div class="grid-2">
+          <label class="cv-field">
+            <span class="cv-label">Registration</span>
+            <input id="profile-reg" data-field="registration" type="text" />
+          </label>
+
+          <label class="cv-field">
+            <span class="cv-label">GitHub</span>
+            <input id="profile-github" data-field="github" type="url" />
+          </label>
+        </div>
+
+        <div class="grid-2">
+          <label class="cv-field">
+            <span class="cv-label">LinkedIn</span>
+            <input id="profile-linkedin" data-field="linkedin" type="url" />
+          </label>
+
+          <label class="cv-field">
+            <span class="cv-label">Bio</span>
+            <input id="profile-about" data-field="bio" type="text" />
+          </label>
+        </div>
 
         <label class="cv-field">
-          <span class="cv-label">Email</span>
-          <input id="profile-email" data-field="email" name="email" type="email" required />
-        </label>
-
-        <!-- Row 2 -->
-        <label class="cv-field">
-          <span class="cv-label">Phone</span>
-          <input id="profile-phone" data-field="phone" name="phone" type="tel" placeholder="+91 9xxxxxxxxx" />
-        </label>
-
-        <label class="cv-field">
-          <span class="cv-label">Role</span>
-          <select id="profile-role-select" data-field="role" name="role" aria-label="role">
-            <option value="student">Student</option>
-            <option value="faculty">Faculty</option>
-            <option value="staff">Staff</option>
-          </select>
-        </label>
-
-        <!-- Row 3: academic -->
-        <label class="cv-field">
-          <span class="cv-label">College / Institution</span>
-          <input id="profile-college" data-field="college" name="college" type="text" />
-        </label>
-
-        <label class="cv-field">
-          <span class="cv-label">Department / Major</span>
-          <input id="profile-department" data-field="department" name="department" type="text" />
-        </label>
-
-        <!-- Row 4: course year / reg -->
-        <label class="cv-field">
-          <span class="cv-label">Program / Degree</span>
-          <input id="profile-degree" data-field="degree" name="degree" type="text" placeholder="B.Sc, B.Tech, M.Sc, etc." />
-        </label>
-
-        <label class="cv-field">
-          <span class="cv-label">Year / Semester</span>
-          <input id="profile-year" data-field="year" name="year" type="text" placeholder="2nd year / Semester 4" />
-        </label>
-
-        <label class="cv-field">
-          <span class="cv-label">Registration / Roll number</span>
-          <input id="profile-reg" data-field="registration" name="registration" type="text" />
-        </label>
-
-        <!-- Row 5: socials -->
-        <label class="cv-field">
-          <span class="cv-label">GitHub</span>
-          <input id="profile-github" data-field="github" name="github" type="url" placeholder="https://github.com/username" />
-        </label>
-
-        <label class="cv-field">
-          <span class="cv-label">LinkedIn</span>
-          <input id="profile-linkedin" data-field="linkedin" name="linkedin" type="url" placeholder="https://www.linkedin.com/in/..." />
-        </label>
-
-        <!-- Row 6: address & bio -->
-        <label class="cv-field" style="grid-column: 1 / -1;">
-          <span class="cv-label">Address</span>
-          <input id="profile-address" data-field="address" name="address" type="text" />
-        </label>
-
-        <label class="cv-field" style="grid-column: 1 / -1;">
-          <span class="cv-label">About / Bio</span>
-          <textarea id="profile-about" data-field="bio" name="bio" rows="4" style="resize:vertical;padding:10px;border-radius:8px;border:1px solid #d9e8ff;"></textarea>
-        </label>
-
-        <!-- Row 7: change password -->
-        <label class="cv-field" style="grid-column: 1 / -1;">
           <span class="cv-label">Change password</span>
-          <input id="profile-password" data-field="password" name="password" type="password" placeholder="New password (leave blank to keep)" />
+          <input id="profile-password" data-field="password" type="password" placeholder="Leave blank to keep existing" />
         </label>
 
-        <div class="cv-actions" style="grid-column:1 / -1;">
+        <div class="cv-actions">
           <button id="profile-save" class="cv-btn cv-btn-primary" type="submit">Save</button>
           <button id="profile-cancel" class="cv-btn" type="button">Cancel</button>
           <span id="profile-status" class="cv-small" aria-live="polite"></span>

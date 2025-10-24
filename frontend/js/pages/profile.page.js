@@ -1,96 +1,83 @@
 // js/pages/profile.page.js
-// ES module for the simplified profile page
-// - No avatar handling
-// - No download JSON, no summary/read-only DB fields
-// - Loads profile (window.__USER__ preferred, otherwise GET /api/profile)
-// - Validates, submits to POST /api/profile (adjust method/URL if needed)
-// - Cancel reverts to last-known server state
+// Standalone module: toggles display/edit, loads profile, saves updates.
+// Uses window.__USER__ when available or GET /api/profile.
+// POSTs updates to /api/profile (adjust API_PROFILE if needed).
 
-const API_PROFILE = '/api/profile'; // change if your backend uses a different route
+const API_PROFILE = '/api/profile'; // change to your backend endpoint if required
 
 // DOM refs
-const form = document.getElementById('profile-form');
-const btnSave = document.getElementById('profile-save');
-const btnCancel = document.getElementById('profile-cancel');
-const statusEl = document.getElementById('profile-status');
+const profileTop = document.getElementById('profile-top');
+const editSection = document.getElementById('profile-edit-section');
 const editBtn = document.getElementById('profile-edit');
+const cancelBtn = document.getElementById('profile-cancel');
 const logoutBtn = document.getElementById('profile-logout');
+const form = document.getElementById('profile-form');
+const statusEl = document.getElementById('profile-status');
 
-// inputs (by data-field)
+const displayFields = {
+  name: document.getElementById('profile-display-name'),
+  email: document.getElementById('profile-display-email'),
+  phone: document.getElementById('profile-display-phone'),
+  role: document.getElementById('profile-display-role'),
+  college: document.getElementById('profile-display-college'),
+  department: document.getElementById('profile-display-department'),
+  degree: document.getElementById('profile-display-degree'),
+  year: document.getElementById('profile-display-year'),
+  registration: document.getElementById('profile-display-reg'),
+  github: document.getElementById('profile-display-github'),
+  linkedin: document.getElementById('profile-display-linkedin'),
+  bio: document.getElementById('profile-display-bio'),
+};
+
 const inputs = Array.from(form.querySelectorAll('[data-field]'));
 
-// state
 let originalProfile = null;
 let saving = false;
 
-// UI helpers
-function showStatus(message, type = 'info', timeout = 4000) {
-  statusEl.textContent = message;
+function showStatus(msg = '', type = 'info', timeout = 4000) {
+  statusEl.textContent = msg;
   statusEl.className = 'cv-small cv-status ' + (type === 'success' ? 'success' : type === 'error' ? 'error' : '');
   if (timeout) {
-    clearTimeout(statusEl._hideTimeout);
-    statusEl._hideTimeout = setTimeout(() => {
+    clearTimeout(statusEl._timer);
+    statusEl._timer = setTimeout(() => {
       statusEl.textContent = '';
       statusEl.className = 'cv-small';
     }, timeout);
   }
 }
-function setSaving(v) {
-  saving = !!v;
-  if (saving) {
-    btnSave.disabled = true;
-    btnSave.textContent = 'Saving...';
-  } else {
-    btnSave.disabled = false;
-    btnSave.textContent = 'Save';
-  }
-}
 
-// Validation
-function isValidEmail(email) {
-  return typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-function validatePayload(payload) {
-  const errors = {};
-  if (!payload.name || payload.name.trim().length < 2) errors.name = 'Name required (2+ chars).';
-  if (!isValidEmail(payload.email)) errors.email = 'Valid email required.';
-  if (payload.password && payload.password.length > 0 && payload.password.length < 8) errors.password = 'Password must be at least 8 characters.';
-  if (payload.phone && payload.phone.trim().length > 0 && !/^\+?[\d\s\-().]{6,20}$/.test(payload.phone)) {
-    errors.phone = 'Enter a valid phone number.';
-  }
-  return errors;
-}
-
-// Populate form inputs from object
-function populateFormFromObject(obj = {}) {
+// populate display and form from object
+function populateFromObject(obj = {}) {
   if (!obj) return;
-  inputs.forEach(input => {
-    const key = input.dataset.field;
-    if (!key) return;
-    const val = obj[key] ?? '';
-    if (input.type === 'checkbox') input.checked = !!val;
-    else input.value = val === null ? '' : String(val);
+  // display fields
+  Object.keys(displayFields).forEach(k => {
+    const el = displayFields[k];
+    if (!el) return;
+    if (k === 'github' || k === 'linkedin') {
+      const v = obj[k] || '';
+      el.href = v || '#';
+      el.textContent = v ? v : (k === 'github' ? '' : '');
+    } else {
+      el.textContent = obj[k] ?? '';
+    }
   });
 
-  // update top display if present
-  const displayName = document.getElementById('profile-display-name');
-  if (displayName) displayName.textContent = obj.name || obj.fullName || '';
+  // fill form inputs
+  inputs.forEach(inp => {
+    const key = inp.dataset.field;
+    if (!key) return;
+    inp.value = (obj[key] ?? '') + '';
+  });
 
-  const roleText = document.getElementById('profile-role-text');
-  if (roleText) {
-    const r = obj.role || 'student';
-    roleText.innerHTML = `Role: <strong>${r}</strong>`;
-  }
-
-  const bioEl = document.getElementById('profile-bio');
-  if (bioEl) bioEl.textContent = obj.bio || '';
+  // update top visible name
+  if (displayFields.name && obj.name) displayFields.name.textContent = obj.name;
 }
 
-// Fetch profile (prefers window.__USER__)
+// fetch profile from API or window.__USER__
 async function fetchProfile() {
   if (window.__USER__ && typeof window.__USER__ === 'object') {
     originalProfile = window.__USER__;
-    populateFormFromObject(originalProfile);
+    populateFromObject(originalProfile);
     return originalProfile;
   }
   try {
@@ -99,53 +86,66 @@ async function fetchProfile() {
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const res = await fetch(API_PROFILE, { method: 'GET', headers });
     if (!res.ok) {
+      console.warn('Could not fetch profile', res.status);
       showStatus('Could not load profile.', 'error');
       return null;
     }
     const data = await res.json();
     originalProfile = data;
-    populateFormFromObject(data);
+    populateFromObject(data);
     return data;
   } catch (err) {
-    console.error('Fetch profile error', err);
+    console.error('fetchProfile err', err);
     showStatus('Could not load profile.', 'error');
     return null;
   }
 }
 
-// Collect payload from inputs
+// collect payload
 function collectPayload() {
   const payload = {};
-  inputs.forEach(input => {
-    const key = input.dataset.field;
-    if (!key) return;
-    if (input.type === 'checkbox') payload[key] = !!input.checked;
-    else payload[key] = input.value;
+  inputs.forEach(inp => {
+    payload[inp.dataset.field] = inp.value;
   });
   return payload;
 }
 
-// Submit handler
+// basic validation
+function isValidEmail(email) {
+  return typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+function validate(payload) {
+  const errors = {};
+  if (!payload.name || payload.name.trim().length < 2) errors.name = 'Name required (2+ chars).';
+  if (!isValidEmail(payload.email)) errors.email = 'Valid email required.';
+  if (payload.password && payload.password.length > 0 && payload.password.length < 8) errors.password = 'Password must be at least 8 chars.';
+  return errors;
+}
+
+// show inline errors
+function showInlineErrors(errors) {
+  // remove previous
+  form.querySelectorAll('.cv-error').forEach(n => n.remove());
+  Object.entries(errors).forEach(([k, msg]) => {
+    const inp = form.querySelector(`[data-field="${k}"]`);
+    if (inp) {
+      const d = document.createElement('div');
+      d.className = 'cv-error';
+      d.textContent = msg;
+      inp.parentElement.appendChild(d);
+    }
+  });
+}
+
+// submit handler
 async function submitProfile(ev) {
-  if (ev && ev.preventDefault) ev.preventDefault();
+  ev && ev.preventDefault();
   if (saving) return;
 
   const payload = collectPayload();
-  const errors = validatePayload(payload);
-
-  // clear previous inline errors
-  form.querySelectorAll('.cv-error').forEach(n => n.remove());
-
-  if (Object.keys(errors).length > 0) {
-    for (const k in errors) {
-      const input = form.querySelector(`[data-field="${k}"]`);
-      if (input) {
-        const err = document.createElement('div');
-        err.className = 'cv-error';
-        err.textContent = errors[k];
-        input.parentElement.appendChild(err);
-      }
-    }
+  const errors = validate(payload);
+  if (Object.keys(errors).length) {
+    showInlineErrors(errors);
     showStatus('Please fix the highlighted fields.', 'error', 4000);
     return;
   }
@@ -165,88 +165,88 @@ async function submitProfile(ev) {
     });
 
     if (!res.ok) {
-      const bodyText = await res.text().catch(() => '');
-      throw new Error(`Server error ${res.status}: ${bodyText}`);
+      const txt = await res.text().catch(() => '');
+      throw new Error(`Server ${res.status} ${txt}`);
     }
 
-    const resp = await res.json().catch(() => ({}));
-    setSaving(false);
-    showStatus('Profile saved successfully.', 'success', 3500);
+    const body = await res.json().catch(() => null);
+    // prefer server-returned user, else merge with payload
+    originalProfile = (body && body.user) ? body.user : { ...(originalProfile || {}), ...payload };
 
-    // update originalProfile and form
-    originalProfile = resp.user ?? { ...(originalProfile || {}), ...payload };
-    populateFormFromObject(originalProfile);
+    populateFromObject(originalProfile);
+    showStatus('Profile saved.', 'success', 2500);
 
-    // clear password field for safety
+    // hide form, show display
+    toggleEdit(false);
+
+    // clear password input
     const pwd = form.querySelector('[data-field="password"]');
     if (pwd) pwd.value = '';
-
   } catch (err) {
-    console.error('Save error', err);
+    console.error('save err', err);
+    showStatus('Could not save profile.', 'error', 5000);
+  } finally {
     setSaving(false);
-    showStatus('Could not save profile — try again.', 'error', 6000);
   }
 }
 
-// Cancel / revert
+function setSaving(v) {
+  saving = !!v;
+  const saveBtn = document.getElementById('profile-save');
+  if (saveBtn) {
+    saveBtn.disabled = !!v;
+    saveBtn.textContent = v ? 'Saving...' : 'Save';
+  }
+}
+
+// toggle edit: true => show form, false => show read-only
+function toggleEdit(show) {
+  if (show) {
+    profileTop.classList.add('hidden');
+    editSection.classList.remove('hidden');
+    editSection.setAttribute('aria-hidden', 'false');
+    // focus first field
+    const first = editSection.querySelector('[data-field]');
+    if (first) first.focus();
+  } else {
+    editSection.classList.add('hidden');
+    profileTop.classList.remove('hidden');
+    editSection.setAttribute('aria-hidden', 'true');
+  }
+}
+
+// cancel
 function cancelEdit() {
-  if (!originalProfile) {
-    showStatus('Nothing to revert to.', 'error', 2000);
-    return;
-  }
-  populateFormFromObject(originalProfile);
-  showStatus('Changes cancelled.', 'info', 2000);
+  populateFromObject(originalProfile);
+  toggleEdit(false);
+  showStatus('Changes canceled.', 'info', 1600);
 }
 
-// Edit button: focus first input
-function enterEditMode() {
-  const firstInput = inputs[0];
-  if (firstInput) firstInput.focus();
-}
-
-// Logout handler
+// logout
 function handleLogout() {
   localStorage.removeItem('cv_token');
   window.location.href = '/login.html';
 }
 
-// Role-specific UI (if you add facultyCode input it will be toggled)
-function handleRoleSpecifics() {
-  const roleSelect = form.querySelector('[data-field="role"]');
-  if (!roleSelect) return;
-  const facultyCodeInput = form.querySelector('[data-field="facultyCode"]');
-  if (facultyCodeInput) {
-    facultyCodeInput.parentElement.style.display = roleSelect.value === 'faculty' ? '' : 'none';
-  }
-}
-
-// Events
-function addEventListeners() {
-  form.addEventListener('submit', submitProfile);
-  btnCancel.addEventListener('click', cancelEdit);
-  editBtn && editBtn.addEventListener('click', enterEditMode);
+// attach events
+function addListeners() {
+  editBtn && editBtn.addEventListener('click', () => toggleEdit(true));
+  cancelBtn && cancelBtn.addEventListener('click', cancelEdit);
   logoutBtn && logoutBtn.addEventListener('click', handleLogout);
 
+  form && form.addEventListener('submit', submitProfile);
+
+  // remove inline error when typing
   inputs.forEach(inp => {
     inp.addEventListener('input', () => {
-      const err = inp.parentElement.querySelector('.cv-error');
-      if (err) err.remove();
-      if (inp.dataset.field === 'role') handleRoleSpecifics();
+      const e = inp.parentElement.querySelector('.cv-error');
+      if (e) e.remove();
     });
   });
 }
 
-// Init
-async function init() {
-  addEventListeners();
+// init
+(async function init() {
+  addListeners();
   await fetchProfile();
-  handleRoleSpecifics();
-}
-
-init().catch(err => {
-  console.error('Profile init error', err);
-  showStatus('Initialization error', 'error');
-});
-
-// Exports for testing
-export { fetchProfile, populateFormFromObject, submitProfile, cancelEdit };
+})();
