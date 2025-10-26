@@ -18,9 +18,9 @@ MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH", 32 * 1024 * 1024))  # 3
 # Email (SMTP)
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.example.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USERNAME = os.getenv("SMTP_USERNAME", "username")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "password")
-SMTP_FROM = os.getenv("SMTP_FROM", "noreply@example.com")
+SMTP_USERNAME = os.getenv("SMTP_USERNAME", "CampusVault")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "Das78838984!")
+SMTP_FROM = os.getenv("SMTP_FROM", "campusvault.official@gmail.com")
 SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "True").lower() in ("1", "true", "yes")
 
 # Admin initial IDs (installer can create)
