@@ -61,7 +61,6 @@ document.addEventListener("DOMContentLoaded", () => {
         errorEl.textContent = "Faculty verification code is required for faculty registration.";
         return;
       }
-      // Basic pattern (alphanumeric, length 4-16). Adjust as needed.
       const codePattern = /^[A-Za-z0-9\-\_]{4,16}$/;
       if (!codePattern.test(facultyCode)) {
         errorEl.textContent = "Faculty code format invalid. Use letters, numbers, - or _ (4-16 chars).";
@@ -77,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const payload = { name, email, password, role };
       if (role === "faculty") payload.faculty_code = facultyCode;
 
-      const res = await apiFetch("/auth/register", {
+      const res = await apiFetch("/auth/signup", {   // ✅ fixed endpoint
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -87,20 +86,17 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!res || res.error) {
         const msg = (res && res.error) ? res.error : "Registration failed";
         errorEl.textContent = msg;
-        submitBtn.disabled = false;
+        submitBtn.disabled = false;   // ✅ re-enable on error
         return;
       }
 
-      // ----If backend returned token + user, auto-login ----
-      // Accept common shapes: { token, user } or { data: { token, user } }
+      // ---- If backend returned token + user, auto-login ----
       const token = res.token || (res.data && res.data.token);
       const user = res.user || (res.data && res.data.user);
 
       if (token && user) {
-        // save session (sessionStorage used to match original snippet)
-        // NOTE: consider switching to httpOnly cookies for production
+        // save session (sessionStorage used for consistency)
         sessionStorage.setItem("auth_token", token);
-        // support different user id key names returned by backend
         const uniqueId = user.unique_id || user.uniqueId || user.id || user._id || "";
         sessionStorage.setItem("user_unique_id", uniqueId);
         sessionStorage.setItem("user_name", user.name || "");
@@ -109,7 +105,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         showToast("Account created and logged in!", "success");
 
-        // short delay so toast shows briefly, then redirect based on role
         setTimeout(() => {
           const r = (user.role || role || "").toLowerCase();
           if (r === "admin") window.location.href = "/admin_dashboard.html";
@@ -117,15 +112,18 @@ document.addEventListener("DOMContentLoaded", () => {
           else window.location.href = "/dashboard.student.html";
         }, 600);
 
-        return; // done
+        return; // ✅ success path complete
       }
 
-      // ---- fallback: no token returned (email verification flow or manual login) ----
+      // ---- fallback: no token returned ----
       showToast("Account created successfully — please login", "success");
       setTimeout(() => (window.location.href = "index.html"), 1200);
     } catch (err) {
       console.error("Signup error", err);
       errorEl.textContent = "Failed to create account. Try again later.";
+      submitBtn.disabled = false;   // ✅ re-enable on exception
+    } finally {
+      // ✅ ensure button is re-enabled in any unexpected scenario
       submitBtn.disabled = false;
     }
   });
