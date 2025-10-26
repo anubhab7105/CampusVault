@@ -117,7 +117,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // ---- fallback: no token returned ----
       showToast("Account created successfully — please login", "success");
-      setTimeout(() => (window.location.href = "index.html"), 1200);
+      setTimeout(() => (window.location.href = "sign_in.html"), 1200);
     } catch (err) {
       console.error("Signup error", err);
       errorEl.textContent = "Failed to create account. Try again later.";
