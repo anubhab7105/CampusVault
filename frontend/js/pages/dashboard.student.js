@@ -128,32 +128,4 @@ document.addEventListener('DOMContentLoaded', () => {
       complaintModal.style.display = 'none';
     }
   });
-
-  // Form submission via Formspree
-  if (complaintForm) {
-    complaintForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (feedbackEl) feedbackEl.textContent = "Sending...";
-
-      const formData = new FormData(complaintForm);
-      const action = complaintForm.action;
-
-      try {
-        const response = await fetch(action, {
-          method: 'POST',
-          body: formData,
-          headers: { 'Accept': 'application/json' }
-        });
-
-        if (response.ok) {
-          if (feedbackEl) feedbackEl.textContent = "Complaint sent successfully!";
-          complaintForm.reset();
-        } else {
-          if (feedbackEl) feedbackEl.textContent = "Oops! Something went wrong.";
-        }
-      } catch (err) {
-        if (feedbackEl) feedbackEl.textContent = "Error sending complaint.";
-      }
-    });
-  }
 });
