@@ -141,7 +141,7 @@ def register():
 @app.route('/', methods=['GET'])
 @app.route('/login', methods=['GET'])
 def login_page():
-    path = os.path.join(app.static_folder, 'sign_in.html')
+    path = os.path.join(app.static_folder, 'signup.html')
     # many projects name login page differently; try 'login.html' then fallback
     for candidate in ['index.html','login.html','signup.html']:
         p = os.path.join(app.static_folder, candidate)
