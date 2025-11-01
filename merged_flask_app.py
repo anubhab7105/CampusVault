@@ -81,12 +81,12 @@ def signup_page():
     return render_template_string('''
     <h2>Signup (fallback)</h2>
     <form method="post" action="/register">
-      Name: <input name="name"><br>
-      Email: <input name="email"><br>
-      Role (S or F): <input name="role"><br>
-      Password: <input name="password" type="password"><br>
-      Faculty code (if F): <input name="faculty_code"><br>
-      <button type="submit">Register</button>
+    Name: <input name="name"><br>
+    Email: <input name="email"><br>
+    Role (S or F): <input name="role"><br>
+    Password: <input name="password" type="password"><br>
+    Faculty code (if F): <input name="faculty_code"><br>
+    <button type="submit">Register</button>
     </form>
     ''')
 
@@ -141,7 +141,7 @@ def register():
 @app.route('/', methods=['GET'])
 @app.route('/login', methods=['GET'])
 def login_page():
-    path = os.path.join(app.static_folder, 'index.html')
+    path = os.path.join(app.static_folder, 'sign_in.html')
     # many projects name login page differently; try 'login.html' then fallback
     for candidate in ['index.html','login.html','signup.html']:
         p = os.path.join(app.static_folder, candidate)
@@ -151,9 +151,9 @@ def login_page():
     return render_template_string('''
     <h2>Login (fallback)</h2>
     <form method="post" action="/auth">
-      Site ID: <input name="site_id"><br>
-      Password: <input name="password" type="password"><br>
-      <button type="submit">Login</button>
+    Site ID: <input name="site_id"><br>
+    Password: <input name="password" type="password"><br>
+    <button type="submit">Login</button>
     </form>
     ''')
 
