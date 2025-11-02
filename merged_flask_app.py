@@ -21,7 +21,7 @@ if UTILS_PATH not in sys.path:
     sys.path.insert(0, UTILS_PATH)
 
 try:
-    from encrypt import load_or_create_key, encrypt_data
+    from encrypt.py import load_or_create_key, encrypt_data
 except Exception as e:
     # fallback: no encryption, but keep API
     print("Warning: couldn't import encrypt utilities — using fallback (no encryption).", e)
