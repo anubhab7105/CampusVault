@@ -255,17 +255,11 @@ def root():
 # -------------------------
 @app.route('/login', methods=['GET'])
 def login_page():
-    # try common template filenames in the templates folder first
-    candidates = ['signup.html', 'index.html', 'login.html', 'sign_in.html']
-    for candidate in candidates:
-        template_candidate = os.path.join(app.template_folder or TEMPLATE_PATH, candidate)
-        if os.path.exists(template_candidate):
-            return render_template(candidate)
-
-    # fallback to static folder (in case template was placed at frontend/)
-    for candidate in candidates:
-        static_candidate = os.path.join(app.static_folder or FRONTEND_PATH, candidate)
-        if os.path.exists(static_candidate):
+    path = os.path.join(app.static_folder, 'sign_in.html')
+    # many projects name login page differently; try 'login.html' then fallback
+    for candidate in ['index.html','login.html','signup.html']:
+        p = os.path.join(app.static_folder, candidate)
+        if os.path.exists(p):
             return send_from_directory(app.static_folder, candidate)
 
     # final fallback HTML
