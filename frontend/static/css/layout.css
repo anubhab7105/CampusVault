@@ -1,0 +1,224 @@
+/* ===============================
+   layout.css
+   Header, nav, footer, layout grid
+   =============================== */
+
+/* Header / top navigation */
+.cv-header {
+  background: linear-gradient(90deg, var(--color-secondary), #11121a);
+  color: var(--color-white);
+  padding: 0.6rem 0;
+  box-shadow: 0 6px 20px rgba(16,24,40,0.06);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.cv-header-inner {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+/* Brand area */
+.cv-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.cv-logo-sm {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #fff;
+}
+
+.cv-app-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-white);
+}
+
+/* Top navigation links */
+.cv-topnav ul {
+  list-style: none;
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.cv-topnav a,
+.cv-topnav button {
+  color: var(--color-white);
+  padding: 0.45rem 0.6rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.cv-topnav a:hover,
+.cv-topnav button:hover {
+  background: rgba(255,255,255,0.04);
+}
+
+/* Link to upload (often shown only for faculty) */
+#nav-upload {}
+
+/* Small header style for sub-pages */
+.cv-header-small {
+  background: var(--color-white);
+  border-bottom: 1px solid rgba(16,24,40,0.04);
+  padding: 0.65rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 900;
+}
+
+.cv-header-small .cv-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Back link for subpages */
+.cv-back {
+  color: var(--color-secondary);
+  font-weight: 600;
+  text-decoration: none;
+  margin-right: 1rem;
+}
+
+/* Main container spacing (already in base but add layout helpers) */
+.cv-container {
+  width: 90%;
+  max-width: 1200px;
+  margin: 1.25rem auto;
+  padding-bottom: 2.5rem;
+}
+
+/* Footer */
+.cv-footer {
+  background: var(--color-secondary);
+  color: var(--color-white);
+  padding: 1rem 0;
+  margin-top: 2rem;
+  text-align: center;
+}
+
+/* Two-column layout helper */
+.cv-columns {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1.25rem;
+}
+
+.cv-main {
+  grid-column: 1;
+}
+
+.cv-sidebar {
+  grid-column: 2;
+}
+
+/* Card list in sidebar */
+.cv-sidebar .cv-card {
+  margin-bottom: 1rem;
+}
+
+/* Small utility: floating action button */
+.cv-fab {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  color: var(--color-white);
+  box-shadow: 0 12px 30px rgba(0,188,212,0.14);
+  cursor: pointer;
+  z-index: 1200;
+}
+
+/* Responsive navigation: hamburger */
+.cv-hamburger {
+  background: transparent;
+  border: none;
+  color: var(--color-white);
+  font-size: 1.35rem;
+  display: none;
+  cursor: pointer;
+}
+
+/* Mobile menu panel */
+.cv-mobile-menu {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 11, 13, 0.6);
+  display: none;
+  z-index: 1300;
+}
+
+.cv-mobile-menu.active {
+  display: block;
+}
+
+.cv-mobile-menu .cv-mobile-panel {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 84%;
+  max-width: 340px;
+  height: 100%;
+  background: var(--color-white);
+  box-shadow: -6px 0 20px rgba(0,0,0,0.08);
+  padding: 1rem;
+}
+
+/* Mobile nav links */
+.cv-mobile-panel ul {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.cv-mobile-panel a {
+  padding: 0.8rem;
+  display: block;
+  border-radius: 8px;
+  color: var(--color-secondary);
+}
+
+/* ========================
+   Responsive rules
+   ======================== */
+@media (max-width: 900px) {
+  .cv-columns {
+    grid-template-columns: 1fr;
+  }
+  .cv-header-inner {
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 760px) {
+  .cv-topnav { display: none; }
+  .cv-hamburger { display: block; }
+  .cv-logo-sm { width: 36px; height: 36px; }
+  .cv-app-name { font-size: 1rem; }
+}

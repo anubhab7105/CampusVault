@@ -1,0 +1,52 @@
+/* ===============================
+   signup.css
+   Signup page styles
+   =============================== */
+
+.cv-signup-card {
+  width: 100%;
+  max-width: 480px;
+  margin: 3rem auto;
+  padding: 1.25rem 1.25rem;
+  text-align: left;
+}
+
+.cv-signup-card h1 {
+  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
+  color: var(--color-secondary);
+}
+
+.cv-signup-card .cv-field {
+  margin-bottom: 0.9rem;
+}
+
+.cv-signup-card .cv-actions {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+#signup-error {
+  margin-top: 0.6rem;
+  color: #ef4444;
+  font-weight: 600;
+}
+
+/* Small help text specific to faculty code */
+#faculty-code-field .cv-muted {
+  margin-top: 0.25rem;
+  font-size: 0.82rem;
+}
+
+/* helper class used across project */
+.hidden { display: none !important; }
+
+/* small screens */
+@media (max-width: 480px) {
+  .cv-signup-card {
+    padding: 1rem;
+    margin: 1.5rem;
+  }
+}

@@ -1,0 +1,261 @@
+/* base page container */
+.cv-container {
+  max-width: 1100px;
+  margin: 1.6rem auto;
+  padding: 0 1rem;
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 1rem;
+  align-items: start;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  color: #0f172a;
+  /* define explicit layout areas for stable alignment */
+  grid-template-areas:
+    "welcome uploads"
+    "overview actions";
+  /* ensure rows expand evenly, but allow very small content to shrink */
+  grid-auto-rows: minmax(200px, 1fr);
+}
+
+/* responsive single-column for phones */
+@media (max-width: 960px) {
+  .cv-container {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "welcome"
+      "overview"
+      "uploads"
+      "actions";
+    grid-auto-rows: auto;
+  }
+}
+
+/* assign grid areas (these match the section ids from your HTML) */
+#faculty-welcome { grid-area: welcome; }
+#faculty-overview { grid-area: overview; }
+#faculty-uploads { grid-area: uploads; }
+#faculty-actions { grid-area: actions; }
+
+/* header */
+.cv-header {
+  background: linear-gradient(90deg, #0b3a8a, #07326b);
+  color: #fff;
+  padding: 0.6rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  box-shadow: 0 4px 18px rgba(3,8,24,0.18);
+}
+.cv-header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 1rem;
+  padding: 0 1rem;
+}
+
+/* card base: make each card a column flex so internal areas can stretch */
+.cv-card {
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
+  border-radius: 14px;
+  padding: 1rem;
+  box-shadow: 0 10px 30px rgba(21,32,54,0.06);
+  border: 1px solid rgba(8,16,32,0.04);
+
+  display: flex;
+  flex-direction: column;
+  /* ensure card occupies the grid cell fully so all cards in the row match height */
+  height: 100%;
+  min-height: 0; /* allows children with overflow to scroll properly */
+}
+
+/* card content wrapper: use this pattern inside JS-rendered content if needed
+   <div class="cv-card-body">...scrolling content here...</div>
+   <div class="cv-card-footer">...actions...</div> */
+
+.cv-card-body {
+  flex: 1 1 auto;
+  overflow: auto; /* scroll only inside the card if content is long */
+  padding-right: 0.1rem; /* avoids layout shift with scrollbar */
+}
+.cv-card-footer {
+  flex: 0 0 auto;
+  margin-top: 0.6rem;
+}
+
+/* headings */
+.cv-card h2, .cv-card h3 { margin: 0 0 .6rem 0; font-weight: 700; color: #0b2540; }
+.cv-card p { margin: 0 0 .8rem 0; color: #334155; }
+
+/* course grid */
+.cv-course-grid {
+  display:grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: .8rem;
+}
+@media (max-width: 700px) { .cv-course-grid { grid-template-columns: 1fr; } }
+
+.cv-course {
+  display:flex;
+  flex-direction:column;
+  gap:.6rem;
+  padding:.65rem;
+  border-radius:12px;
+  background: #fff;
+  border:1px solid rgba(11,22,45,0.04);
+  transition: transform .16s ease, box-shadow .16s ease;
+  min-height: 120px; /* consistent min height for nicer alignment */
+}
+.cv-course:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(11,22,45,0.06); }
+
+/* course head layout */
+.cv-course-head { display:flex; gap:.65rem; align-items:center; }
+.cv-course-avatar {
+  width:54px; height:54px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+  font-weight:700; font-size:1.05rem; color:#0b3a8a;
+  background: linear-gradient(180deg,#eef6ff,#f8fbff); border:1px solid rgba(11,66,160,0.06);
+  box-shadow: inset 0 -6px 18px rgba(11,66,160,0.03);
+}
+.cv-course-info { flex:1; min-width: 0; } /* min-width:0 prevents overflow in flex children */
+.cv-course-title { margin:0; font-size:1rem; color:#071233; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cv-course-meta { margin-top:.28rem; font-size:.85rem; display:flex; gap:.5rem; align-items:center; color:#475569; flex-wrap:wrap; }
+.cv-pill { padding:.18rem .45rem; border-radius:999px; background: rgba(11,22,45,0.04); font-weight:700; font-size:.78rem; }
+
+/* actions aligned to bottom of card */
+.cv-course-actions {
+  display:flex; gap:.5rem; align-items:center;
+  margin-top: auto; /* push to bottom so cards look aligned visually */
+}
+
+/* buttons */
+.cv-btn { padding:.5rem .75rem; border-radius:8px; background: linear-gradient(180deg,#0b6bff,#084fd6); color:#fff; border:none; cursor:pointer; font-weight:700; box-shadow: 0 8px 20px rgba(9,41,102,0.12); }
+.cv-btn:active { transform: translateY(1px); }
+.cv-btn-ghost { background:transparent; color:#0b3a8a; border:1px solid rgba(11,22,45,0.06); box-shadow:none; font-weight:700; }
+
+/* right column: uploads and quick actions */
+.cv-actions { display:flex; gap:.5rem; flex-direction:row; flex-wrap:wrap; align-items:center; justify-content:flex-start; }
+#faculty-actions .cv-actions { margin-top:.4rem; }
+
+.cv-btn-link { background:transparent; border:none; color:#0b6bff; font-weight:700; cursor:pointer; padding:.25rem .4rem; }
+
+/* upload list */
+.cv-upload-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.6rem; max-height: 420px; overflow:auto; }
+.cv-upload-item {
+  display:flex; gap:.7rem; align-items:center; background:#fff; padding:.5rem; border-radius:10px; border:1px solid rgba(11,22,45,0.04);
+}
+.cv-upload-left { min-width:56px; display:flex; align-items:center; justify-content:center; }
+.cv-upload-type { width:44px; height:44px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; background: linear-gradient(180deg,#f3f6ff,#eef5ff); color:#0b6bff; border:1px solid rgba(11,66,160,0.06); }
+.cv-upload-body { flex:1; min-width: 0; }
+.cv-upload-title { font-weight:700; margin-bottom:.18rem; color:#071233; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cv-upload-meta { font-size:.86rem; color:#64748b; }
+
+/* empty */
+.cv-empty { color:#64748b; padding:.6rem; border-radius:8px; background:#fbfdff; border:1px dashed rgba(11,22,45,0.02); }
+
+/* helpers */
+.cv-list { display:block; }
+.muted, .cv-muted { color:#6b7280; font-size:.92rem; }
+
+/* ensure nav and header behave responsively */
+.cv-topnav ul { display:flex; gap: .45rem; list-style:none; margin:0; padding:0; align-items:center; }
+.cv-topnav a, .cv-topnav button { color: #e6eef8; text-decoration:none; background: transparent; border: none; padding: .45rem .6rem; border-radius: 8px; cursor:pointer; font-weight:600; font-size:0.95rem; }
+.cv-topnav a.active { background: rgba(255,255,255,0.06); box-shadow: inset 0 -2px 0 rgba(255,255,255,0.03); }
+.cv-hamburger { display:none; font-size:1.25rem; background:transparent; color:#fff; border:none; }
+@media (max-width:900px) {
+  .cv-topnav { position:absolute; top:66px; right:1rem; background: rgba(8,18,36,0.96); padding:.6rem; border-radius:10px; display:none; flex-direction:column; min-width:200px; box-shadow: 0 10px 30px rgba(2,6,23,0.35); }
+  .cv-topnav.open { display:flex; }
+  .cv-hamburger { display:inline-block; }
+}
+
+/* tweak vertical spacing on narrow screens so content isn't cramped */
+@media (max-width: 480px) {
+  .cv-card { padding: 0.75rem; border-radius: 10px; }
+  .cv-course-avatar { width:48px; height:48px; }
+  .cv-course-title { font-size: 0.95rem; }
+}
+
+/* Floating Complaint Button */
+.cv-float-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #0066cc;
+  color: #fff;
+  font-size: 32px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  z-index: 1100;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.cv-float-btn:hover {
+  background-color: #005bb5;
+  transform: scale(1.1);
+}
+
+/* Modal Styles */
+.cv-modal {
+  display: none;
+  position: fixed;
+  z-index: 1200;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  backdrop-filter: blur(6px);
+  background-color: rgba(0,0,0,0.5);
+}
+
+.cv-modal-content {
+  background-color: #fff;
+  margin: 8% auto;
+  padding: 20px;
+  border-radius: 12px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  position: relative;
+}
+
+.cv-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.cv-modal h3 {
+  margin-top: 0;
+}
+
+.cv-modal form label {
+  display: block;
+  margin: 10px 0 4px;
+  font-weight: 500;
+}
+
+.cv-modal form input,
+.cv-modal form textarea {
+  width: 100%;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.cv-modal form textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.cv-feedback {
+  color: green;
+  margin-top: 8px;
+  font-size: 14px;
+}
