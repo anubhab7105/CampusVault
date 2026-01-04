@@ -1,7 +1,0 @@
-__pycache__/
-venv/
-*.pyc
-instance/
-backend/app/static_uploads/
-*.sqlite3
-.env
