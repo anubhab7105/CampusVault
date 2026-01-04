@@ -1,1 +1,14 @@
-Frontend static files. Deploy to Vercel or serve from any static host. Configure API base in js/config.json or replace at build time.
+# CampusVault Frontend
+
+A minimal vanilla JS frontend.
+
+Development:
+- Serve `frontend` (e.g., using `npx serve frontend` or host on Vercel)
+- Configure `API` URL in `frontend/main.js` (or set `API_BASE_URL` and update code)
+
+Pages:
+- Home
+- Sign up (single-page OTP flow)
+- Login
+- Document listing
+- (Future) Role dashboards for Admin/Faculty/Student
