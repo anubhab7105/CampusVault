@@ -8,7 +8,12 @@ Backend: Render
 - Create a new Web Service on Render with branch from repo.
 - Add environment variables (from `.env.example`) in Render dashboard.
 - Use the start command `npm run start`.
+- You can also deploy via Docker (we provide `backend/Dockerfile`) if you prefer container-based deployment.
+- (Optional) Add a health check path `/` and configure instance size according to traffic.
 
+CI (recommended)
+- GitHub Actions workflow is included at `.github/workflows/ci.yml` to run tests.
+- Ensure DB credentials for test service are set in the workflow or use a test DB service.
 Database: Railway / PlanetScale
 - Create a MySQL instance on Railway or PlanetScale.
 - Run `sql/schema.sql` and `sql/seeds.sql` against the DB.

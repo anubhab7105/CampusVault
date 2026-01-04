@@ -15,4 +15,5 @@ Password Reset:
 
 Security notes:
 - Do not disclose whether emails/phones exist in the system for privacy.
-- Rate-limit OTP and password reset endpoints to prevent abuse.
+- Rate-limit OTP and password reset endpoints to prevent abuse (implemented using express-rate-limit; default 5 requests per 15 minutes).
+- Set `CORS_ORIGIN` in environment to restrict allowed origins in production.

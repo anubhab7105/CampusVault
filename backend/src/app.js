@@ -23,7 +23,7 @@ app.use(helmet.contentSecurityPolicy({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+app.use(cors({ origin: process.env.CORS_ORIGIN || true }));
 app.use(morgan('dev'));
 
 const limiter = rateLimit({ windowMs: 60 * 1000, max: 120 });
@@ -33,6 +33,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/documents', docsRoutes);
 app.use('/api/comments', commentsRoutes);
+
+// Serve OpenAPI json
+const path = require('path');
+app.get('/api/docs/openapi.json', (req, res) => res.sendFile(path.join(__dirname, '../../docs/openapi.json')));
 
 app.get('/', (req, res) => res.json({ ok: true, msg: 'CampusVault API' }));
 

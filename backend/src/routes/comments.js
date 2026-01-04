@@ -7,6 +7,7 @@ const { authenticateJWT, requireRole } = require('../middleware/auth');
 const router = express.Router();
 
 // post comment (students & faculty)
+const { logAction } = require('../middleware/accessLog');
 router.post('/:documentId', authenticateJWT, [body('body').notEmpty()], async (req, res, next) => {
   try {
     const errors = validationResult(req); if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
@@ -14,6 +15,7 @@ router.post('/:documentId', authenticateJWT, [body('body').notEmpty()], async (r
     const doc = await Document.findByPk(documentId);
     if (!doc) return res.status(404).json({ error: 'Document not found' });
     const comment = await Comment.create({ body: req.body.body, authorId: req.user.userId, documentId });
+    await logAction(req, 'create_comment', { documentId });
     res.json({ ok: true, comment });
   } catch (err) { next(err); }
 });
@@ -35,6 +37,8 @@ router.delete('/:id', authenticateJWT, async (req, res, next) => {
     if (!comment) return res.status(404).json({ error: 'Not found' });
     if (req.user.role !== 'admin' && comment.authorId !== req.user.userId) return res.status(403).json({ error: 'Forbidden' });
     await comment.destroy();
+    const { logAction } = require('../middleware/accessLog');
+    await logAction(req, 'delete_comment', { documentId: comment.documentId });
     res.json({ ok: true });
   } catch (err) { next(err); }
 });

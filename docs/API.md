@@ -13,10 +13,13 @@ Users
 Documents
 - POST /api/documents (multipart/form-data) { file, title, description, isPublic } → faculty only
 - GET /api/documents → list documents (public and private depending on role)
+- GET /api/documents/:id/view → viewable link for document (students limited to public docs)
+- GET /api/documents/admin/all → admin only: list all uploads
 
 Comments
 - POST /api/comments/:documentId { body } → authenticated users (students/faculty)
 - GET /api/comments/:documentId → list comments
+- DELETE /api/comments/:id → admin or comment author
 
 Notes
 - Use Authorization: Bearer <token> header for protected routes.

@@ -2,13 +2,17 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
+
+const otpLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, message: 'Too many OTP requests, try later' });
+const resetLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, message: 'Too many requests, try later' });
 
 const router = express.Router();
 const User = require('../models/user');
 const OTP = require('../models/otp');
 
 // Request OTP for signup (phone)
-router.post('/request-otp', [body('phone').isMobilePhone()], async (req, res, next) => {
+router.post('/request-otp', otpLimiter, [body('phone').isMobilePhone()], async (req, res, next) => {
   try {
     const errors = validationResult(req); if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
     const { phone } = req.body;
@@ -30,7 +34,7 @@ router.post('/request-otp', [body('phone').isMobilePhone()], async (req, res, ne
 });
 
 // Verify OTP and create user (step two in single-page flow)
-router.post('/verify-otp', [body('phone').isMobilePhone(), body('code').isLength({ min: 6, max: 6 })], async (req, res, next) => {
+router.post('/verify-otp', [body('phone').isMobilePhone(), body('code').isLength({ min: 6, max: 6 }), body('fullName').notEmpty(), body('collegeId').notEmpty(), body('email').isEmail()], async (req, res, next) => {
   try {
     const errors = validationResult(req); if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
     const { phone, code, fullName, collegeId, email, password } = req.body;
@@ -71,8 +75,17 @@ router.post('/login', [body('email').isEmail(), body('password').isLength({ min:
   } catch (err) { next(err); }
 });
 
+// me endpoint
+router.get('/me', authenticateJWT, async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.user.userId, { attributes: ['id','fullName','email','role','collegeId','verified','phone'] });
+    if (!user) return res.status(404).json({ error: 'Not found' });
+    res.json({ ok: true, user });
+  } catch (err) { next(err); }
+});
+
 // Request password reset
-router.post('/request-password-reset', [body('email').isEmail()], async (req, res, next) => {
+router.post('/request-password-reset', resetLimiter, [body('email').isEmail()], async (req, res, next) => {
   try {
     const errors = validationResult(req); if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
     const { email } = req.body;

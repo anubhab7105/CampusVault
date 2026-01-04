@@ -4,7 +4,7 @@ Setup:
 
 1. Copy `.env.example` to `.env` and fill in credentials (DB, Cloudinary, SMTP, Twilio)
 2. Install deps: `npm install`
-3. Setup MySQL DB and run `sql/schema.sql` and `sql/seeds.sql`
+3. Setup MySQL DB and run `sql/schema.sql` and `sql/seeds.sql` (or run `npm run db:sync` for development)
 4. Run server: `npm run dev`
 
 Notes:

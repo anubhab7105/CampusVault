@@ -21,6 +21,7 @@ cloudinary.config({
 
 // Faculty uploads a document
 const ALLOWED_MIMES = ['application/pdf', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+const { logAction } = require('../middleware/accessLog');
 router.post('/', authenticateJWT, requireRole('faculty'), upload.single('file'), [body('title').notEmpty()], async (req, res, next) => {
   try {
     const errors = validationResult(req); if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
@@ -31,6 +32,7 @@ router.post('/', authenticateJWT, requireRole('faculty'), upload.single('file'),
     const stream = cloudinary.uploader.upload_stream({ resource_type: 'auto', folder: 'campusvault' }, async (err, result) => {
       if (err) return next(err);
       const doc = await Document.create({ title, description, fileUrl: result.secure_url, filePublicId: result.public_id, fileType: req.file.mimetype, isPublic: isPublic !== 'false', uploadedById: req.user.userId });
+      await logAction(req, 'upload_document', { documentId: doc.id });
       res.json({ ok: true, document: doc });
     });
     streamifier.createReadStream(req.file.buffer).pipe(stream);
@@ -73,6 +75,8 @@ router.put('/:id', authenticateJWT, requireRole('faculty'), [body('title').optio
     if (description) doc.description = description;
     if (typeof isPublic !== 'undefined') doc.isPublic = isPublic;
     await doc.save();
+    const { logAction } = require('../middleware/accessLog');
+    await logAction(req, 'edit_document', { documentId: doc.id });
     res.json({ ok: true, doc });
   } catch (err) { next(err); }
 });
@@ -87,7 +91,17 @@ router.delete('/:id', authenticateJWT, requireRole('faculty'), async (req, res, 
     // remove from cloudinary
     if (doc.filePublicId) await cloudinary.uploader.destroy(doc.filePublicId, { resource_type: 'auto' });
     await doc.destroy();
+    const { logAction } = require('../middleware/accessLog');
+    await logAction(req, 'delete_document', { documentId: id });
     res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+// admin - view all uploads
+router.get('/admin/all', authenticateJWT, requireRole('admin'), async (req, res, next) => {
+  try {
+    const docs = await Document.findAll({ include: ['uploadedBy'] });
+    res.json({ ok: true, docs });
   } catch (err) { next(err); }
 });
 
