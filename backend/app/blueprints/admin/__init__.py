@@ -10,7 +10,7 @@ from flask import Blueprint, current_app, jsonify, request, send_file
 from flask_jwt_extended import get_jwt, jwt_required
 from marshmallow import Schema, fields, validate
 
-from app.errors.exceptions import ConflictError, ForbiddenError, NotFoundError
+from app.errors.exceptions import ConflictError, ForbiddenError, NotFoundError, ValidationError
 from app.extensions import db
 from app.middleware.auth import ensure_authenticated
 from app.schemas.common import PaginationQuerySchema, SearchSortQuerySchema
