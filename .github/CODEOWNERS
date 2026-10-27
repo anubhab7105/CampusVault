@@ -1,0 +1,19 @@
+# CODEOWNERS — CampusVault
+# Paths are relative to the repository root.
+
+# Documentation → platform engineering.
+/docs/                              @platform-eng
+
+# Backend (Flask, SQLAlchemy, Alembic, Celery, Socket.IO)
+/backend/                           @backend-team
+
+# Frontend (React, Vite, Tailwind, Zustand)
+/frontend/                          @frontend-team
+
+# Infra & CI/CD
+/docker/                            @devops-team
+/.github/                           @devops-team
+
+# Root config
+/README.md                          @platform-eng
+/.gitignore                         @platform-eng
