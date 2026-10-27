@@ -10,4 +10,4 @@ app = create_app()
 
 if __name__ == "__main__":
     # Dev-only fallback; production uses `gunicorn wsgi:app`.
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    app.run(host="0.0.0.0", port=8000, debug=True)  # noqa: S104
