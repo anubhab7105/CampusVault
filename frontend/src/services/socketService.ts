@@ -6,7 +6,7 @@ import { useAuthStore } from "@stores/useAuthStore";
 const WS_URL = import.meta.env.VITE_WS_URL ?? "ws://localhost:8000/socket.io";
 
 let socket: Socket | null = null;
-let pendingEmitQueue: Array<[string, unknown?]> = [];
+const pendingEmitQueue: Array<[string, unknown?]> = [];
 
 export const socketService = {
   /** Authenticate + connect. Idempotent. */
