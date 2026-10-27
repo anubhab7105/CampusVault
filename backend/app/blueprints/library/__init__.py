@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 
 from flask import Blueprint, current_app, jsonify, request
 from marshmallow import Schema, fields, validate
@@ -10,6 +11,7 @@ from marshmallow import Schema, fields, validate
 from app.extensions import db, limiter
 from app.middleware.auth import ensure_authenticated
 from app.repositories.resource_repository import resource_repository
+from app.models.resource import Resource
 from app.schemas.resource_schema import ResourceQuerySchema, ResourceUploadSchema
 from app.services.role_service import role_service
 from app.services.upload import UploadService
