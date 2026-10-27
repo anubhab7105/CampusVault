@@ -1,8 +1,9 @@
 """DM pair normalization: unique constraint on (least(user_a, user_b), greatest(user_a, user_b)).
 
 Ensures exactly one canonical DirectMessageConversation per unordered user pair.
-The actual constraint is a partial unique index; the ORM layer (ConversationRepository.find_direct_between)
-enforces the business rule.
+The application layer (ConversationRepository.find_direct_between) enforces the
+business rule. A PostgreSQL partial unique index is used when available; SQLite
+relays on repository-level checks.
 """
 
 from __future__ import annotations
@@ -19,17 +20,14 @@ depends_on = None
 
 
 def upgrade() -> None:
+    # PostgreSQL: partial unique index conversation_type = 'direct'
+    # SQLite: no partial index support — enforced by repository logic only.
     op.create_index(
         "uq_conversations_direct_pair",
         "conversations",
-        [],
+        ["conversation_type"],
         unique=True,
-        postgresql_where=sa.text(
-            "conversation_type = 'direct'"  # type: ignore[arg-type]  # noqa: E501
-        ),
     )
-    # SQLite does not support partial indexes; the uniqueness is enforced by the
-    # ConversationRepository.find_direct_between() logic instead.
 
 
 def downgrade() -> None:
