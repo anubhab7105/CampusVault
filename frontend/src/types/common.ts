@@ -3,7 +3,8 @@
 export type UUID = string;
 export type RoleName = "Student" | "Teacher" | "Admin";
 
-import type { UUID } from "./common";
+export interface Timestamped {
+  id: UUID;
   created_at: string;
   updated_at: string;
   deleted_at?: string | null;

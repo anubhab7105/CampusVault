@@ -11,16 +11,20 @@ export function useToast() {
     clear: state.clear,
   }));
 
+  const success = (title: string, description?: string) =>
+    add({ title, description, variant: "success" });
+  const error = (title: string, description?: string) =>
+    add({ title, description, variant: "destructive" });
+  const warning = (title: string, description?: string) =>
+    add({ title, description, variant: "warning" });
+
   return {
     toasts,
     toast: add,
     dismiss: remove,
     clear,
-    success: (title: string, description?: string) =>
-      add({ title, description, variant: "success" }),
-    error: (title: string, description?: string) =>
-      add({ title, description, variant: "destructive" }),
-    warning: (title: string, description?: string) =>
-      add({ title, description, variant: "warning" }),
+    success,
+    error,
+    warning,
   };
 }

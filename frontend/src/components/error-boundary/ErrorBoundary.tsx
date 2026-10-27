@@ -15,7 +15,7 @@ interface State {
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false, error: null };
 
-  static override getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 
@@ -23,7 +23,7 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error("[CampusVault ErrorBoundary]", _errorInfo.componentStack);
   }
 
-  override reset = (): void => this.setState({ hasError: false, error: null });
+  reset = (): void => this.setState({ hasError: false, error: null });
 
   render(): ReactNode {
     if (this.state.hasError) {

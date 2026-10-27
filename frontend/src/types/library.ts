@@ -1,5 +1,6 @@
 /** Library / resource domain types. */
 
+import type { UUID } from "./common";
 export type ResourceType =
   | "note"
   | "book"
