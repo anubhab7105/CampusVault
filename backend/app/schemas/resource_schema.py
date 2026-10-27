@@ -18,12 +18,12 @@ class ResourceQuerySchema(Schema):
     q = fields.Str(allow_none=True, validate=validate.Length(max=255))
     sort = fields.Str(validate=validate.OneOf(["title", "download_count", "view_count", "created_at"]))
     order = fields.Str(validate=validate.OneOf(["asc", "desc"]))
-    page = fields.Int(missing=1, validate=validate.GreaterThan(0))
-    page_size = fields.Int(missing=20, validate=validate.Range(min=1, max=100))
+    page = fields.Int(missing=1, validate=lambda n: 0 < n <= 1000)
+    page_size = fields.Int(missing=20, validate=lambda n: 0 < n <= 100)
 
 
 class ResourceUploadSchema(Schema):
-    """Schema for the upload‑request phase A payload."""
+    """Schema for the upload-request phase A payload."""
 
     extension = fields.Str(required=True, validate=validate.Length(max=10))
     mime_type = fields.Str(allow_none=True)
