@@ -48,7 +48,9 @@ class ConversationRepository(BaseRepository[Conversation]):
                 participants.user_id.in_([user_a, user_b]),
             )
             .group_by(Conversation.id)
-            .having(sa.func.count(participants.user_id) == DIRECT_MESSAGE_PARTICIPANT_COUNT)
+            .having(
+                sa.func.count(participants.user_id) == ConversationRepository.DIRECT_MESSAGE_PARTICIPANT_COUNT
+            )
             .limit(1)
         )
         return db.session.scalar(stmt)
