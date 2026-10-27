@@ -1,0 +1,15 @@
+/** Toast store — global non-blocking notifications. */
+import { create } from "zustand";
+let nextId = 0;
+export const useToastStore = create((set) => ({
+    toasts: [],
+    add: (toast) => {
+        const id = String(++nextId);
+        set((state) => ({ toasts: [...state.toasts, { ...toast, id }] }));
+        if (toast.duration !== 0) {
+            setTimeout(() => set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })), toast.duration ?? 5000);
+        }
+    },
+    remove: (id) => set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
+    clear: () => set({ toasts: [] }),
+}));

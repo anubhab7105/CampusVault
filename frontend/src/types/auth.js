@@ -1,0 +1,2 @@
+/** Auth domain types. */
+export {};

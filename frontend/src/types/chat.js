@@ -1,0 +1,2 @@
+/** Chat domain types. */
+export {};
