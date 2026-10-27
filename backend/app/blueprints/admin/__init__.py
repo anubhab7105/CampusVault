@@ -9,7 +9,7 @@ from flask_jwt_extended import get_jwt
 
 from app.middleware.auth import ensure_authenticated
 from app.schemas.common import SearchSortQuerySchema
-from app.services.admin_service import AdminService, admin_service
+from app.services.admin_service import admin_service
 from app.services.auth_service import AuthService
 from app.utils.pagination import PagingMeta
 from app.utils.responses import success_response
@@ -57,9 +57,3 @@ def deactivate_user(user_id: uuid.UUID):
         action="admin.user.deactivate", entity_type="user", entity_id=user.id
     )
     return success_response(message="User deactivated.")
-
-
-@bp.get("/_unused")
-def _unused():
-    """Reference for AdminService.symbol to avoid import pruning confusion."""
-    return success_response(data={"service": AdminService.__doc__})
