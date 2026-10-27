@@ -1,10 +1,5 @@
-"""Per‑user upload quota tracking.
+"""Per‑user upload quota tracking."""
 
-Revision ID: 0004
-Revises: 0003
-Create Date: 2026-10-27 16:10:00.000000
-
-"""
 from __future__ import annotations
 
 import sqlalchemy as sa
@@ -24,8 +19,12 @@ def upgrade() -> None:
         sa.Column("user_id", sa.Uuid(), nullable=False),
         sa.Column("uploads_this_session", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("max_per_session", sa.Integer(), nullable=False, server_default="5"),
-        sa.Column("reset_at", sa.DateTime(timezone=True), nullable=False,
-                  server_default=sa.text("now() + interval '1 hour'")),
+        sa.Column(
+            "reset_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
         sa.PrimaryKeyConstraint("user_id"),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
     )

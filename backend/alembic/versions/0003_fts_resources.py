@@ -1,9 +1,10 @@
 """Full‑text search index on resources.
 
 Migration adds a ``fts`` column stored as ``TEXT`` (PostgreSQL ``TSVector``)
-with a GIN index. On SQLite it is a plain ``TEXT`` column; the repository
-layer (``ResourceRepository.by_hierarchy``) switches to ``LIKE`` queries
-automatically when the dialect is not PostgreSQL.
+with a GIN index. On SQLite it is a plain ``TEXT`` column with no default; the
+application generates the tsvector at insert time (``ResourceRepository.create``)
+and the repository search method switches to ``LIKE`` queries automatically when
+the dialect is not PostgreSQL.
 
 Revision ID: 0003
 Revises: 0002
@@ -25,13 +26,7 @@ depends_on = None
 def upgrade() -> None:
     op.add_column(
         "resources",
-        sa.Column(
-            "fts",
-            sa.Text(),
-            server_default=sa.text(
-                "to_tsvector('english', title || ' ' || COALESCE(description, ''))"
-            ),
-        ),
+        sa.Column("fts", sa.Text(), nullable=True),
     )
     op.create_index(
         "idx_resources_fts",
