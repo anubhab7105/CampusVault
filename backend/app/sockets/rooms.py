@@ -11,7 +11,7 @@ import uuid
 
 from flask_socketio import join_room, leave_room
 
-from app.errors.exceptions import ForbiddenError, NotFoundError
+from app.errors.exceptions import ForbiddenError
 from app.services.group_service import group_service
 
 

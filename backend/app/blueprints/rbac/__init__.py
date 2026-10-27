@@ -5,6 +5,7 @@ from __future__ import annotations
 import uuid
 
 from flask import Blueprint, request
+from marshmallow import Schema, fields, validate
 
 from app.extensions import db
 from app.middleware.rbac import permission_required
@@ -12,7 +13,6 @@ from app.repositories import RoleRepository
 from app.services.role_service import RoleService
 from app.utils.responses import success_response
 from app.utils.validation import get_json_body, load_schema
-from marshmallow import Schema, fields, validate
 
 bp = Blueprint("rbac", __name__, url_prefix="/api/v1/rbac")
 
@@ -119,7 +119,7 @@ def assign_role(user_id: uuid.UUID):
         r.name == body["role_name"] for r in roles_repo.get_user_roles(user_id)
     ):
         return success_response(message="Role already assigned.")
-    acting_admin = request.environ.get("REQUESTED_USER_ID")  # set by middleware
+    request.environ.get("REQUESTED_USER_ID")  # set by middleware
     roles_repo.assign_role(user_id, role.id, assigned_by=None)
     db.session.commit()
     return success_response(message="Role assigned.")

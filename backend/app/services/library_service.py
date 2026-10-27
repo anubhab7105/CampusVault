@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Sequence
 
 import sqlalchemy as sa
 
@@ -11,8 +10,8 @@ from app.errors.exceptions import ForbiddenError, NotFoundError, ValidationError
 from app.extensions import db
 from app.models import Resource
 from app.repositories import ResourceRepository
-from app.services.base_service import BaseService
 from app.services.audit_service import audit_service
+from app.services.base_service import BaseService
 
 
 class LibraryService(BaseService):

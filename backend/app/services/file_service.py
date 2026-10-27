@@ -8,10 +8,9 @@ Policy (docs/06_SECURITY_GUIDE.md):
 
 from __future__ import annotations
 
-import hashlib
 import secrets
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from flask import current_app
 
@@ -79,7 +78,7 @@ class FileService(BaseService):
         return row
 
     def register_scan_result(self, file_id: uuid.UUID, status: str) -> None:
-        self.files.set_scan_result(file_id, status, datetime.now(tz=timezone.utc))
+        self.files.set_scan_result(file_id, status, datetime.now(tz=UTC))
         db.session.commit()
 
 

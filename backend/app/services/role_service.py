@@ -38,7 +38,6 @@ class RoleService:
 
     def ensure_system_roles_exist(self) -> None:
         """Idempotent seed of Student/Teacher/Admin + base permissions."""
-        from app.models import Permission as PermissionModel
 
         for name in SYSTEM_ROLES:
             if self.roles.get_system_role_by_name(name) is None:

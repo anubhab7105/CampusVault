@@ -9,7 +9,6 @@ from __future__ import annotations
 import sqlalchemy as sa
 
 from app.constants import NOTIFICATION_SYSTEM
-from app.extensions import db
 from app.models.base import BaseModel, JSONType, UUIDType
 
 

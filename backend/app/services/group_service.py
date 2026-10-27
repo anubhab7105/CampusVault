@@ -7,7 +7,7 @@ from collections.abc import Sequence
 
 from app.errors.exceptions import ForbiddenError, NotFoundError
 from app.extensions import db
-from app.models import Conversation, Group
+from app.models import Group
 from app.repositories import ConversationRepository, GroupRepository
 from app.services.base_service import BaseService
 

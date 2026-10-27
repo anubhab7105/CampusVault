@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import uuid
 
-from app.constants import ROLE_ADMIN
 from app.errors.exceptions import ConflictError, ForbiddenError, NotFoundError
 from app.extensions import db
 from app.models import User

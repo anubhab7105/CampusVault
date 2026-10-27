@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 
 from flask import current_app, request
-from flask_socketio import disconnect, emit
+from flask_socketio import emit
 
 from app.extensions import socketio
 from app.services.connections import (

@@ -10,9 +10,8 @@ Contract (docs/06_SECURITY_GUIDE.md):
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from app.utils.redis_utils import get_redis
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
@@ -22,7 +21,8 @@ from flask_jwt_extended import (
 )
 
 from app.errors.exceptions import UnauthorizedError
-from app.middleware.auth import ROLE_CLAIM, PERMISSIONS_CLAIM
+from app.middleware.auth import PERMISSIONS_CLAIM, ROLE_CLAIM
+from app.utils.redis_utils import get_redis
 
 BLOCKLIST_PREFIX = "jwt:blocklist:"
 
@@ -56,7 +56,7 @@ class TokenService:
             raise UnauthorizedError("Refresh token is invalid.")
 
         claims = get_jwt()
-        ttl = max(int(claims["exp"] - datetime.now(tz=timezone.utc).timestamp()), 1)
+        ttl = max(int(claims["exp"] - datetime.now(tz=UTC).timestamp()), 1)
         TokenService._blocklist(claims["jti"], ttl)
 
         from app.services.role_service import role_service
@@ -69,7 +69,7 @@ class TokenService:
         claims = get_jwt()
         if claims.get("type") != "refresh":
             raise UnauthorizedError("Refresh token required.")
-        ttl = max(int(claims["exp"] - datetime.now(tz=timezone.utc).timestamp()), 1)
+        ttl = max(int(claims["exp"] - datetime.now(tz=UTC).timestamp()), 1)
         TokenService._blocklist(claims["jti"], ttl)
 
     @staticmethod

@@ -20,7 +20,7 @@ bp = Blueprint("audit", __name__, url_prefix="/api/v1/audit-logs")
 
 @bp.get("")
 def timeline():
-    user_id = uuid.UUID(ensure_authenticated())
+    uuid.UUID(ensure_authenticated())
     if (get_jwt() or {}).get("role") != "Admin":
         raise ForbiddenError("Admin access required.")
 

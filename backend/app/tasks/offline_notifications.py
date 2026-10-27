@@ -25,7 +25,6 @@ def queue_online_emit_or_persist(self, *, notification_id: str) -> str:
     """Emit `notification` over Socket.IO if online; else keep it unread."""
     with flask_app().app_context():
         from app.extensions import db
-        from app.models import Notification
         from app.repositories import NotificationRepository
 
         row = NotificationRepository().get_by_id(uuid.UUID(notification_id))

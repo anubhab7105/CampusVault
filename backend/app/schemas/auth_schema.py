@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from marshmallow import Schema, ValidationError, fields, validate, validates_schema
+from marshmallow import Schema, fields, validate
 
 
 class OAuthExchangeSchema(Schema):

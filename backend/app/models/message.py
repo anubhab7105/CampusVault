@@ -9,7 +9,6 @@ from __future__ import annotations
 import sqlalchemy as sa
 
 from app.constants import MESSAGE_TYPE_TEXT
-from app.extensions import db
 from app.models.base import BaseModel, SoftDeleteMixin, UUIDType
 
 
@@ -57,7 +56,7 @@ class Message(BaseModel, SoftDeleteMixin):
         sa.Index("ix_messages_sender_conversation", "sender_id", "conversation_id"),
     )
 
-    def wipe_content(self) -> "Message":
+    def wipe_content(self) -> Message:
         """Tombstone the payload while keeping the audit trail."""
         from app.constants import MESSAGE_TYPE_SYSTEM
 

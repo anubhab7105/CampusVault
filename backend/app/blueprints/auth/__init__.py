@@ -6,7 +6,6 @@ import secrets
 import uuid
 
 from flask import Blueprint
-
 from flask_jwt_extended import jwt_required
 
 from app.constants import DEFAULT_AUTH_RATE_LIMIT

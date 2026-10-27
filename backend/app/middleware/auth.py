@@ -6,7 +6,6 @@ around their own authorization.
 
 from __future__ import annotations
 
-from flask import g
 from flask_jwt_extended import get_jwt, get_jwt_identity, verify_jwt_in_request
 
 from app.errors.exceptions import UnauthorizedError

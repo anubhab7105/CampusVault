@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Sequence
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.constants import NOTIFICATION_SYSTEM
 from app.extensions import db
@@ -54,14 +54,14 @@ class NotificationService(BaseService):
 
     def mark_read(self, notification_id: uuid.UUID, user_id: uuid.UUID) -> int:
         updated = self.notifications.mark_read(
-            notification_id, user_id, datetime.now(tz=timezone.utc)
+            notification_id, user_id, datetime.now(tz=UTC)
         )
         db.session.commit()
         return updated
 
     def mark_all_read(self, user_id: uuid.UUID) -> int:
         updated = self.notifications.mark_all_read(
-            user_id, datetime.now(tz=timezone.utc)
+            user_id, datetime.now(tz=UTC)
         )
         db.session.commit()
         return updated

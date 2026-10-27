@@ -5,8 +5,6 @@ from __future__ import annotations
 import uuid
 from collections.abc import Sequence
 
-import sqlalchemy as sa
-
 from app.extensions import db
 from app.models import AuditLog
 from app.repositories.base_repository import BaseRepository

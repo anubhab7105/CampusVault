@@ -10,7 +10,6 @@ from __future__ import annotations
 import sqlalchemy as sa
 
 from app.constants import SCAN_STATUS_PENDING
-from app.extensions import db
 from app.models.base import BaseModel, SoftDeleteMixin, UUIDType
 
 

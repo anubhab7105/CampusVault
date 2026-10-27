@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import uuid
-
 from flask_socketio import emit
 
 from app.models import Notification

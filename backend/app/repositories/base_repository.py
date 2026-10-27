@@ -68,7 +68,7 @@ class BaseRepository(Generic[ModelT]):
     def soft_delete(self, row: ModelT) -> ModelT:
         if not hasattr(row, "deleted_at"):
             raise NotImplementedError(f"{self.model.__name__} hard-deletes only")
-        row.deleted_at = dt.datetime.now(tz=dt.timezone.utc)
+        row.deleted_at = dt.datetime.now(tz=dt.UTC)
         db.session.add(row)
         return row
 

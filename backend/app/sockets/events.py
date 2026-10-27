@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Callable
+from datetime import UTC
 from functools import wraps
 
 from flask import request
@@ -23,10 +24,10 @@ from app.extensions import socketio
 from app.schemas.message_schema import SendGroupMessageSchema
 from app.services.audit_service import audit_service
 from app.services.chat_service import chat_service
-from app.services.group_service import group_service
 from app.services.connections import user_id_for_session
-from app.utils.validation import build_validation_error
+from app.services.group_service import group_service
 from app.sockets.rooms import dm_room, group_room, join_group_room, leave_group_room
+from app.utils.validation import build_validation_error
 
 
 def socket_errors(view: Callable) -> Callable:
@@ -227,9 +228,9 @@ def on_delivery_status(payload=None) -> None:  # type: ignore[no-untyped-def]
         return
     message = chat_service.messages.get_by_id(uuid.UUID(message_id))
     if message is not None and str(message.sender_id) == user_id:
-        from datetime import datetime, timezone
+        from datetime import datetime
 
-        chat_service.messages.mark_delivered(message.id, datetime.now(tz=timezone.utc))
+        chat_service.messages.mark_delivered(message.id, datetime.now(tz=UTC))
         from app.extensions import db
 
         db.session.commit()

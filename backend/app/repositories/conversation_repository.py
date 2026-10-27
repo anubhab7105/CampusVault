@@ -92,7 +92,7 @@ class ConversationRepository(BaseRepository[Conversation]):
             )
             .where(ConversationParticipant.conversation_id == conversation_id)
         )
-        return {user_id: name for user_id, name in db.session.execute(stmt)}
+        return dict(db.session.execute(stmt))
 
     def update_last_read(
         self, conversation_id: uuid.UUID, user_id: uuid.UUID, read_at

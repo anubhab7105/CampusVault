@@ -6,12 +6,13 @@ API payloads into services without a marshmallow schema.
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from flask import request
-from marshmallow import Schema, ValidationError as MarshmallowValidationError
+from marshmallow import Schema
+from marshmallow import ValidationError as MarshmallowValidationError
 
-from app.constants import VALIDATION_ERROR
 from app.errors.exceptions import ValidationError
 
 

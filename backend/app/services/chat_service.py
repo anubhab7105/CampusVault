@@ -10,11 +10,11 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Sequence
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.errors.exceptions import ForbiddenError, NotFoundError
 from app.extensions import db
-from app.models import Message
+from app.models import Conversation, Message
 from app.repositories import ConversationRepository, MessageRepository
 from app.services.base_service import BaseService
 
@@ -75,7 +75,7 @@ class ChatService(BaseService):
         self._assert_author(message, editor_id)
         message.content = content
         message.is_edited = True
-        message.edited_at = datetime.now(tz=timezone.utc)
+        message.edited_at = datetime.now(tz=UTC)
         db.session.commit()
         return message
 
@@ -104,7 +104,7 @@ class ChatService(BaseService):
     def mark_read(self, conversation_id: uuid.UUID, user_id: uuid.UUID) -> None:
         self.assert_participant(conversation_id, user_id)
         self.conversations.update_last_read(
-            conversation_id, user_id, datetime.now(tz=timezone.utc)
+            conversation_id, user_id, datetime.now(tz=UTC)
         )
         db.session.commit()
 

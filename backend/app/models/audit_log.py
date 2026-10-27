@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import sqlalchemy as sa
 
-from app.extensions import db
 from app.models.base import BaseModel, JSONType, UUIDType
 
 

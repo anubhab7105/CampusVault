@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import datetime as dt
 
-UTC = dt.timezone.utc
+UTC = dt.UTC
 
 
 def utcnow() -> dt.datetime:

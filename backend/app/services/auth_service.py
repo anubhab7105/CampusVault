@@ -174,7 +174,6 @@ class AuthService:
         google_sub: str | None,
         role_name: str,
     ) -> User:
-        from app.models import Role
         from app.services.role_service import role_service
 
         system_role = role_service.roles.get_system_role_by_name(role_name)
