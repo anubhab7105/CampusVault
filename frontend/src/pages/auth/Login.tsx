@@ -49,7 +49,7 @@ export default function Login() {
       // Scaffold note: Google consent-screen flow completes at /auth/google?code=…
       navigate(`${PATHS.LOGIN}?google_authorize_url=${encodeURIComponent(data.authorize_url)}`);
     } catch (err: any) {
-      toast.error("Sign-in failed", err?.campusvaultError?.message ?? String(err ?? ""));
+      error("Sign-in failed", err?.campusvaultError?.message ?? String(err ?? ""));
     } finally {
       setPending(false);
     }
@@ -60,9 +60,9 @@ export default function Login() {
     try {
       const { expires_in_seconds } = await authService.requestTeacherOtp(values.email);
       setPhase("verifying");
-      toast.success("Code sent", `Expires in ${expires_in_seconds} seconds.`);
+      success("Code sent", `Expires in ${expires_in_seconds} seconds.`);
     } catch (err: any) {
-      toast.error("Could not send code", err?.campusvaultError?.message ?? String(err ?? ""));
+      error("Could not send code", err?.campusvaultError?.message ?? String(err ?? ""));
     } finally {
       setPending(false);
     }
