@@ -180,14 +180,15 @@ def download_resource(resource_id: str):
 
     # Permission check: Teacher/Admin may download any; Students only their own.
     from app.services.role_service import role_service
-    role_name, _ = role_service.load_user_role_bundle(current_user.id)
+    user_id = ensure_authenticated()
+    role_name, _ = role_service.load_user_role_bundle(user_id)
     if role_name == "Admin":
         pass  # allowed
     elif role_name == "Teacher":
-        if resource.uploader_id != current_user.id:
+        if resource.uploader_id != user_id:
             return error_response("Not your resource", error_code="FORBIDDEN")
     else:  # Student
-        if resource.uploader_id != current_user.id:
+        if resource.uploader_id != user_id:
             return error_response("Not your resource", error_code="FORBIDDEN")
 
     # Increment download counter atomically.
@@ -211,6 +212,9 @@ def download_resource(resource_id: str):
 def my_uploads():
     """List resources uploaded by the current user."""
     from app.repositories.resource_repository import resource_repository as rr
+    from app.models import User
+    user_id = ensure_authenticated()
+    user = db.session.get(User, user_id)
     items, total = rr.by_hierarchy(
         department_id=None,
         program_id=None,
@@ -224,11 +228,7 @@ def my_uploads():
         page_size=50,
     )
     # Filter by uploader_id in memory since the repo method doesn't take uploader_id yet.
-    # (The repo method is a placeholder; we'll add the filter in a follow‑up.)
-    # For now, just return everything and let the frontend filter, or query directly.
-    from app.models import User
-    user = db.session.get(User, current_user.id)
-    items = [r for r in items if r.uploader_id == current_user.id]
+    items = [r for r in items if r.uploader_id == user_id]
     return success_response(data={
         "items": [
             {
