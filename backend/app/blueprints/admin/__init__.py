@@ -12,7 +12,6 @@ from marshmallow import Schema, fields, validate
 
 from app.errors.exceptions import ConflictError, NotFoundError, ValidationError
 from app.middleware.auth import ensure_authenticated
-from app.schemas.common import PaginationQuerySchema, SearchSortQuerySchema
 from app.services.admin_service import admin_service
 from app.services.auth_service import AuthService
 from app.utils.pagination import PagingMeta
