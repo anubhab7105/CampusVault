@@ -6,7 +6,7 @@ import csv
 import io
 import uuid
 
-from flask import Blueprint, current_app, jsonify, request, send_file
+from flask import Blueprint, request, send_file
 from flask_jwt_extended import get_jwt, jwt_required
 from marshmallow import Schema, fields, validate
 
