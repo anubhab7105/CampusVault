@@ -93,3 +93,7 @@ class CSRFTokenMissingError(AppError):
     status_code = 400
     code = "CSRF_TOKEN_MISSING"
     default_message = "CSRF token is required for this endpoint."
+
+
+class ConfigError(RuntimeError):
+    """Raised when a required environment variable is missing at boot."""
