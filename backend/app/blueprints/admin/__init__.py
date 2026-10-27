@@ -245,7 +245,7 @@ def resource_scan_status(resource_id: uuid.UUID):
 
 # ---- Teacher Allowlist ------------------------------------------------ #
 
-@bp.post("/allowlist", allowlist_add)
+@bp.post("/allowlist")
 def allowlist_add():
     acting_admin = _admin_guard()
     body = load_schema(Schema({"email": fields.Str(validate=validate.Email())}), get_json_body())
