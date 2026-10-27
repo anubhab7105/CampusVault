@@ -37,7 +37,7 @@ depends_on: str | Sequence[str] | None = None
 JSON_TS = sa.text("CURRENT_TIMESTAMP")
 
 
-def upgrade() -> None:
+def upgrade() -> None:  # noqa: PLR0915
     # ---- departments (referenced by users.department_id) ------------------- #
     op.create_table(
         "departments",
