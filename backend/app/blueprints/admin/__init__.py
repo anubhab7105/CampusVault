@@ -78,7 +78,7 @@ def reactivate_user(user_id: uuid.UUID):
     return success_response(message="User reactivated.")
 
 
-@bp.post("/users/<uuid:user_id>/assign-role", schemas=["role"])
+@bp.post("/users/<uuid:user_id>/assign-role")
 def assign_user_role(user_id: uuid.UUID):
     acting_admin = _admin_guard()
     body = load_schema(Schema({"role": fields.Str(validate=validate.OneOf(["Student", "Teacher", "Admin"]))}), get_json_body())
