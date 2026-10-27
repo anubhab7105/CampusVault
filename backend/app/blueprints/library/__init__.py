@@ -168,7 +168,6 @@ def browse_resources():
 # ---- Download --------------------------------------------------------- #
 
 @bp.get("/<resource_id>/download")
-@permission_required("library:resource:download")  # custom permission; see below
 def download_resource(resource_id: str):
     """Return a short‑lived signed URL for the resource file."""
     from uuid import UUID as _UUID
