@@ -5,7 +5,7 @@ from __future__ import annotations
 import secrets
 import uuid
 
-from flask import Blueprint, request, session
+from flask import Blueprint, session
 from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt_identity, jwt_required
 
 from app.constants import DEFAULT_AUTH_RATE_LIMIT
