@@ -3,18 +3,21 @@
 from __future__ import annotations
 
 import secrets
-import uuid
 
-from flask import Blueprint
-from flask_jwt_extended import jwt_required
+from flask import Blueprint, request, session
+from flask_jwt_extended import jwt_required, create_access_token, create_refresh_token, get_jwt_identity
+
+from flask import current_app
 
 from app.constants import DEFAULT_AUTH_RATE_LIMIT
 from app.extensions import limiter
-from app.middleware.auth import ensure_authenticated
+from app.middleware.auth import ensure_authenticated, require_csrf_token
 from app.schemas.auth_schema import (
     OAuthExchangeSchema,
     TeacherRequestOtpSchema,
     TeacherVerifyOtpSchema,
+    RefreshTokenSchema,
+    LogoutSchema,
 )
 from app.services.auth_service import auth_service
 from app.services.token_service import TokenService
@@ -68,6 +71,8 @@ def teacher_verify_otp():
 @jwt_required(refresh=True)
 def refresh():
     """Rotate the refresh token; returns a fresh access + refresh pair."""
+    # CSRF protection for state-changing refresh endpoint.
+    require_csrf_token()
     tokens = TokenService.rotate()
     return success_response(data={"tokens": tokens}, message="Session refreshed.")
 

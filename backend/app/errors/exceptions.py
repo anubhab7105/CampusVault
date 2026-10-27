@@ -81,3 +81,9 @@ class ServiceUnavailableError(AppError):
     status_code = 503
     code = SERVICE_UNAVAILABLE
     default_message = "The service is temporarily unavailable."
+
+
+class CSRFTokenMissingError(AppError):
+    status_code = 400
+    code = "CSRF_TOKEN_MISSING"
+    default_message = "CSRF token is required for this endpoint."

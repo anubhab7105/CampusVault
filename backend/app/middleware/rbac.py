@@ -6,7 +6,7 @@ also supported via ``role_required`` when a route is genuinely role-bound
 
 Permissions are read from the JWT claims when present (fast path); the
 database is consulted through RoleService when claims are absent or bypassed,
-so aPermissions stay authoritative.
+so permissions stay authoritative.
 """
 
 from __future__ import annotations
@@ -19,6 +19,7 @@ from flask_jwt_extended import get_jwt, verify_jwt_in_request
 from app.constants import ROLE_ADMIN
 from app.errors.exceptions import ForbiddenError
 from app.middleware.auth import CLAIMS_ROLE, CLAIMS_ROLE_PERMISSIONS
+from app.services.role_service import role_service
 
 
 def permission_required(
@@ -38,8 +39,14 @@ def permission_required(
             verify_jwt_in_request(optional=False)
             claims = get_jwt() or {}
             held = set(claims.get(CLAIMS_ROLE_PERMISSIONS, []))
-            wanted = set(permission_codes)
 
+            # Fast path: if the JWT carries role + permissions, use them directly.
+            role_name = claims.get(CLAIMS_ROLE)
+            if role_name == ROLE_ADMIN:
+                # Admin implicitly holds all permissions — skip further checks.
+                return view(*args, **kwargs)
+
+            wanted = set(permission_codes)
             if not held:
                 raise ForbiddenError("Your role has no permissions; contact an administrator.")
 
@@ -73,3 +80,54 @@ def role_required(*role_names: str) -> Callable:
 def admin_required() -> Callable:
     """Sugar for :func:`role_required` on the Admin role."""
     return role_required(ROLE_ADMIN)
+
+
+def last_admin_protected() -> Callable:
+    """Decorator for admin-only actions that must not demote the last admin.
+
+    Usage::
+
+        @bp.post("/admin/users/<user_id>/deactivate")
+        @last_admin_protected()
+        def deactivate_user(user_id): ...
+
+    The view function receives ``user_id`` as a keyword argument and should
+    check ``request.current_user_id`` (or equivalent) before proceeding.
+    """
+    def decorator(view: Callable) -> Callable:
+        @wraps(view)
+        def wrapper(*args, **kwargs):  # type: ignore[no-untyped-def]
+            verify_jwt_in_request(optional=False)
+            # Identify the user to be acted upon and the acting admin.
+            target_user_id = kwargs.get("user_id")
+            if not target_user_id:
+                raise ForbiddenError("user_id is required for this decorator.")
+
+            # Check if the target user is an Admin.
+            from app.models import User, Role, UserRole
+
+            target_is_admin = (
+                db.session.query(UserRole)
+                .join(Role, UserRole.role_id == Role.id)
+                .filter(UserRole.user_id == target_user_id, Role.name == "Admin")
+                .count()
+                > 0
+            )
+
+            # Count total admins in the system.
+            total_admins = (
+                db.session.query(UserRole)
+                .join(Role, UserRole.role_id == Role.id)
+                .filter(Role.name == "Admin")
+                .count()
+            )
+
+            # If the target is an admin and they are the last one, block the action.
+            if target_is_admin and total_admins <= 1:
+                raise ForbiddenError("The last admin cannot be demoted or deactivated.")
+
+            return view(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
