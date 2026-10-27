@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 
 from flask import Blueprint, current_app, request, jsonify
-from flask_login import current_user  # type: ignore[attr-defined]  # noqa: F811
 from marshmallow import Schema, fields, validate
 
 from app.extensions import db, limiter
