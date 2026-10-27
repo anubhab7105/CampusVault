@@ -1,6 +1,11 @@
-/** Chat hook — TanStack Query infinite query + socket resync. */
+/** Chat hook — TanStack Query v5 infinite query + socket resync. */
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+  useQueryState,
+} from "@tanstack/react-query";
 import { socketService } from "@services/socketService";
 import { useAuthStore } from "@stores/useAuthStore";
 import { useSocketStore } from "@stores/useSocketStore";
@@ -9,7 +14,7 @@ import { v4 as uuidv4 } from "uuid";
 
 import { fetchMessages } from "@services/apiClient";
 
-const CACHE_KEY = "chat:messages";
+const CACHE_KEY = "/chat:messages";
 
 interface UseChatOptions {
   conversationId: string;
@@ -17,11 +22,11 @@ interface UseChatOptions {
   pageSize?: number;
 }
 
-interface MessageStatus {
-  sending: boolean;
-  sent: boolean;
-  delivered: boolean;
-  read: boolean;
+interface Message {
+  id: string;
+  content: string;
+  sender_id: string;
+  created_at: string;
 }
 
 /** Fetch a page of messages (newest first, keyset pagination). */
@@ -33,55 +38,66 @@ export const useChatMessages = ({
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
 
-  const { data, isLoading, isError, fetchNextPage, hasNextPage } = useQuery<
-    Array<{ id: string; content: string; sender_id: string; created_at: string }>,
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+    status,
+    fetchPage,
+    invalidateQueries,
+  } = useInfiniteQuery<
+    Array<Message>,
     Error
   >(
-    [CACHE_KEY, conversationId, initialCursor],
-    async () => {
+    [CACHE_KEY, conversationId],
+    async ({ pageParam = initialCursor }) => {
       const resp = await fetchMessages({
         conversation_id: conversationId,
-        before_id: initialCursor,
+        before_id: pageParam as string,
         limit: pageSize,
       });
       return resp.data.messages;
     },
     {
-      getPreviousPage: (lastPage) => {
-        // If we have the first page and there's no previous, return null
-        return null;
+      getNextPageParam: (lastPage, pages) => {
+        // Return the last message id as cursor for the next page
+        if (lastPage.length === 0) return undefined;
+        return lastPage[lastPage.length - 1].id;
       },
-      keepPreviousData: true,
+      getPreviousPageParam: (firstPage, pages) => {
+        // For previous page, return the first message id as cursor
+        if (firstPage.length === 0) return undefined;
+        return firstPage[0].id;
+      },
+      staleTime: 2 * 60 * 1000, // 2 minutes
     }
   );
 
-  /** Optimistic add: insert a new message at the top of the list */
+  /** Optimistic add: insert a new message at the beginning of the list */
   const addMessageOptimistic = (
-    newMessage: {
-      id: string;
-      content: string;
-      sender_id: string;
-      created_at: string;
-    }
+    newMessage: Message
   ) => {
-    queryClient.setQueryData(
-      [CACHE_KEY, conversationId, initialCursor],
-      (old: any) => [newMessage, ...(old || [])]
-    );
+    queryClient.setInfiniteQueryData([CACHE_KEY, conversationId], (old) => {
+      if (!old) return [newMessage];
+      return [newMessage, ...old];
+    });
   };
 
   /** Refetch after reconnect — only fetch messages after the last known cursor */
   const resyncAfterReconnect = useCallback(() => {
     if (user && socketService.connected) {
-      queryClient.invalidateQueries([CACHE_KEY, conversationId]);
+      invalidatedQueries([CACHE_KEY, conversationId]);
     }
-  }, [queryClient, conversationId, user]);
+  }, [queryClient, conversationId, user, invalidatedQueries]);
 
   useEffect(() => {
     // Subscribe to new messages via socket
     const unsub = socketService.on(
       "send_group_message",
-      (payload: { data: { message: any } }) => {
+      (payload: { data: { message: Message } }) => {
         const msg = payload.data.message;
         addMessageOptimistic(msg);
       }
@@ -122,13 +138,18 @@ export const useChatMessages = ({
     };
   }, [resyncAfterReconnect]);
 
+  // Combine all pages into a single array
+  const allMessages = data?.flat() || [];
+
   return {
-    messages: data || [],
+    messages: allMessages,
     isLoading,
     isError,
     fetchNextPage,
     hasNextPage,
-    refetch: queryClient.invalidateQueries,
+    isFetchingNextPage,
+    status,
+    refetch: invalidatedQueries,
     resyncAfterReconnect,
   };
 };
@@ -139,7 +160,7 @@ export const useSendMessage = () => {
   const { user } = useAuthStore();
 
   const sendMutation = useMutation<
-    { success: boolean; message: { id: string } },
+    { success: boolean; message: Message },
     { conversationId: string; content: string; idempotencyKey: string },
     string
   >(
@@ -157,16 +178,20 @@ export const useSendMessage = () => {
     },
     {
       onSuccess: (data) => {
-        // Optimistically add the message; the server will ack with the real id
+        // Optimistically add the message
         if (data.success && user?.currentConversationId) {
-          queryClient.setQueryData(
-            ["chat:messages", data.success, user.currentConversationId],
-            (old: any) => [data.message, ...(old || [])]
+          queryClient.setInfiniteQueryData(
+            [CACHE_KEY, user.currentConversationId],
+            (old) => [data.message, ...(old || [])]
           );
         }
       },
     }
   );
 
-  return { sendMutation, isLoading: sendMutation.isLoading };
+  return {
+    sendMutation,
+    isPending: sendMutation.isPending,
+    isError: sendMutation.isError,
+  };
 };
