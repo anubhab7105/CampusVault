@@ -31,6 +31,7 @@ type TeacherForm = z.infer<typeof teacherSchema>;
 export default function Login() {
   const navigate = useNavigate();
   const { setTokens, setUser } = useAuthStore();
+  const { toast } = useToast();
   const [phase, setPhase] = useState<"provider" | "teacher" | "verifying">("provider");
   const [pending, setPending] = useState(false);
 

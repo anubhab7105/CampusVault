@@ -1,6 +1,6 @@
 /** Axios client with access-token refresh rotation. */
 
-import axios, { type AxiosError, type AxiosInstance } from "axios";
+import axios, { type AxiosError, type AxiosInstance, type InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "@stores/useAuthStore";
 
 const API_BASE =
@@ -8,6 +8,15 @@ const API_BASE =
 
 let refreshing = false;
 let refreshPromise: Promise<string | null> | null = null;
+
+export interface CampusVaultError {
+  code: string;
+  message: string;
+}
+
+interface RetryableRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
+}
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE,
@@ -25,12 +34,10 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-let logoutTimer: ReturnType<typeof setTimeout> | null = null;
-
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config;
+    const originalRequest = error.config as RetryableRequestConfig;
     if (!originalRequest) return Promise.reject(error);
 
     const { response } = error;
@@ -66,12 +73,11 @@ apiClient.interceptors.response.use(
     if (response?.data) {
       const envelope = response.data as {
         success?: boolean;
-        error?: { code: string; message: string };
+        error?: CampusVaultError;
+        message?: string;
       };
-      error.campusvaultError = envelope.error ?? {
-        code: "UNKNOWN_ERROR",
-        message: String(envelope?.message ?? error.message),
-      };
+      (error as AxiosError & { campusvaultError?: CampusVaultError }).campusvaultError =
+        envelope.error ?? { code: "UNKNOWN_ERROR", message: String(envelope?.message ?? error.message) };
     }
     return Promise.reject(error);
   },
@@ -82,7 +88,7 @@ async function rotateRefresh(refreshToken: string): Promise<string | null> {
     const { data } = await apiClient.post<{
       success: boolean;
       message: string;
-      data: TokenPair;
+      data: { access_token: string; refresh_token: string };
     }>("/auth/refresh", {});
     if (data?.data) {
       const store = useAuthStore.getState();
@@ -94,10 +100,3 @@ async function rotateRefresh(refreshToken: string): Promise<string | null> {
     return null;
   }
 }
-
-export { logoutTimer };
-
-type TokenPair = {
-  access_token: string;
-  refresh_token: string;
-};

@@ -6,7 +6,7 @@ import { ErrorBoundary } from "@components/error-boundary/ErrorBoundary";
 import { ToastContainer } from "@components/ui/index";
 import { AuthLayout } from "@layouts/index";
 import { DashboardLayout } from "@layouts/index";
-import { routes } from "@routes/index";
+import { routes, type RouteConfig } from "@routes/index";
 import { ProtectedRoute } from "@routes/ProtectedRoute";
 
 import "./styles/index.css";

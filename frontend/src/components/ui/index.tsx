@@ -285,7 +285,7 @@ export const ToastContainer = () => {
   const { toasts, dismiss } = useToastStore();
   return (
     <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
-      {toasts.map((toast: { id: string; title: string; description?: string; variant: string }) => (
+      {toasts.map((toast: { id: string; title: string; description?: string; variant: "default" | "destructive" | "success" | "warning" }) => (
         <ToastItem key={toast.id} id={toast.id} title={toast.title} description={toast.description} variant={toast.variant} onDismiss={() => dismiss(toast.id)} />
       ))}
     </div>

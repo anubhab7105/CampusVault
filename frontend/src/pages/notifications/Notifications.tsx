@@ -1,9 +1,9 @@
 /** Notifications placeholder — unread list + read receipts. */
 
 import { useQuery } from "@tanstack/react-query";
-import { notificationService } from "@services/notificationService"; // placeholder import
 import { useAuthStore } from "@stores/useAuthStore";
-import { Card, Button, Skeleton, EmptyState } from "@components/ui/index";
+import { Card, Skeleton, EmptyState } from "@components/ui/index";
+import { cn } from "@utils/cn";
 
 export default function Notifications() {
   const { user } = useAuthStore();
@@ -16,7 +16,7 @@ export default function Notifications() {
       });
       return res.json();
     },
-    enabled: !!user,
+    enabled: !!user && !!useAuthStore.getState().access_token,
   });
 
   if (isLoading) {
