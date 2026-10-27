@@ -2,6 +2,7 @@
 
 import { cn } from "@utils/cn";
 import { useNavigate } from "react-router-dom";
+import { useSidebarStore } from "@stores/useSidebarStore";
 import { useAuthStore } from "@stores/useAuthStore";
 import { PATHS } from "@constants/routes";
 

@@ -4,7 +4,7 @@ import { useToastStore } from "@stores/useToastStore";
 import type { ToastState } from "@stores/useToastStore";
 
 export function useToast() {
-  const { toasts, dismiss } = useToastStore((state: ToastState) => ({
+  const { toasts, add, remove, clear } = useToastStore((state: ToastState) => ({
   toasts: state.toasts,
   add: state.add,
   remove: state.remove,

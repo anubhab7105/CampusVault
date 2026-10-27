@@ -1,7 +1,6 @@
 /** Admin placeholder — role-gated stats + user list. */
 
 import { useQuery } from "@tanstack/react-query";
-import { adminService } from "@services/adminService"; // placeholder service import
 import { useAuthStore } from "@stores/useAuthStore";
 import { Card, Button, EmptyState } from "@components/ui/index";
 import { PERMISSIONS } from "@constants/permissions";
@@ -57,10 +56,7 @@ export default function Admin() {
       )}
       <Card>
         <div className="p-4">
-          <Table
-            columns={["ID", "Email", "Role"]}
-            rows={[]}
-          />
+          <div className="text-caption-xs text-ink-secondary">User directory placeholder — wired to /api/v1/admin/users.</div>
         </div>
       </Card>
     </div>

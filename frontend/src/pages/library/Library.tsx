@@ -13,7 +13,7 @@ export default function Library() {
 
   const { data, isLoading } = useQuery({
     queryKey: ["library", "resources"],
-    queryFn: libraryService.list,
+    queryFn: () => libraryService.list(),
     enabled: !!user,
   });
 

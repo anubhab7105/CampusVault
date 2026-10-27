@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { navigate, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { authService } from "@services/authService";
 import { useAuthStore } from "@stores/useAuthStore";
 import { useToast } from "@hooks/useToast";
@@ -29,9 +29,8 @@ const teacherSchema = z.object({
 type TeacherForm = z.infer<typeof teacherSchema>;
 
 export default function Login() {
-  const navigateTo = useNavigate();
+  const navigate = useNavigate();
   const { setTokens, setUser } = useAuthStore();
-  const { toast } = useToast();
   const [phase, setPhase] = useState<"provider" | "teacher" | "verifying">("provider");
   const [pending, setPending] = useState(false);
 
