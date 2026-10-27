@@ -11,7 +11,6 @@ from flask_jwt_extended import get_jwt
 from marshmallow import Schema, fields, validate
 
 from app.errors.exceptions import ConflictError, NotFoundError, ValidationError
-from app.extensions import limiter, socketio
 from app.middleware.auth import ensure_authenticated
 from app.schemas.common import PaginationQuerySchema, SearchSortQuerySchema
 from app.services.admin_service import admin_service
