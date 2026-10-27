@@ -7,7 +7,7 @@ import uuid
 
 from flask import Blueprint
 
-from app.constants import RATELIMIT_AUTH
+from app.constants import DEFAULT_AUTH_RATE_LIMIT
 from app.extensions import jwt, limiter
 from app.middleware.auth import ensure_authenticated
 from app.schemas.auth_schema import (
@@ -24,7 +24,7 @@ bp = Blueprint("auth", __name__, url_prefix="/api/v1/auth")
 
 
 @bp.get("/google/authorize")
-@limiter.limit(RATELIMIT_AUTH)
+@limiter.limit(DEFAULT_AUTH_RATE_LIMIT)
 def google_authorize():
     """Return the Google consent-screen URL for the SPA to open."""
     state = secrets.token_urlsafe(16)
@@ -35,7 +35,7 @@ def google_authorize():
 
 
 @bp.post("/google")
-@limiter.limit(RATELIMIT_AUTH)
+@limiter.limit(DEFAULT_AUTH_RATE_LIMIT)
 def google_callback():
     """Exchange the consent-screen code for CampusVault tokens."""
     body = load_schema(OAuthExchangeSchema(), get_json_body())
@@ -44,7 +44,7 @@ def google_callback():
 
 
 @bp.post("/teachers/otp/request")
-@limiter.limit(RATELIMIT_AUTH)
+@limiter.limit(DEFAULT_AUTH_RATE_LIMIT)
 def teacher_request_otp():
     """Phase 1 — queue the OTP email (same response shape for all emails)."""
     body = load_schema(TeacherRequestOtpSchema(), get_json_body())
@@ -55,7 +55,7 @@ def teacher_request_otp():
 
 
 @bp.post("/teachers/otp/verify")
-@limiter.limit(RATELIMIT_AUTH)
+@limiter.limit(DEFAULT_AUTH_RATE_LIMIT)
 def teacher_verify_otp():
     """Phase 2 — exchange the OTP for a token pair."""
     body = load_schema(TeacherVerifyOtpSchema(), get_json_body())

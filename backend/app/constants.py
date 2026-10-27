@@ -76,3 +76,6 @@ CONFLICT: Final[str] = "CONFLICT"
 RATE_LIMITED: Final[str] = "RATE_LIMITED"
 INTERNAL_ERROR: Final[str] = "INTERNAL_ERROR"
 SERVICE_UNAVAILABLE: Final[str] = "SERVICE_UNAVAILABLE"
+
+# --- Rate limiting defaults (config can override per environment) ---------------------- #
+DEFAULT_AUTH_RATE_LIMIT: Final[str] = "5/minute"
