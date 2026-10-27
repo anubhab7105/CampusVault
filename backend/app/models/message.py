@@ -27,9 +27,7 @@ class Message(BaseModel, SoftDeleteMixin):
         index=True,
     )
 
-    message_type = sa.Column(
-        sa.String(16), nullable=False, default=MESSAGE_TYPE_TEXT
-    )
+    message_type = sa.Column(sa.String(16), nullable=False, default=MESSAGE_TYPE_TEXT)
     content = sa.Column(sa.Text, nullable=True)
     file_id = sa.Column(
         UUIDType,
@@ -42,9 +40,7 @@ class Message(BaseModel, SoftDeleteMixin):
         nullable=True,
     )
 
-    is_edited = sa.Column(
-        sa.Boolean, nullable=False, default=False, server_default=sa.text("false")
-    )
+    is_edited = sa.Column(sa.Boolean, nullable=False, default=False, server_default=sa.text("false"))
     edited_at = sa.Column(sa.DateTime(timezone=True), nullable=True)
 
     # Delivery status: null=pending, set when all participants receive it.

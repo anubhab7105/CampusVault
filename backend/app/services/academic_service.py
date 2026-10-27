@@ -74,9 +74,7 @@ class AcademicService(BaseService):
 
     # --- Section ------------------------------------------------------------------------ #
 
-    def create_section(
-        self, *, semester_id: uuid.UUID, name: str, capacity: int | None = None
-    ) -> Section:
+    def create_section(self, *, semester_id: uuid.UUID, name: str, capacity: int | None = None) -> Section:
         semester = self.semesters.get_active_by_id(semester_id)
         if semester is None:
             raise NotFoundError("Semester not found.")
@@ -93,9 +91,7 @@ class AcademicService(BaseService):
         semester = self.semesters.get_active_by_id(semester_id)
         if semester is None:
             raise NotFoundError("Semester not found.")
-        subject = self.subjects.create(
-            semester_id=semester_id, name=name, code=code, credits=credits
-        )
+        subject = self.subjects.create(semester_id=semester_id, name=name, code=code, credits=credits)
         db.session.flush()
         db.session.commit()
         return subject

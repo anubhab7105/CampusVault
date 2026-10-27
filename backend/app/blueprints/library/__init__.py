@@ -27,9 +27,7 @@ def browse():
     filters = load_schema(ListResourcesQuerySchema(), request.args.to_dict())
     page = filters.pop("page", 1)
     page_size = filters.pop("page_size", 20)
-    rows, total = library_service.browse(
-        filters=filters, page=page, page_size=page_size
-    )
+    rows, total = library_service.browse(filters=filters, page=page, page_size=page_size)
     meta = PagingMeta(page, page_size, total)
     return success_response(
         data={
@@ -107,8 +105,10 @@ def download(resource_id: uuid.UUID):
 
     db.session.commit()
     return success_response(
-        data={"file_id": str(resource.file_id) if resource.file_id else None,
-              "external_url": resource.external_url},
+        data={
+            "file_id": str(resource.file_id) if resource.file_id else None,
+            "external_url": resource.external_url,
+        },
         message="Download ready.",
     )
 

@@ -18,9 +18,7 @@ class FileRepository(BaseRepository[FileRecord]):
         stmt = sa.select(FileRecord).where(FileRecord.storage_key == storage_key)
         return db.session.scalar(stmt)
 
-    def set_scan_result(
-        self, file_id: uuid.UUID, status: str, scanned_at
-    ) -> int:
+    def set_scan_result(self, file_id: uuid.UUID, status: str, scanned_at) -> int:
         stmt = (
             sa.update(FileRecord)
             .where(FileRecord.id == file_id)

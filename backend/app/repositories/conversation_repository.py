@@ -34,9 +34,7 @@ class ConversationRepository(BaseRepository[Conversation]):
 
     DIRECT_MESSAGE_PARTICIPANT_COUNT = 2  # canonical DM shape
 
-    def find_direct_between(
-        self, user_a: uuid.UUID, user_b: uuid.UUID
-    ) -> Conversation | None:
+    def find_direct_between(self, user_a: uuid.UUID, user_b: uuid.UUID) -> Conversation | None:
         """Single canonical DM conversation per unordered pair."""
         participants = ConversationParticipant
         stmt = (
@@ -69,9 +67,7 @@ class ConversationRepository(BaseRepository[Conversation]):
     def add_participant(
         self, conversation_id: uuid.UUID, user_id: uuid.UUID, *, is_admin: bool = False
     ) -> ConversationParticipant:
-        row = ConversationParticipant(
-            conversation_id=conversation_id, user_id=user_id, is_admin=is_admin
-        )
+        row = ConversationParticipant(conversation_id=conversation_id, user_id=user_id, is_admin=is_admin)
         db.session.add(row)
         return row
 
@@ -93,16 +89,12 @@ class ConversationRepository(BaseRepository[Conversation]):
     def participant_usernames(self, conversation_id: uuid.UUID) -> dict[uuid.UUID, str]:
         stmt = (
             sa.select(User.id, User.full_name)
-            .join(
-                ConversationParticipant, ConversationParticipant.user_id == User.id
-            )
+            .join(ConversationParticipant, ConversationParticipant.user_id == User.id)
             .where(ConversationParticipant.conversation_id == conversation_id)
         )
         return dict(db.session.execute(stmt))
 
-    def update_last_read(
-        self, conversation_id: uuid.UUID, user_id: uuid.UUID, read_at
-    ) -> int:
+    def update_last_read(self, conversation_id: uuid.UUID, user_id: uuid.UUID, read_at) -> int:
         stmt = (
             sa.update(ConversationParticipant)
             .where(

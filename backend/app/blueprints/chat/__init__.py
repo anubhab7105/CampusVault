@@ -53,9 +53,7 @@ def history(conversation_id: uuid.UUID):
         before_id=query["before_id"],
         limit=query["limit"],
     )
-    return success_response(
-        data={"items": [_serialize(m) for m in messages]}, message="History loaded."
-    )
+    return success_response(data={"items": [_serialize(m) for m in messages]}, message="History loaded.")
 
 
 @bp.post("/conversations/<uuid:conversation_id>/messages")

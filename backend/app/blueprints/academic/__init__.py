@@ -65,9 +65,7 @@ def create_department():
     dept = academic_service.create_department(
         name=body["name"], code=body["code"], description=body["description"]
     )
-    return success_response(
-        data={"id": str(dept.id)}, status_code=201, message="Department created."
-    )
+    return success_response(data={"id": str(dept.id)}, status_code=201, message="Department created.")
 
 
 @bp.get("/departments")
@@ -117,12 +115,8 @@ def list_programs(department_id: uuid.UUID):
 @permission_required("admin:academic:manage")
 def create_semester():
     body = load_schema(SemesterSchema(), get_json_body())
-    semester = academic_service.create_semester(
-        program_id=body["program_id"], number=body["number"]
-    )
-    return success_response(
-        data={"id": str(semester.id)}, status_code=201, message="Semester created."
-    )
+    semester = academic_service.create_semester(program_id=body["program_id"], number=body["number"])
+    return success_response(data={"id": str(semester.id)}, status_code=201, message="Semester created.")
 
 
 @bp.get("/semesters/<uuid:program_id>")
@@ -175,10 +169,7 @@ def list_subjects(semester_id: uuid.UUID):
     rows = academic_service.subjects.list_for_semester(semester_id, page=1, page_size=100)[0]
     return success_response(
         data={
-            "items": [
-                {"id": str(s.id), "name": s.name, "code": s.code, "credits": s.credits}
-                for s in rows
-            ]
+            "items": [{"id": str(s.id), "name": s.name, "code": s.code, "credits": s.credits} for s in rows]
         },
         message="Subjects listed.",
     )

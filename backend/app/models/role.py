@@ -18,9 +18,7 @@ class Role(BaseModel):
     name = sa.Column(sa.String(64), nullable=False, unique=True, index=True)
     description = sa.Column(sa.String(255), nullable=True)
     # System roles cannot be deleted from the admin UI.
-    is_system = sa.Column(
-        sa.Boolean, nullable=False, default=False, server_default=sa.text("false")
-    )
+    is_system = sa.Column(sa.Boolean, nullable=False, default=False, server_default=sa.text("false"))
 
     permissions = db.relationship(
         "Permission",
@@ -59,6 +57,4 @@ class RolePermission(db.Model):
         primary_key=True,
     )
 
-    __table_args__ = (
-        sa.Index("ix_role_permissions_permission_id", "permission_id"),
-    )
+    __table_args__ = (sa.Index("ix_role_permissions_permission_id", "permission_id"),)

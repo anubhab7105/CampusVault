@@ -16,9 +16,7 @@ STAGING: Final[str] = "staging"
 PRODUCTION: Final[str] = "production"
 TESTING: Final[str] = "testing"
 
-ENVIRONMENTS: Final[frozenset[str]] = frozenset(
-    {DEVELOPMENT, STAGING, PRODUCTION, TESTING}
-)
+ENVIRONMENTS: Final[frozenset[str]] = frozenset({DEVELOPMENT, STAGING, PRODUCTION, TESTING})
 
 
 class ConfigError(RuntimeError):
@@ -56,9 +54,7 @@ class BaseConfig:
     JWT_REFRESH_TOKEN_DAYS: int = int(os.environ.get("JWT_REFRESH_DAYS", "30"))
 
     # --- CORS --------------------------------------------------------------- #
-    CORS_ORIGINS: list[str] = _split_origins(
-        os.environ.get("CORS_ORIGINS", "http://localhost:5173")
-    )
+    CORS_ORIGINS: list[str] = _split_origins(os.environ.get("CORS_ORIGINS", "http://localhost:5173"))
 
     # --- Email (Gmail SMTP, development only) -------------------------------- #
     SMTP_HOST: str = os.environ.get("SMTP_HOST", "smtp.gmail.com")
@@ -71,36 +67,35 @@ class BaseConfig:
     # --- Google OAuth (students) --------------------------------------------- #
     GOOGLE_CLIENT_ID: str = os.environ.get("GOOGLE_CLIENT_ID", "")
     GOOGLE_CLIENT_SECRET: str = os.environ.get("GOOGLE_CLIENT_SECRET", "")
-    GOOGLE_OAUTH_REDIRECT_URI: str = os.environ.get(
-        "GOOGLE_OAUTH_REDIRECT_URI", ""
-    )
-    GOOGLE_OAUTH_AUTHORIZATION_ENDPOINT: Final[str] = (
-        "https://accounts.google.com/o/oauth2/v2/auth"
-    )
-    GOOGLE_OAUTH_TOKEN_ENDPOINT: Final[str] = (
-        "https://oauth2.googleapis.com/token"
-    )
-    GOOGLE_OAUTH_USERINFO_ENDPOINT: Final[str] = (
-        "https://openidconnect.googleapis.com/v1/userinfo"
-    )
+    GOOGLE_OAUTH_REDIRECT_URI: str = os.environ.get("GOOGLE_OAUTH_REDIRECT_URI", "")
+    GOOGLE_OAUTH_AUTHORIZATION_ENDPOINT: Final[str] = "https://accounts.google.com/o/oauth2/v2/auth"
+    GOOGLE_OAUTH_TOKEN_ENDPOINT: Final[str] = "https://oauth2.googleapis.com/token"
+    GOOGLE_OAUTH_USERINFO_ENDPOINT: Final[str] = "https://openidconnect.googleapis.com/v1/userinfo"
 
     # --- Supabase Storage ----------------------------------------------------- #
     SUPABASE_URL: str = os.environ.get("SUPABASE_URL", "")
-    SUPABASE_SERVICE_ROLE_KEY: str = os.environ.get(
-        "SUPABASE_SERVICE_ROLE_KEY", ""
-    )
-    SUPABASE_STORAGE_BUCKET: str = os.environ.get(
-        "SUPABASE_STORAGE_BUCKET", "campusvault-files"
-    )
+    SUPABASE_SERVICE_ROLE_KEY: str = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+    SUPABASE_STORAGE_BUCKET: str = os.environ.get("SUPABASE_STORAGE_BUCKET", "campusvault-files")
 
     # --- Upload policy -------------------------------------------------------- #
-    UPLOAD_MAX_SIZE_BYTES: int = int(
-        os.environ.get("UPLOAD_MAX_SIZE_BYTES", str(25 * 1024 * 1024))
-    )
+    UPLOAD_MAX_SIZE_BYTES: int = int(os.environ.get("UPLOAD_MAX_SIZE_BYTES", str(25 * 1024 * 1024)))
     UPLOAD_ALLOWED_EXTENSIONS: frozenset[str] = frozenset(
         {
-            "pdf", "doc", "docx", "ppt", "pptx", "xls", "xlsx",
-            "png", "jpg", "jpeg", "webp", "txt", "csv", "md", "zip",
+            "pdf",
+            "doc",
+            "docx",
+            "ppt",
+            "pptx",
+            "xls",
+            "xlsx",
+            "png",
+            "jpg",
+            "jpeg",
+            "webp",
+            "txt",
+            "csv",
+            "md",
+            "zip",
         }
     )
 
@@ -133,8 +128,7 @@ class BaseConfig:
         if BaseConfig.SUPABASE_DB_URL:
             return BaseConfig.SUPABASE_DB_URL
         raise ConfigError(
-            "SUPABASE_DB_URL (or SUPABASE_DB_* parts) is required "
-            "to connect to Supabase PostgreSQL."
+            "SUPABASE_DB_URL (or SUPABASE_DB_* parts) is required " "to connect to Supabase PostgreSQL."
         )
 
     @classmethod
@@ -163,7 +157,7 @@ class DevelopmentConfig(BaseConfig):
 
     @classmethod
     def environ_required(cls) -> list[str]:
-        return cls_environ_required(cls, ["APP_SECRET_KEY"])
+        return super().environ_required()
 
 
 class StagingConfig(BaseConfig):
@@ -187,9 +181,7 @@ class TestingConfig(BaseConfig):
     ENV: str = TESTING
     TESTING: bool = True
 
-    SQLALCHEMY_DATABASE_URI: str = os.environ.get(
-        "TEST_DATABASE_URL", "sqlite:///:memory:"
-    )
+    SQLALCHEMY_DATABASE_URI: str = os.environ.get("TEST_DATABASE_URL", "sqlite:///:memory:")
 
     @classmethod
     def database_url(cls) -> str:

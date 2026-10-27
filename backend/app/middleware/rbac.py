@@ -41,15 +41,11 @@ def permission_required(
             wanted = set(permission_codes)
 
             if not held:
-                raise ForbiddenError(
-                    "Your role has no permissions; contact an administrator."
-                )
+                raise ForbiddenError("Your role has no permissions; contact an administrator.")
 
             ok = bool(wanted & held) if any_of else wanted.issubset(held)
             if not ok:
-                raise ForbiddenError(
-                    "Missing permission: " + ", ".join(sorted(wanted))
-                )
+                raise ForbiddenError("Missing permission: " + ", ".join(sorted(wanted)))
             return view(*args, **kwargs)
 
         return wrapper

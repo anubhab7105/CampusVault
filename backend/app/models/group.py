@@ -18,9 +18,7 @@ class Group(BaseModel, SoftDeleteMixin):
 
     name = sa.Column(sa.String(120), nullable=False)
     description = sa.Column(sa.String(1000), nullable=True)
-    group_type = sa.Column(
-        sa.String(32), nullable=False, default="subject_group", index=True
-    )
+    group_type = sa.Column(sa.String(32), nullable=False, default="subject_group", index=True)
 
     owner_id = sa.Column(
         UUIDType,
@@ -41,13 +39,9 @@ class Group(BaseModel, SoftDeleteMixin):
         index=True,
     )
 
-    is_active = sa.Column(
-        sa.Boolean, nullable=False, default=True, server_default=sa.text("true")
-    )
+    is_active = sa.Column(sa.Boolean, nullable=False, default=True, server_default=sa.text("true"))
 
-    __table_args__ = (
-        sa.Index("ix_groups_subject_created", "subject_id", "created_at"),
-    )
+    __table_args__ = (sa.Index("ix_groups_subject_created", "subject_id", "created_at"),)
 
 
 class UserGroup(db.Model):
@@ -63,9 +57,7 @@ class UserGroup(db.Model):
         sa.ForeignKey("groups.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    joined_at = sa.Column(
-        sa.DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    joined_at = sa.Column(sa.DateTime(timezone=True), nullable=False, server_default=func.now())
     added_by = sa.Column(
         UUIDType,
         sa.ForeignKey("users.id", ondelete="SET NULL"),

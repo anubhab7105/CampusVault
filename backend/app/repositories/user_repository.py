@@ -21,9 +21,7 @@ class UserRepository(BaseRepository[User]):
         return db.session.scalar(stmt)
 
     def get_by_google_sub(self, google_sub: str) -> User | None:
-        stmt = sa.select(User).where(
-            User.google_sub == google_sub, User.deleted_at.is_(None)
-        )
+        stmt = sa.select(User).where(User.google_sub == google_sub, User.deleted_at.is_(None))
         return db.session.scalar(stmt)
 
     def get_user_role(self, user_id: uuid.UUID) -> Role | None:
@@ -37,12 +35,8 @@ class UserRepository(BaseRepository[User]):
         )
         return db.session.scalar(stmt)
 
-    def search(
-        self, query: str | None, page: int, page_size: int
-    ) -> tuple[Sequence[User], int]:
+    def search(self, query: str | None, page: int, page_size: int) -> tuple[Sequence[User], int]:
         conditions = [User.deleted_at.is_(None)]
         if query:
             conditions.append(User.full_name.ilike(f"%{query}%"))
-        return self.paginate(
-            page, page_size, *conditions, order_by=User.created_at.desc()
-        )
+        return self.paginate(page, page_size, *conditions, order_by=User.created_at.desc())

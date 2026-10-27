@@ -31,13 +31,9 @@ class Conversation(BaseModel):
         nullable=True,
     )
     last_message_at = sa.Column(sa.DateTime(timezone=True), nullable=True, index=True)
-    is_active = sa.Column(
-        sa.Boolean, nullable=False, default=True, server_default=sa.text("true")
-    )
+    is_active = sa.Column(sa.Boolean, nullable=False, default=True, server_default=sa.text("true"))
 
-    __table_args__ = (
-        sa.Index("ix_conversations_type_last_msg", "conversation_type", "last_message_at"),
-    )
+    __table_args__ = (sa.Index("ix_conversations_type_last_msg", "conversation_type", "last_message_at"),)
 
 
 class ConversationParticipant(db.Model):
@@ -53,12 +49,8 @@ class ConversationParticipant(db.Model):
         sa.ForeignKey("users.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    joined_at = sa.Column(
-        sa.DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
-    is_admin = sa.Column(
-        sa.Boolean, nullable=False, default=False, server_default=sa.text("false")
-    )
+    joined_at = sa.Column(sa.DateTime(timezone=True), nullable=False, server_default=func.now())
+    is_admin = sa.Column(sa.Boolean, nullable=False, default=False, server_default=sa.text("false"))
     # Read receipts + unread counts power the notification badge.
     last_read_at = sa.Column(sa.DateTime(timezone=True), nullable=True)
 

@@ -33,18 +33,13 @@ class RoleRepository(BaseRepository[Role]):
         )
         return db.session.scalars(stmt).all()
 
-    def assign_role(
-        self, user_id: uuid.UUID, role_id: uuid.UUID, assigned_by: uuid.UUID | None
-    ) -> UserRole:
+    def assign_role(self, user_id: uuid.UUID, role_id: uuid.UUID, assigned_by: uuid.UUID | None) -> UserRole:
         link = UserRole(user_id=user_id, role_id=role_id, assigned_by=assigned_by)
         db.session.add(link)
         return link
 
     def remove_role(self, user_id: uuid.UUID, role_id: uuid.UUID) -> int:
-        stmt = (
-            sa.delete(UserRole)
-            .where(UserRole.user_id == user_id, UserRole.role_id == role_id)
-        )
+        stmt = sa.delete(UserRole).where(UserRole.user_id == user_id, UserRole.role_id == role_id)
         result = db.session.execute(stmt)
         return int(result.rowcount or 0)
 
@@ -64,9 +59,7 @@ class PermissionRepository(BaseRepository[Permission]):
         )
         return db.session.scalars(stmt).all()
 
-    def get_role_permission_codes_bulk(
-        self, role_ids: Sequence[uuid.UUID]
-    ) -> dict[uuid.UUID, list[str]]:
+    def get_role_permission_codes_bulk(self, role_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, list[str]]:
         """Permission map for many roles in one round-trip."""
         if not role_ids:
             return {}
@@ -80,9 +73,7 @@ class PermissionRepository(BaseRepository[Permission]):
             mapping.setdefault(role_id, []).append(code)
         return mapping
 
-    def grant_to_role(
-        self, role_id: uuid.UUID, permission_id: uuid.UUID
-    ) -> RolePermission:
+    def grant_to_role(self, role_id: uuid.UUID, permission_id: uuid.UUID) -> RolePermission:
         link = RolePermission(role_id=role_id, permission_id=permission_id)
         db.session.add(link)
         return link

@@ -64,10 +64,7 @@ class BaseModel(db.Model, UuidPk, TimestampMixin):
 
     def to_dict(self) -> dict:
         """Lightweight default serialization (extend in feature models)."""
-        return {
-            column.name: getattr(self, column.name)
-            for column in self.__table__.columns
-        }
+        return {column.name: getattr(self, column.name) for column in self.__table__.columns}
 
 
 __all__ = ["BaseModel", "JSONType", "SoftDeleteMixin", "TimestampMixin", "UUIDType"]

@@ -48,12 +48,8 @@ def list_users():
 @bp.post("/users/<uuid:user_id>/deactivate")
 def deactivate_user(user_id: uuid.UUID):
     acting_admin = _admin_guard()
-    user = admin_service.deactivate_user(
-        target_user_id=user_id, acting_admin_id=acting_admin
-    )
+    user = admin_service.deactivate_user(target_user_id=user_id, acting_admin_id=acting_admin)
     from app.services.audit_service import audit_service
 
-    audit_service.record(
-        action="admin.user.deactivate", entity_type="user", entity_id=user.id
-    )
+    audit_service.record(action="admin.user.deactivate", entity_type="user", entity_id=user.id)
     return success_response(message="User deactivated.")

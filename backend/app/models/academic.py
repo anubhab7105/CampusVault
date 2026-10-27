@@ -19,9 +19,7 @@ class Department(BaseModel, SoftDeleteMixin):
     code = sa.Column(sa.String(16), nullable=False, unique=True, index=True)
     description = sa.Column(sa.String(255), nullable=True)
 
-    programs = db.relationship(
-        "Program", backref="department", lazy="selectin", viewonly=True
-    )
+    programs = db.relationship("Program", backref="department", lazy="selectin", viewonly=True)
 
 
 class Program(BaseModel, SoftDeleteMixin):
@@ -55,9 +53,7 @@ class Semester(BaseModel, SoftDeleteMixin):
     )
     number = sa.Column(sa.SmallInteger, nullable=False)
 
-    __table_args__ = (
-        sa.UniqueConstraint("program_id", "number", name="uq_semesters_program_num"),
-    )
+    __table_args__ = (sa.UniqueConstraint("program_id", "number", name="uq_semesters_program_num"),)
 
 
 class Section(BaseModel, SoftDeleteMixin):
@@ -72,9 +68,7 @@ class Section(BaseModel, SoftDeleteMixin):
     name = sa.Column(sa.String(24), nullable=False)
     capacity = sa.Column(sa.Integer, nullable=True)
 
-    __table_args__ = (
-        sa.UniqueConstraint("semester_id", "name", name="uq_sections_semester_name"),
-    )
+    __table_args__ = (sa.UniqueConstraint("semester_id", "name", name="uq_sections_semester_name"),)
 
 
 class Subject(BaseModel, SoftDeleteMixin):

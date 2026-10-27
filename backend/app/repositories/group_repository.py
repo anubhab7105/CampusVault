@@ -23,17 +23,13 @@ class GroupRepository(BaseRepository[Group]):
         )
         return db.session.scalar(stmt) is not None
 
-    def add_member(
-        self, group_id: uuid.UUID, user_id: uuid.UUID, added_by: uuid.UUID | None
-    ) -> UserGroup:
+    def add_member(self, group_id: uuid.UUID, user_id: uuid.UUID, added_by: uuid.UUID | None) -> UserGroup:
         link = UserGroup(group_id=group_id, user_id=user_id, added_by=added_by)
         db.session.add(link)
         return link
 
     def remove_member(self, group_id: uuid.UUID, user_id: uuid.UUID) -> int:
-        stmt = sa.delete(UserGroup).where(
-            UserGroup.group_id == group_id, UserGroup.user_id == user_id
-        )
+        stmt = sa.delete(UserGroup).where(UserGroup.group_id == group_id, UserGroup.user_id == user_id)
         result = db.session.execute(stmt)
         return int(result.rowcount or 0)
 

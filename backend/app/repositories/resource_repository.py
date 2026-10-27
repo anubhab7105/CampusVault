@@ -52,9 +52,7 @@ class ResourceRepository(BaseRepository[Resource]):
 
     def increment_view(self, resource_id: uuid.UUID) -> int:
         stmt = (
-            sa.update(Resource)
-            .where(Resource.id == resource_id)
-            .values(view_count=Resource.view_count + 1)
+            sa.update(Resource).where(Resource.id == resource_id).values(view_count=Resource.view_count + 1)
         )
         result = db.session.execute(stmt)
         return int(result.rowcount or 0)

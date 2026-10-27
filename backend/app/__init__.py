@@ -24,9 +24,7 @@ import app.config as config_module
 def _configure_logging(app: Flask) -> None:
     """Single-line application logs; log level from config only."""
     handler = logging.StreamHandler()
-    handler.setFormatter(
-        logging.Formatter(fmt="%(asctime)s %(levelname)s %(name)s — %(message)s")
-    )
+    handler.setFormatter(logging.Formatter(fmt="%(asctime)s %(levelname)s %(name)s — %(message)s"))
     app.logger.handlers = [handler]
     app.logger.setLevel(app.config.get("LOG_LEVEL", logging.INFO))
 
@@ -44,9 +42,7 @@ def create_app(
             keeps registering the standard blueprints when omitted.
     """
     env_name = os.environ.get("APP_ENV", config_module.DEVELOPMENT)
-    selected = config_object or config_module.CONFIG_BY_ENV.get(
-        env_name, config_module.DevelopmentConfig
-    )
+    selected = config_object or config_module.CONFIG_BY_ENV.get(env_name, config_module.DevelopmentConfig)
 
     app = Flask(__name__)
     app.config.from_object(selected)
@@ -65,12 +61,8 @@ def create_app(
     app.config.update(
         # JWT tombstone: derive access/refresh expiry here so config.py stays declarative.
         JWT_SECRET_KEY=app.config["JWT_SECRET_KEY"],
-        JWT_ACCESS_TOKEN_EXPIRES=dt.timedelta(
-            minutes=app.config["JWT_ACCESS_TOKEN_MINUTES"]
-        ),
-        JWT_REFRESH_TOKEN_EXPIRES=dt.timedelta(
-            days=app.config["JWT_REFRESH_TOKEN_DAYS"]
-        ),
+        JWT_ACCESS_TOKEN_EXPIRES=dt.timedelta(minutes=app.config["JWT_ACCESS_TOKEN_MINUTES"]),
+        JWT_REFRESH_TOKEN_EXPIRES=dt.timedelta(days=app.config["JWT_REFRESH_TOKEN_DAYS"]),
     )
 
     db.init_app(app)

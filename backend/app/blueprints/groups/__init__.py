@@ -35,11 +35,7 @@ def my_groups():
     user_id = uuid.UUID(ensure_authenticated())
     groups = group_service.list_for_user(user_id)
     return success_response(
-        data={
-            "items": [
-                {"id": str(g.id), "name": g.name, "group_type": g.group_type} for g in groups
-            ]
-        },
+        data={"items": [{"id": str(g.id), "name": g.name, "group_type": g.group_type} for g in groups]},
         message="Your groups listed.",
     )
 

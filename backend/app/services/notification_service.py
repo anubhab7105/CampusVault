@@ -53,16 +53,12 @@ class NotificationService(BaseService):
         return self.notifications.unread_count(user_id)
 
     def mark_read(self, notification_id: uuid.UUID, user_id: uuid.UUID) -> int:
-        updated = self.notifications.mark_read(
-            notification_id, user_id, datetime.now(tz=UTC)
-        )
+        updated = self.notifications.mark_read(notification_id, user_id, datetime.now(tz=UTC))
         db.session.commit()
         return updated
 
     def mark_all_read(self, user_id: uuid.UUID) -> int:
-        updated = self.notifications.mark_all_read(
-            user_id, datetime.now(tz=UTC)
-        )
+        updated = self.notifications.mark_all_read(user_id, datetime.now(tz=UTC))
         db.session.commit()
         return updated
 

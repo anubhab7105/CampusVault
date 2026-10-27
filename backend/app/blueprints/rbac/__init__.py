@@ -54,12 +54,7 @@ def list_roles():
 def list_permissions():
     permissions = service.permissions.list_all()
     return success_response(
-        data={
-            "items": [
-                {"id": str(p.id), "code": p.code, "module": p.module}
-                for p in permissions
-            ]
-        },
+        data={"items": [{"id": str(p.id), "code": p.code, "module": p.module} for p in permissions]},
         message="Permissions listed.",
     )
 

@@ -55,4 +55,3 @@ def register_jwt_blocklist(jwt_ext) -> None:
         if not jti:
             return False
         return get_redis().exists(f"jwt:blocklist:{jti}") > 0
-

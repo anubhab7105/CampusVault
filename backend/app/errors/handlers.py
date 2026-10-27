@@ -67,9 +67,7 @@ def _register_framework_handlers(app: Flask) -> None:
     def handle_integrity(err: sqlalchemy.exc.IntegrityError) -> tuple:
         app.logger.warning("integrity_error %s", type(err.orig).__name__)
         return (
-            error_response(
-                "CONFLICT", "The request conflicts with existing state.", status_code=409
-            ),
+            error_response("CONFLICT", "The request conflicts with existing state.", status_code=409),
             409,
         )
 
@@ -82,9 +80,7 @@ def _register_framework_handlers(app: Flask) -> None:
     def handle_unexpected(err: Exception) -> tuple:
         # Log full traceback server-side; mask everything on the wire.
         app.logger.exception("unhandled_error type=%s", type(err).__name__)
-        return error_response(
-            "INTERNAL_ERROR", "An unexpected error occurred.", status_code=500
-        )
+        return error_response("INTERNAL_ERROR", "An unexpected error occurred.", status_code=500)
 
 
 def _register_jwt_handlers(app: Flask) -> None:

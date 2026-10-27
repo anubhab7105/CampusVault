@@ -52,9 +52,13 @@ class ChatService(BaseService):
     # --- messages ------------------------------------------------------------- #
 
     def send_group_message(
-        self, *,
-        conversation_id: uuid.UUID, sender_id: uuid.UUID,
-        content: str, reply_to_id: uuid.UUID | None = None, message_type: str = "text",
+        self,
+        *,
+        conversation_id: uuid.UUID,
+        sender_id: uuid.UUID,
+        content: str,
+        reply_to_id: uuid.UUID | None = None,
+        message_type: str = "text",
     ) -> Message:
         self.assert_participant(conversation_id, sender_id)
         message = self.messages.create(
@@ -68,9 +72,7 @@ class ChatService(BaseService):
         db.session.commit()
         return message
 
-    def edit_group_message(
-        self, *, message_id: uuid.UUID, editor_id: uuid.UUID, content: str
-    ) -> Message:
+    def edit_group_message(self, *, message_id: uuid.UUID, editor_id: uuid.UUID, content: str) -> Message:
         message = self._get_message(message_id)
         self._assert_author(message, editor_id)
         message.content = content
@@ -103,9 +105,7 @@ class ChatService(BaseService):
 
     def mark_read(self, conversation_id: uuid.UUID, user_id: uuid.UUID) -> None:
         self.assert_participant(conversation_id, user_id)
-        self.conversations.update_last_read(
-            conversation_id, user_id, datetime.now(tz=UTC)
-        )
+        self.conversations.update_last_read(conversation_id, user_id, datetime.now(tz=UTC))
         db.session.commit()
 
     # --- internals --------------------------------------------------------------- #

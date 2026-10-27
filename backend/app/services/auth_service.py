@@ -72,9 +72,7 @@ class AuthService:
             response.raise_for_status()
             return response.json()
         except Exception as err:  # upstream OAuth errors are opaque to the client
-            current_app.logger.warning(
-                "google_oauth_exchange_failed %s", type(err).__name__
-            )
+            current_app.logger.warning("google_oauth_exchange_failed %s", type(err).__name__)
             raise ServiceUnavailableError("Could not verify Google sign-in.") from err
 
     def login_student_with_code(self, code: str) -> dict:

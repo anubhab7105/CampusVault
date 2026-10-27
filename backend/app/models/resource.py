@@ -38,21 +38,13 @@ class Resource(BaseModel, SoftDeleteMixin):
     title = sa.Column(sa.String(160), nullable=False)
     description = sa.Column(sa.String(2000), nullable=True)
     resource_type = sa.Column(sa.String(24), nullable=False, index=True)
-    visibility = sa.Column(
-        sa.String(16), nullable=False, default="college", index=True
-    )
+    visibility = sa.Column(sa.String(16), nullable=False, default="college", index=True)
     external_url = sa.Column(sa.String(2048), nullable=True)
 
     share_token = sa.Column(sa.String(64), nullable=True, unique=True, index=True)
-    is_published = sa.Column(
-        sa.Boolean, nullable=False, default=True, server_default=sa.text("true")
-    )
-    download_count = sa.Column(
-        sa.Integer, nullable=False, default=0, server_default=sa.text("0")
-    )
-    view_count = sa.Column(
-        sa.Integer, nullable=False, default=0, server_default=sa.text("0")
-    )
+    is_published = sa.Column(sa.Boolean, nullable=False, default=True, server_default=sa.text("true"))
+    download_count = sa.Column(sa.Integer, nullable=False, default=0, server_default=sa.text("0"))
+    view_count = sa.Column(sa.Integer, nullable=False, default=0, server_default=sa.text("0"))
 
     __table_args__ = (
         # Primary browse path: filter by subject, order by recency.

@@ -30,9 +30,7 @@ class Notification(BaseModel):
     body = sa.Column(sa.String(500), nullable=True)
     payload = sa.Column(JSONType, nullable=True)
 
-    is_read = sa.Column(
-        sa.Boolean, nullable=False, default=False, server_default=sa.text("false")
-    )
+    is_read = sa.Column(sa.Boolean, nullable=False, default=False, server_default=sa.text("false"))
     read_at = sa.Column(sa.DateTime(timezone=True), nullable=True)
     delivered_at = sa.Column(sa.DateTime(timezone=True), nullable=True)
 

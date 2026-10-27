@@ -29,9 +29,7 @@ def _serialize(n) -> dict:
 @bp.get("")
 def list_notifications():
     user_id = uuid.UUID(ensure_authenticated())
-    page, page_size, _ = parse_pagination_args(
-        request.args.get("page"), request.args.get("page_size")
-    )
+    page, page_size, _ = parse_pagination_args(request.args.get("page"), request.args.get("page_size"))
     rows, total = notification_service.list_for_user(
         user_id,
         unread_only=request.args.get("unread") == "true",

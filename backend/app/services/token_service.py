@@ -35,12 +35,8 @@ class TokenService:
         identity = str(user_id)
         claims = {ROLE_CLAIM: role, PERMISSIONS_CLAIM: list(permissions)}
         return {
-            "access_token": create_access_token(
-                identity=identity, additional_claims=claims
-            ),
-            "refresh_token": create_refresh_token(
-                identity=identity, additional_claims=claims
-            ),
+            "access_token": create_access_token(identity=identity, additional_claims=claims),
+            "refresh_token": create_refresh_token(identity=identity, additional_claims=claims),
         }
 
     @staticmethod

@@ -22,9 +22,7 @@ class User(BaseModel, SoftDeleteMixin):
     full_name = sa.Column(sa.String(120), nullable=False)
     avatar_url = sa.Column(sa.String(512), nullable=True)
 
-    auth_provider = sa.Column(
-        sa.String(20), nullable=False, default=AUTH_PROVIDER_OTP
-    )
+    auth_provider = sa.Column(sa.String(20), nullable=False, default=AUTH_PROVIDER_OTP)
     google_sub = sa.Column(sa.String(64), nullable=True, unique=True, index=True)
     email_verified_at = sa.Column(sa.DateTime(timezone=True), nullable=True)
 
@@ -35,9 +33,7 @@ class User(BaseModel, SoftDeleteMixin):
         index=True,
     )
 
-    is_active = sa.Column(
-        sa.Boolean, nullable=False, default=True, server_default=sa.text("true")
-    )
+    is_active = sa.Column(sa.Boolean, nullable=False, default=True, server_default=sa.text("true"))
     last_login_at = sa.Column(sa.DateTime(timezone=True), nullable=True)
 
     def __repr__(self) -> str:  # pragma: no cover - debugging aid

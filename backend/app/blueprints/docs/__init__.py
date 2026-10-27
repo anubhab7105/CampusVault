@@ -90,50 +90,86 @@ def _spec() -> dict:
         },
         "paths": {
             f"{base}/health/ready": {
-                "get": {"tags": ["health"], "summary": "Readiness probe",
-                        "responses": {"200": {"description": "Ready"},
-                                      "503": {"description": "Dependency down"}}},
+                "get": {
+                    "tags": ["health"],
+                    "summary": "Readiness probe",
+                    "responses": {"200": {"description": "Ready"}, "503": {"description": "Dependency down"}},
+                },
             },
             f"{base}/auth/google/authorize": {
-                "get": {"tags": ["auth"], "summary": "Google OAuth authorize URL",
-                        "responses": {"200": {"description": "URL + state"}}},
+                "get": {
+                    "tags": ["auth"],
+                    "summary": "Google OAuth authorize URL",
+                    "responses": {"200": {"description": "URL + state"}},
+                },
             },
             f"{base}/auth/teachers/otp/request": {
-                "post": {"tags": ["auth"], "summary": "Request teacher OTP",
-                         "requestBody": {"required": True, "content": {"application/json": {"schema": {
-                             "type": "object",
-                             "required": ["email"],
-                             "properties": {"email": {"type": "string", "format": "email"}}}}}},
-                         "responses": {"200": {"description": "Queued"},
-                                       "429": {"description": "Rate limited"}}},
+                "post": {
+                    "tags": ["auth"],
+                    "summary": "Request teacher OTP",
+                    "requestBody": {
+                        "required": True,
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": ["email"],
+                                    "properties": {"email": {"type": "string", "format": "email"}},
+                                }
+                            }
+                        },
+                    },
+                    "responses": {"200": {"description": "Queued"}, "429": {"description": "Rate limited"}},
+                },
             },
             f"{base}/auth/teachers/otp/verify": {
-                "post": {"tags": ["auth"], "summary": "Verify OTP → tokens",
-                         "requestBody": {"required": True, "content": {"application/json": {"schema": {
-                             "type": "object",
-                             "required": ["email", "code"],
-                             "properties": {"email": {"type": "string"},
-                                            "code": {"type": "string", "minLength": 6, "maxLength": 6}}}}}},
-                         "responses": {"200": {"description": "Token pair issued"},
-                                       "401": {"description": "Invalid code"}}},
+                "post": {
+                    "tags": ["auth"],
+                    "summary": "Verify OTP → tokens",
+                    "requestBody": {
+                        "required": True,
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": ["email", "code"],
+                                    "properties": {
+                                        "email": {"type": "string"},
+                                        "code": {"type": "string", "minLength": 6, "maxLength": 6},
+                                    },
+                                }
+                            }
+                        },
+                    },
+                    "responses": {
+                        "200": {"description": "Token pair issued"},
+                        "401": {"description": "Invalid code"},
+                    },
+                },
             },
             f"{base}/auth/refresh": {
-                "post": {"tags": ["auth"], "summary": "Rotate refresh token",
-                         "security": [{"bearerAuth": []}],
-                         "responses": {"200": {"description": "New token pair"}}},
+                "post": {
+                    "tags": ["auth"],
+                    "summary": "Rotate refresh token",
+                    "security": [{"bearerAuth": []}],
+                    "responses": {"200": {"description": "New token pair"}},
+                },
             },
             f"{base}/library/resources": {
-                "get": {"tags": ["library"], "summary": "Browse/search resources",
-                        "security": [{"bearerAuth": []}],
-                        "parameters": [
-                            {"name": "subject_id", "in": "query", "schema": {"type": "string"}},
-                            {"name": "q", "in": "query", "schema": {"type": "string"}},
-                            {"name": "sort", "in": "query", "schema": {"type": "string"}},
-                            {"name": "order", "in": "query", "schema": {"type": "string"}},
-                            {"name": "page", "in": "query", "schema": {"type": "integer"}},
-                            {"name": "page_size", "in": "query", "schema": {"type": "integer"}},
-                        ],
-                        "responses": {"200": {"description": "Paged resources"}}},
+                "get": {
+                    "tags": ["library"],
+                    "summary": "Browse/search resources",
+                    "security": [{"bearerAuth": []}],
+                    "parameters": [
+                        {"name": "subject_id", "in": "query", "schema": {"type": "string"}},
+                        {"name": "q", "in": "query", "schema": {"type": "string"}},
+                        {"name": "sort", "in": "query", "schema": {"type": "string"}},
+                        {"name": "order", "in": "query", "schema": {"type": "string"}},
+                        {"name": "page", "in": "query", "schema": {"type": "integer"}},
+                        {"name": "page_size", "in": "query", "schema": {"type": "integer"}},
+                    ],
+                    "responses": {"200": {"description": "Paged resources"}},
+                },
             },
         },
     }

@@ -20,9 +20,7 @@ REQUEST_ID_MAX_LENGTH = 64
 
 def _sanitize_request_id(value: str | None) -> str:
     if value and 0 < len(value) <= REQUEST_ID_MAX_LENGTH:
-        return "".join(
-            ch if (ch.isalnum() or ch in "-_.") else "_" for ch in value
-        )
+        return "".join(ch if (ch.isalnum() or ch in "-_.") else "_" for ch in value)
     return secrets.token_hex(8)
 
 

@@ -100,9 +100,7 @@ def on_send_group_message(payload=None) -> None:  # type: ignore[no-untyped-def]
         raise ForbiddenError("Conversation not found.")
 
     if conversation.conversation_type == "group" and conversation.group_id:
-        group_service.assert_membership(
-            uuid.UUID(str(conversation.group_id)), uuid.UUID(user_id)
-        )
+        group_service.assert_membership(uuid.UUID(str(conversation.group_id)), uuid.UUID(user_id))
     chat_service.assert_participant(validated["conversation_id"], uuid.UUID(user_id))
 
     message = chat_service.send_group_message(
@@ -146,9 +144,7 @@ def on_edit_group_message(payload=None) -> None:  # type: ignore[no-untyped-def]
     message_id = str(data.get("message_id") or "")
     content = str(data.get("content") or "")
     if not message_id or not content:
-        raise build_validation_error(
-            {"message_id": ["message_id and content are required."]}
-        )
+        raise build_validation_error({"message_id": ["message_id and content are required."]})
     chat_service.edit_group_message(
         message_id=uuid.UUID(message_id), editor_id=uuid.UUID(user_id), content=content
     )
@@ -167,9 +163,7 @@ def on_delete_group_message(payload=None) -> None:  # type: ignore[no-untyped-de
     message_id = str(data.get("message_id") or "")
     if not message_id:
         raise build_validation_error({"message_id": ["message_id is required."]})
-    chat_service.delete_group_message(
-        message_id=uuid.UUID(message_id), requester_id=uuid.UUID(user_id)
-    )
+    chat_service.delete_group_message(message_id=uuid.UUID(message_id), requester_id=uuid.UUID(user_id))
     audit_service.record(
         action="chat.message.delete",
         entity_type="message",

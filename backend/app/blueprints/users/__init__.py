@@ -25,17 +25,13 @@ def get_me():
     user = users_repo.get_active_by_id(user_id)
     if user is None:
         raise ValidationError("Account not found.")
-    return success_response(
-        data=AuthService.serialize_user(user), message="Profile loaded."
-    )
+    return success_response(data=AuthService.serialize_user(user), message="Profile loaded.")
 
 
 @bp.get("")
 @permission_required("admin:users:manage")
 def list_users():
-    page, page_size, _ = parse_pagination_args(
-        request.args.get("page"), request.args.get("page_size")
-    )
+    page, page_size, _ = parse_pagination_args(request.args.get("page"), request.args.get("page_size"))
     rows, total = users_repo.search(request.args.get("q"), page, page_size)
     from app.utils.pagination import PagingMeta
 
