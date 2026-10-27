@@ -35,15 +35,16 @@ const colors = {
     "900": "#1d4ed8",
   },
   ink: {
-    DEFAULT: "#0f172a",
+    default: "#0f172a",
     secondary: "#334155",
     tertiary: "#64748b",
   },
   muted: {
-    DEFAULT: "#94a3b8",
+    default: "#94a3b8",
+    foreground: "#94a3b8",
   },
   border: {
-    DEFAULT: "#e2e8f0",
+    default: "#e2e8f0",
     brand: "#2563eb",
   },
   brandFocus: "#bfdbfe",
