@@ -1,10 +1,10 @@
-/** Login page — unified entry for Student (Google OAuth) + Teacher (OTP). */
+/** Login page — student Google OAuth + teacher two-step OTP. */
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { authService } from "@services/authService";
 import { useAuthStore } from "@stores/useAuthStore";
 import { useToast } from "@hooks/useToast";
@@ -20,6 +20,7 @@ import {
 } from "@components/ui/index";
 import { cn } from "@utils/cn";
 import { PATHS } from "@constants/routes";
+import { useThemeStore } from "@stores/useThemeStore";
 
 const teacherSchema = z.object({
   email: z.string().email("Enter a valid college email address."),
@@ -30,10 +31,23 @@ type TeacherForm = z.infer<typeof teacherSchema>;
 
 export default function Login() {
   const navigate = useNavigate();
-  const { setTokens, setUser } = useAuthStore();
-  const { success, error } = useToast();
+  const { setTokens, setUser, clear } = useAuthStore();
+  const { toast } = useToast();
   const [phase, setPhase] = useState<"provider" | "teacher" | "verifying">("provider");
   const [pending, setPending] = useState(false);
+  const { user } = useAuthStore();
+
+  // Silent session restore on app load.
+  useState(() => {
+    if (!user && !pending) {
+      // Attempt to restore from the refresh cookie / in-memory state.
+      // The backend sets the refresh cookie; the frontend reads it via
+      // the auth interceptor. If the user is already authenticated,
+      // the interceptor will set tokens in the store.
+      setPhase("provider");
+    }
+    return () => {};
+  }, []);
 
   const form = useForm<TeacherForm>({
     resolver: zodResolver(teacherSchema),
@@ -44,12 +58,11 @@ export default function Login() {
     e.preventDefault();
     setPending(true);
     try {
-      // Provider-consent URL — in production the SPA opens this in a browser context.
       const data = await authService.googleAuthorize("init");
       // Scaffold note: Google consent-screen flow completes at /auth/google?code=…
       navigate(`${PATHS.LOGIN}?google_authorize_url=${encodeURIComponent(data.authorize_url)}`);
     } catch (err: any) {
-      error("Sign-in failed", err?.campusvaultError?.message ?? String(err ?? ""));
+      toast.error("Sign-in failed", err?.campusvaultError?.message ?? String(err ?? ""));
     } finally {
       setPending(false);
     }
@@ -60,9 +73,9 @@ export default function Login() {
     try {
       const { expires_in_seconds } = await authService.requestTeacherOtp(values.email);
       setPhase("verifying");
-      success("Code sent", `Expires in ${expires_in_seconds} seconds.`);
+      toast("Code sent", `Expires in ${expires_in_seconds} seconds.`);
     } catch (err: any) {
-      error("Could not send code", err?.campusvaultError?.message ?? String(err ?? ""));
+      toast.error("Could not send code", err?.campusvaultError?.message ?? String(err ?? ""));
     } finally {
       setPending(false);
     }
@@ -82,6 +95,85 @@ export default function Login() {
     }
   };
 
+  // If we came in with a google_authorize_url query param, render the Google
+  // button; otherwise show the phase selector.
+  if (window.location.search.google_authorize_url) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-surface-100 px-4 py-12 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div>
+            <h2 className="text-heading-lg font-semibold tracking-tight text-ink-default">CampusVault</h2>
+            <p className="mt-2 text-body-md text-ink-secondary">Sign in to your academic library.</p>
+          </div>
+
+          <Card className={cn("w-full", phase === "provider" ? "pt-6" : "pt-0")}>
+            <CardHeader>
+              <CardTitle>{phase === "provider" ? "Sign in" : "Teacher verification"}</CardTitle>
+              <CardDescription>
+                {phase === "provider"
+                  ? "Students sign in with Google. Teachers use email OTP."
+                  : "Enter the code sent to your college email."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {phase === "provider" ? (
+                <>
+                  <Button
+                    onClick={handleGoogle}
+                    disabled={pending}
+                    className="w-full justify-center"
+                    variant="default"
+                    isLoading={pending}
+                  >
+                    Continue with Google
+                  </Button>
+                  <p className="mt-4 text-caption-xs text-ink-tertiary">
+                    College Google Workspace account required.
+                  </p>
+                </>
+              ) : (
+                <form onSubmit={form.handleSubmit(handleOtpRequest)} className="space-y-4">
+                  <Input
+                    label="College email"
+                    type="email"
+                    placeholder="name@college.edu"
+                    {...form.register("email")}
+                  />
+                  <Button type="submit" disabled={pending} isLoading={pending} className="w-full">
+                    Send verification code
+                  </Button>
+                </form>
+              )}
+              {phase === "verifying" && (
+                <form onSubmit={form.handleSubmit(handleOtpVerify)} className="mt-6 space-y-4">
+                  <Input label="6-digit code" {...form.register("code")} />
+                  <Button type="submit" disabled={pending} isLoading={pending} className="w-full">
+                    Verify & sign in
+                  </Button>
+                </form>
+              )}
+            </CardContent>
+            {phase === "provider" ? (
+              <Button
+                type="button"
+                onClick={() => setPhase("teacher")}
+                variant="ghost"
+                className="w-full text-left text-ink-secondary"
+              >
+                Teacher sign-in with email OTP
+              </Button>
+            ) : (
+              <Button type="button" onClick={() => setPhase("provider")} variant="ghost" className="w-full">
+                Back to provider selection
+              </Button>
+            )}
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
+  // Normal login page (no google_authorize_url in query).
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-surface-100 px-4 py-12 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -102,6 +194,7 @@ export default function Login() {
           <CardContent>
             {phase === "provider" ? (
               <>
+
                 <Button
                   onClick={handleGoogle}
                   disabled={pending}
@@ -115,6 +208,7 @@ export default function Login() {
                   College Google Workspace account required.
                 </p>
               </>
+
             ) : (
               <form onSubmit={form.handleSubmit(handleOtpRequest)} className="space-y-4">
                 <Input
@@ -132,26 +226,25 @@ export default function Login() {
               <form onSubmit={form.handleSubmit(handleOtpVerify)} className="mt-6 space-y-4">
                 <Input label="6-digit code" {...form.register("code")} />
                 <Button type="submit" disabled={pending} isLoading={pending} className="w-full">
-                  Verify &amp; sign in
+                  Verify & sign in
                 </Button>
               </form>
             )}
           </CardContent>
-          <CardFooter className="flex flex-col gap-3 pt-6 border-t">
-            {phase === "provider" ? (
-              <Button
-                type="button"
-                onClick={() => setPhase("teacher")}
-                variant="ghost"
-                className="w-full text-left text-ink-secondary"
-              >
-                Teacher sign-in with email OTP
-              </Button>
-            ) : (
-              <Button type="button" onClick={() => setPhase("provider")} variant="ghost" className="w-full">
-                Back to provider selection
-              </Button>
-            )}
+          {phase === "provider" ? (
+            <Button
+              type="button"
+              onClick={() => setPhase("teacher")}
+              variant="ghost"
+              className="w-full text-left text-ink-secondary"
+            >
+              Teacher sign-in with email OTP
+            </Button>
+          ) : (
+            <Button type="button" onClick={() => setPhase("provider")} variant="ghost" className="w-full">
+              Back to provider selection
+            </Button>
+          )}
           </CardFooter>
         </Card>
       </div>
