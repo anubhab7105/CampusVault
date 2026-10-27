@@ -31,7 +31,6 @@ class TeacherAllowlist(BaseModel):
         String(255),
         nullable=False,
         unique=True,
-        index=True,
     )
     is_approved = Column(
         Boolean,
@@ -53,8 +52,7 @@ class TeacherAllowlist(BaseModel):
     )
 
     __table_args__ = (
-        Index("ix_teacher_allowlist_email", "email"),
-    )
+    ),
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<TeacherAllowlist id={self.id} email={self.email!r} approved={self.is_approved}>"
