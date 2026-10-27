@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 from alembic import context
-from sqlalchemy import MetaData, engine_from_config, pool
+from sqlalchemy import engine_from_config, pool
 
 # Make `app` importable when alembic runs from backend/.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -22,7 +22,9 @@ import app.config as config_module  # noqa: E402
 
 from app import create_app  # noqa: E402
 
-from app.models import *  # noqa: F401,F403,E402 — register all tables
+from app.extensions import db  # noqa: E402
+
+from app import models  # noqa: F401,E402 — register all tables on the metadata
 
 config = context.config
 
@@ -35,15 +37,7 @@ db_url = flask_app.config["SQLALCHEMY_DATABASE_URI"]
 config.set_main_option("sqlalchemy.url", db_url)
 
 # --- target metadata + naming convention --------------------------------------- #
-metadata = flask_app.extensions["sqlalchemy"].db.metadata
-metadata_naming = {
-    "ix": "ix_%(column_0_label)s",
-    "uq": "uq_%(table_name)s_%(column_0_name)s",
-    "ck": "ck_%(table_name)s_%(constraint_name)s",
-    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
-    "pk": "pk_%(table_name)s",
-}
-target_metadata = metadata
+target_metadata = db.metadata
 
 
 def include_object(obj, name, type_, reflected, compare_to) -> bool:  # noqa: ANN001

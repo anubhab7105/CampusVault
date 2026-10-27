@@ -188,11 +188,6 @@ class TestingConfig(BaseConfig):
         return cls.SQLALCHEMY_DATABASE_URI
 
 
-def cls_environ_required(config_cls: type[BaseConfig], extra: list[str]) -> list[str]:
-    """Compose the base required variable list with environment-specific extras."""
-    return list({*BaseConfig.environ_required(), *extra})
-
-
 # Selects the config class from APP_ENV; the factory is the only consumer.
 CONFIG_BY_ENV: Final[dict[str, type[BaseConfig]]] = {
     DEVELOPMENT: DevelopmentConfig,
