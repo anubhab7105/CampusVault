@@ -55,7 +55,7 @@ def create_app(
             )
 
     # ----- extensions -------------------------------------------------------- #
-    from app.extensions import cors, db, jwt, limiter, mail, migrate, socketio
+    from app.extensions import cors, db, jwt, limiter, mail, migrate, socketio  # noqa: PLC0415
 
     app.config.setdefault("SQLALCHEMY_DATABASE_URI", selected.database_url())
     app.config.update(
@@ -68,7 +68,7 @@ def create_app(
     db.init_app(app)
     migrate.init_app(app, db, compare_type=True)
     jwt.init_app(app)
-    from app.middleware.auth import register_jwt_blocklist
+    from app.middleware.auth import register_jwt_blocklist  # noqa: PLC0415
 
     register_jwt_blocklist(jwt)
     cors.init_app(
@@ -80,10 +80,10 @@ def create_app(
     mail.init_app(app)
 
     # ----- errors → middleware → models → blueprints → sockets ---------------- #
-    from app import models as _models  # noqa: F401 — ORM entity registration
-    from app.blueprints import register_blueprints
-    from app.errors.handlers import register_error_handlers
-    from app.middleware import register_middleware
+    from app import models as _models  # noqa: F401, PLC0415 — ORM entity registration
+    from app.blueprints import register_blueprints  # noqa: PLC0415
+    from app.errors.handlers import register_error_handlers  # noqa: PLC0415
+    from app.middleware import register_middleware  # noqa: PLC0415
     from app.sockets import init_socketio
 
     register_error_handlers(app)
