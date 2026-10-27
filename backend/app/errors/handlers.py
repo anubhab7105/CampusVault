@@ -11,19 +11,24 @@ from __future__ import annotations
 import marshmallow
 import sqlalchemy.exc
 import werkzeug.exceptions
-from flask import Flask, FlaskError
+from flask import Flask
+from flask_limiter.errors import RateLimitExceeded
 from jwt import PyJWTError  # type: ignore[import-not-found]
 
-from app.extensions import jwt, limiter
-from app.errors.exceptions import (
-    AppError,
-    RateLimitedError,
-)
+from app.errors.exceptions import AppError
 from app.utils.responses import error_response
 
 
 def _register_framework_handlers(app: Flask) -> None:
     """Map framework/library errors onto the envelope."""
+
+    @app.errorhandler(RateLimitExceeded)
+    def handle_rate_limited(err: RateLimitExceeded) -> tuple:
+        return error_response(
+            "RATE_LIMITED",
+            "Too many requests. Please slow down.",
+            status_code=429,
+        )
 
     @app.errorhandler(AppError)
     def handle_app_error(err: AppError) -> tuple:
