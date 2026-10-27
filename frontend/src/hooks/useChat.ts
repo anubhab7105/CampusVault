@@ -4,7 +4,6 @@ import {
   useInfiniteQuery,
   useMutation,
   useQueryClient,
-  useQueryState,
 } from "@tanstack/react-query";
 import { socketService } from "@services/socketService";
 import { useAuthStore } from "@stores/useAuthStore";
@@ -46,7 +45,6 @@ export const useChatMessages = ({
     isLoading,
     isError,
     status,
-    fetchPage,
     invalidateQueries,
   } = useInfiniteQuery<
     Array<Message>,
@@ -89,9 +87,9 @@ export const useChatMessages = ({
   /** Refetch after reconnect — only fetch messages after the last known cursor */
   const resyncAfterReconnect = useCallback(() => {
     if (user && socketService.connected) {
-      invalidatedQueries([CACHE_KEY, conversationId]);
+      queryClient.invalidateQueries([CACHE_KEY, conversationId]);
     }
-  }, [queryClient, conversationId, user, invalidatedQueries]);
+  }, [queryClient, conversationId, user]);
 
   useEffect(() => {
     // Subscribe to new messages via socket
@@ -139,7 +137,7 @@ export const useChatMessages = ({
   }, [resyncAfterReconnect]);
 
   // Combine all pages into a single array
-  const allMessages = data?.flat() || [];
+  const allMessages = data?.reduce((acc, page) => acc.concat(page), []) || [];
 
   return {
     messages: allMessages,
@@ -149,7 +147,7 @@ export const useChatMessages = ({
     hasNextPage,
     isFetchingNextPage,
     status,
-    refetch: invalidatedQueries,
+    refetch: invalidateQueries,
     resyncAfterReconnect,
   };
 };
