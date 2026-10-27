@@ -7,7 +7,8 @@ import json
 from flask import Blueprint, current_app, request, jsonify
 from marshmallow import Schema, fields, validate
 
-from app.extensions import db, limiter
+from app.extensions import db
+from app.extensions import limiter
 from app.middleware.auth import ensure_authenticated, permission_required
 from app.repositories.resource_repository import resource_repository
 from app.services.upload import UploadService
@@ -57,7 +58,8 @@ def request_upload():
 
     # Permission check: Teacher/Admin may upload; Students may not.
     from app.services.role_service import role_service
-    role_name, _ = role_service.load_user_role_bundle(current_user.id)
+    user_id = ensure_authenticated()
+    role_name, _ = role_service.load_user_role_bundle(user_id)
     if role_name not in ("Teacher", "Admin"):
         return error_response("Only teachers and admins may upload resources.", error_code="FORBIDDEN")
 
@@ -69,7 +71,7 @@ def request_upload():
 
     try:
         envelope = svc.request_upload(
-            uploader_id=UUID(current_user.id),
+            uploader_id=UUID(user_id),
             extension=extension,
             mime_type=mime_type,
             declared_size=declared_size,
