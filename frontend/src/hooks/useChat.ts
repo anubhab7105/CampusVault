@@ -5,10 +5,11 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { apiClient } from "@services/apiClient";
 import { socketService } from "@services/socketService";
 import { useAuthStore } from "@stores/useAuthStore";
 import { useEffect, useCallback } from "react";
+
+import { fetchMessages } from "@services/apiClient";
 
 const CACHE_KEY = "/chat:messages";
 
@@ -46,7 +47,7 @@ export const useChatMessages = ({
     ["messages", conversationId],
     async ({ pageParam }) => {
       const before = pageParam as string | undefined;
-      const resp = await apiClient.post("/chat/messages", {
+      const resp = await fetchMessages({
         conversation_id: conversationId,
         before_id: before,
         limit: pageSize,
@@ -119,16 +120,19 @@ export const useSendMessage = () => {
       content: string;
       idempotencyKey: string;
     }) => {
-      const resp = await apiClient.post("/chat/messages", {
-        conversationId,
-        content,
-        idempotencyKey,
+      const resp = await fetch("/api/v1/chat/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access_token}`,
+        },
+        body: JSON.stringify({ conversationId, content, idempotencyKey }),
       });
-      return resp.data;
+      return resp.json();
     },
     {
       onSuccess: (data) => {
-        if (data.success && user?.currentConversationId) {
+        if (data.success) {
           addMessageOptimistic(data.message);
         }
       },
