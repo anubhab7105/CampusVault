@@ -15,6 +15,8 @@ from app.repositories.base_repository import BaseRepository
 class ConversationRepository(BaseRepository[Conversation]):
     model = Conversation
 
+    DIRECT_MESSAGE_PARTICIPANT_COUNT = 2  # canonical DM shape
+
     def get_by_group(self, group_id: uuid.UUID) -> Conversation | None:
         stmt = sa.select(Conversation).where(
             Conversation.group_id == group_id,

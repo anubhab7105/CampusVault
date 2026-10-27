@@ -46,7 +46,11 @@ def emit_notification_or_persist(row: Notification) -> bool:
     from app.extensions import socketio
 
     for sid in session_ids:
-        socketio.emit("notification", {"success": True, "message": "New notification.", "data": payload}, to=sid)
+        socketio.emit(
+            "notification",
+            {"success": True, "message": "New notification.", "data": payload},
+            to=sid,
+        )
     return True
 
 

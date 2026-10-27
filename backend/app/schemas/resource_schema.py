@@ -16,8 +16,12 @@ class ListResourcesQuerySchema(Schema):
     section_id = fields.UUID(load_default=None, allow_none=True)
     subject_id = fields.UUID(load_default=None, allow_none=True)
 
-    resource_type = fields.Str(load_default=None, allow_none=True, validate=validate.OneOf(sorted(RESOURCE_TYPES)))
-    visibility = fields.Str(load_default=None, allow_none=True, validate=validate.OneOf(sorted(VISIBILITY_CHOICES)))
+    resource_type = fields.Str(
+        load_default=None, allow_none=True, validate=validate.OneOf(sorted(RESOURCE_TYPES))
+    )
+    visibility = fields.Str(
+        load_default=None, allow_none=True, validate=validate.OneOf(sorted(VISIBILITY_CHOICES))
+    )
 
     q = fields.Str(load_default=None, allow_none=True, validate=validate.Length(max=128))
     sort = fields.Str(
