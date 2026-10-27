@@ -25,7 +25,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   reset = (): void => this.setState({ hasError: false, error: null });
 
-  render(): ReactNode {
+  override render(): ReactNode {
     if (this.state.hasError) {
       return this.props.fallback({
         error: this.state.error ?? new Error("Unknown error"),
