@@ -15,6 +15,6 @@ if __name__ == "__main__":
         app,
         host="0.0.0.0",
         port=8000,
-        debug=app.config.get("DEBUG", False),
+        debug=app.config.get("DEBUG", False),  # noqa: S104
         allow_unsafe_werkzeug=True,
     )
