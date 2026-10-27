@@ -33,6 +33,7 @@ from app.models import TeacherAllowlist, User
 from app.repositories import UserRepository
 from app.services.otp_service import OTP_TTL_SECONDS, otp_service
 from app.services.token_service import TokenService
+from app.utils.redis_utils import get_redis
 from app.utils.datetime_utils import utcnow
 
 
