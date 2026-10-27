@@ -17,9 +17,14 @@ node_modules/
 /build
 *.pyc
 __pycache__/
-/frontend/coverage
+*.tsbuildinfo
 /coverage/
 /*.egg-info/
+
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+/frontend/coverage
 
 # IDE
 .idea/
