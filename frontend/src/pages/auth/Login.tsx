@@ -60,7 +60,7 @@ export default function Login() {
     try {
       const { expires_in_seconds } = await authService.requestTeacherOtp(values.email);
       setPhase("verifying");
-      toast("Code sent", `Expires in ${expires_in_seconds} seconds.`);
+      toast.success("Code sent", `Expires in ${expires_in_seconds} seconds.`);
     } catch (err: any) {
       toast.error("Could not send code", err?.campusvaultError?.message ?? String(err ?? ""));
     } finally {

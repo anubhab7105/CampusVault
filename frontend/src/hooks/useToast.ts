@@ -5,11 +5,11 @@ import type { ToastState } from "@stores/useToastStore";
 
 export function useToast() {
   const { toasts, add, remove, clear } = useToastStore((state: ToastState) => ({
-  toasts: state.toasts,
-  add: state.add,
-  remove: state.remove,
-  clear: state.clear,
-}));
+    toasts: state.toasts,
+    add: state.add,
+    remove: state.remove,
+    clear: state.clear,
+  }));
 
   return {
     toasts,

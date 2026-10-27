@@ -15,11 +15,11 @@ interface State {
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false, error: null };
 
-  static getDerivedStateFromError(error: Error): State {
+  static override getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 
-  componentDidCatch(_error: Error, _errorInfo: ErrorInfo): void {
+  override componentDidCatch(_error: Error, _errorInfo: ErrorInfo): void {
     console.error("[CampusVault ErrorBoundary]", _errorInfo.componentStack);
   }
 
