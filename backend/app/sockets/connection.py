@@ -34,7 +34,7 @@ def on_connect(auth) -> bool:  # type: ignore[valid-type]
 
     register_connection(user_id, request.sid)
     emit(
-        "connect",
+        "connection_ack",
         {"success": True, "message": "Connected.", "data": {"user_id": user_id}},
     )
     return True
