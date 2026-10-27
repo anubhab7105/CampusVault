@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { User } from "@types/auth";
+import type { User } from "@/types/auth";
 import { STORAGE_KEYS } from "@constants/index";
 import { useToastStore } from "@stores/useToastStore";
 

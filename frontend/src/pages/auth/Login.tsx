@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { authService } from "@services/authService";
 import { useAuthStore } from "@stores/useAuthStore";
 import { useToast } from "@hooks/useToast";
@@ -31,8 +31,8 @@ type TeacherForm = z.infer<typeof teacherSchema>;
 /** Render the login page for the normal (non-Google-callback) case. */
 function LoginPage() {
   const navigate = useNavigate();
-  const { setTokens, setUser, clear } = useAuthStore();
-  const { toast } = useToast();
+  const { setTokens, setUser } = useAuthStore();
+  const { success, error, toast: dismiss } = useToast();
   const [phase, setPhase] = useState<"provider" | "teacher" | "verifying">("provider");
   const [pending, setPending] = useState(false);
   const { user } = useAuthStore();
@@ -48,7 +48,7 @@ function LoginPage() {
       const data = await authService.googleAuthorize("init");
       navigate(`${PATHS.LOGIN}?google_authorize_url=${encodeURIComponent(data.authorize_url)}`);
     } catch (err: any) {
-      toast.error("Sign-in failed", err?.campusvaultError?.message ?? String(err ?? ""));
+      error("Sign-in failed", err?.campusvaultError?.message ?? String(err ?? ""));
     } finally {
       setPending(false);
     }
@@ -59,9 +59,9 @@ function LoginPage() {
     try {
       const { expires_in_seconds } = await authService.requestTeacherOtp(values.email);
       setPhase("verifying");
-      toast("Code sent", `Expires in ${expires_in_seconds} seconds.`);
+      success("Code sent", `Expires in ${expires_in_seconds} seconds.`);
     } catch (err: any) {
-      toast.error("Could not send code", err?.campusvaultError?.message ?? String(err ?? ""));
+      error("Could not send code", err?.campusvaultError?.message ?? String(err ?? ""));
     } finally {
       setPending(false);
     }
@@ -160,18 +160,16 @@ function LoginPage() {
 
 /** Render the login page when coming from the Google callback. */
 function LoginCallback() {
-  // The google_authorize_url will be in the query string; we render the Google
-  // button immediately.
   const navigate = useNavigate();
   const { setTokens, setUser, clear } = useAuthStore();
 
-  // If we came in with a google_authorize_url query param, render the Google
-  // button; otherwise show the normal login page.
+  // The google_authorize_url will be in the query string; we render the Google
+  // button immediately.
   const hasGoogleCallback = !!window.location.search.match(/\bgoogle_authorize_url\b/);
 
   if (hasGoogleCallback) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-surface-100 px-4 py-12 sm:px-6 lg:px-8">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-surface-100 px-4 py-12 sm:px-6 lg:px:8">
         <div className="max-w-md w-full space-y-8">
           <div>
             <h2 className="text-heading-lg font-semibold tracking-tight text-ink-default">CampusVault</h2>
