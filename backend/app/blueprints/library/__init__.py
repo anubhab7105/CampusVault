@@ -9,7 +9,7 @@ from marshmallow import Schema, fields, validate
 
 from app.extensions import db
 from app.extensions import limiter
-from app.middleware.auth import ensure_authenticated, permission_required
+from app.middleware.auth import ensure_authenticated
 from app.repositories.resource_repository import resource_repository
 from app.services.upload import UploadService
 from app.services.role_service import role_service
