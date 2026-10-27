@@ -317,7 +317,7 @@ def upgrade() -> None:
             "visibility IN ('section','subject','department','college','private')",
             name="ck_resources_visibility",
         ),
-        sa.CheckConstraint("char_length(title) >= 3", name="ck_resources_title_min_length"),
+        sa.CheckConstraint("length(title) >= 3", name="ck_resources_title_min_length"),
     )
     op.create_index("ix_resources_subject_id", "resources", ["subject_id"])
     op.create_index("ix_resources_uploaded_by", "resources", ["uploaded_by"])

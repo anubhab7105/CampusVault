@@ -2,5 +2,5 @@
 
 # Production-only packages (used by gunicorn workers).
 gunicorn==23.0.0
-eventlet==0.37.0
+eventlet==0.41.3
 gevent==24.10.0

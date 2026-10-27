@@ -33,7 +33,7 @@ Flask-Mail==0.9.1
 # --- Real-time ---
 Flask-SocketIO==5.7.0
 python-socketio==5.13.0
-eventlet==0.37.0
+eventlet==0.41.3
 redis==5.2.0
 
 # --- Background work ---

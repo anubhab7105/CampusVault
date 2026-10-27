@@ -59,7 +59,5 @@ class Resource(BaseModel, SoftDeleteMixin):
         # Primary browse path: filter by subject, order by recency.
         sa.Index("ix_resources_subject_created", "subject_id", "created_at"),
         sa.Index("ix_resources_type_published", "resource_type", "is_published"),
-        sa.CheckConstraint(
-            "char_length(title) >= 3", name="ck_resources_title_min_length"
-        ),
+        sa.CheckConstraint("length(title) >= 3", name="ck_resources_title_min_length"),
     )
