@@ -4,27 +4,53 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { Suspense } from "react-router-dom";
 import { ErrorBoundary } from "@components/error-boundary/ErrorBoundary";
 import { ToastContainer } from "@components/ui/index";
-import { useThemeStore } from "@stores/useThemeStore";
-import { routes } from "@routes/index";
-import { ProtectedRoute } from "@routes/ProtectedRoute";
 import { AuthLayout } from "@layouts/index";
 import { DashboardLayout } from "@layouts/index";
+import { routes } from "@routes/index";
+import { ProtectedRoute } from "@routes/ProtectedRoute";
 
 import "./styles/index.css";
 
-function AppContent() {
-  // Router-level theme bootstrap.
-  useThemeStore.getState().setTheme(useThemeStore.getState().theme);
+function AuthShell() {
+  return (
+    <AuthLayout>
+      <Suspense fallback={null}>
+        <LoginFallback />
+      </Suspense>
+    </AuthLayout>
+  );
+}
 
+function LoginFallback() {
+  return null; // Login page renders its own form
+}
+
+function AppShell() {
+  return (
+    <DashboardLayout>
+      <Suspense fallback={null}>
+        <ProtectedRoute>
+          <OutletFallback />
+        </ProtectedRoute>
+      </Suspense>
+    </DashboardLayout>
+  );
+}
+
+function OutletFallback() {
+  return null;
+}
+
+function AppContent() {
   const router = createBrowserRouter([
     {
       path: "/login",
-      element: <AuthLayout><Suspense fallback={null}><Login /></Suspense></AuthLayout>,
-      children: routes.filter((r) => r.path === "/login"),
+      element: <AuthShell />,
+      children: [{ path: "/login", element: <LoginPage /> }],
     },
     {
       path: "/",
-      element: <DashboardLayout><Suspense fallback={null}><ProtectedRoute><Dashboard /></ProtectedRoute></Suspense></DashboardLayout>,
+      element: <AppShell />,
       children: routes.filter((r) => r.path !== "/login"),
     },
   ]);
@@ -49,7 +75,6 @@ function DefaultFallback({ error, reset }: { error: Error; reset: () => void }) 
   );
 }
 
-export default AppContent;
+const LoginPage = lazy(() => import("@pages/auth/Login"));
 
-const Login = lazy(() => import("@pages/auth/Login"));
-const Dashboard = lazy(() => import("@pages/Dashboard"));
+export default AppContent;

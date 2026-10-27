@@ -1,6 +1,6 @@
 /** Route map — lazy-loaded routes with code splitting + route guard. */
 
-import { lazy, Suspense } from "react-router-dom";
+import { lazy } from "react-router-dom";
 
 const Login = lazy(() => import("@pages/auth/Login"));
 const Dashboard = lazy(() => import("@pages/Dashboard"));
@@ -13,6 +13,7 @@ const NotFound = lazy(() => import("@pages/NotFound"));
 export const routes = [
   { path: "/login", element: <Login /> },
   { path: "/", element: <Dashboard /> },
+  { path: "/library", element: <Library /> },
   { path: "/chat", element: <Chat /> },
   { path: "/admin", element: <Admin /> },
   { path: "/notifications", element: <Notifications /> },
@@ -20,4 +21,4 @@ export const routes = [
   { path: "*", element: <NotFound /> },
 ] as const;
 
-export { Suspense };
+export type RouteConfig = typeof routes[number];
