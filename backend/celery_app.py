@@ -46,6 +46,12 @@ celery_app.conf.update(
     enable_utc=True,
     task_time_limit=600,
     task_soft_time_limit=540,
+    beat_schedule={
+        "refresh-daily-stats": {
+            "task": "app.tasks.daily_stats.refresh_daily_stats",
+            "schedule": 60.0 * 60.0 * 24.0,  # once per day
+        },
+    },
 )
 
 
