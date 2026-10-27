@@ -87,3 +87,9 @@ class BadRequestError(AppError):
     status_code = 400
     code = "BAD_REQUEST"
     default_message = "The request is invalid."
+
+
+class CSRFTokenMissingError(AppError):
+    status_code = 400
+    code = "CSRF_TOKEN_MISSING"
+    default_message = "CSRF token is required for this endpoint."
