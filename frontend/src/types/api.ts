@@ -1,5 +1,7 @@
 /** Notification + audit domain types. */
 
+import type { UUID } from "./common";
+
 export type NotificationType =
   | "resource_shared"
   | "group_message"

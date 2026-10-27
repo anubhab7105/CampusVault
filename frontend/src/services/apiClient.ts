@@ -53,8 +53,9 @@ apiClient.interceptors.response.use(
     // 401 → try token rotation once.
     if (status === 401 && !originalRequest._retry && store.refresh_token) {
       originalRequest._retry = true;
+      if (!refreshing) {
         refreshing = true;
-        refreshPromise = rotateRefresh(store.refresh_token);
+        refreshPromise = rotateRefresh();
       }
       try {
         const newAccess = await refreshPromise;

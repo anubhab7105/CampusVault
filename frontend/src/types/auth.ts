@@ -1,5 +1,6 @@
 /** Auth domain types. */
 
+import type { UUID } from "./common";
 export interface User {
   id: UUID;
   email: string;

@@ -1,5 +1,6 @@
 /** Chat domain types. */
 
+import type { UUID } from "./common";
 export type ConversationType = "group" | "direct";
 export type MessageType = "text" | "file" | "system";
 
