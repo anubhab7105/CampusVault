@@ -1,7 +1,7 @@
 """teacher_allowlist table
 
-Revision ID: 20261027_0002
-Revises: 0001_initial_core_tables
+Revision ID: 0002
+Revises: 0001
 Create Date: 2026-10-27 15:42:12.694838
 
 """
@@ -13,8 +13,8 @@ from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision = "20261027_0002"
-down_revision = "0001_initial_core_tables"
+revision = "0002"
+down_revision = "0001"
 branch_labels = None
 depends_on = None
 
