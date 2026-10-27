@@ -12,9 +12,7 @@ from app.constants import DEFAULT_AUTH_RATE_LIMIT
 from app.extensions import limiter
 from app.middleware.auth import ensure_authenticated, require_csrf_token
 from app.schemas.auth_schema import (
-    LogoutSchema,
     OAuthExchangeSchema,
-    RefreshTokenSchema,
     TeacherRequestOtpSchema,
     TeacherVerifyOtpSchema,
 )
