@@ -30,12 +30,11 @@ type TeacherForm = z.infer<typeof teacherSchema>;
 
 /** Render the login page for the normal (non-Google-callback) case. */
 function LoginPage() {
-  const navigate = useNavigate();
   const { setTokens, setUser } = useAuthStore();
-  const { success, error, toast: dismiss } = useToast();
+  const { success, error } = useToast();
   const [phase, setPhase] = useState<"provider" | "teacher" | "verifying">("provider");
   const [pending, setPending] = useState(false);
-  const { user } = useAuthStore();
+  
 
   const form = useForm<TeacherForm>({
     resolver: zodResolver(teacherSchema),
@@ -160,8 +159,7 @@ function LoginPage() {
 
 /** Render the login page when coming from the Google callback. */
 function LoginCallback() {
-  const navigate = useNavigate();
-  const { setTokens, setUser, clear } = useAuthStore();
+  const { setTokens, setUser } = useAuthStore();
 
   // The google_authorize_url will be in the query string; we render the Google
   // button immediately.
