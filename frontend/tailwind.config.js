@@ -25,6 +25,7 @@ export default {
         ink: sharedTokens.colors.ink,
         muted: sharedTokens.colors.muted,
         border: sharedTokens.colors.border,
+        brandFocus: sharedTokens.colors.brandFocus,
       },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
