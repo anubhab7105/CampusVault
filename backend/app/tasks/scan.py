@@ -38,3 +38,23 @@ def scan_file_task(self, file_id: str, storage_type: str = "supabase", scanner_t
         storage = LocalFileStorage()
 
     try:
+        # --- Run the scan -------------------------------------------------------
+        data = storage.download(file_record.storage_key)
+
+        result = scanner.scan(data, file_record.mime_type)
+
+        # --- Update the database -----------------------------------------------
+        file_record.scan_status = result["status"]
+        file_record.scan_confidence = result.get("confidence", 0.0)
+        file_record.scan_error = None
+        db.session.commit()
+
+    except Exception as exc:
+        # --- Transient failure: retry with exponential backoff ------------------
+        if self.request.retries < self.max_retries:
+            raise self.retry(exc=exc, countdown=2 ** self.request.retries)
+
+        # --- Permanent failure -------------------------------------------------
+        file_record.scan_status = "failed"
+        file_record.scan_error = str(exc)
+        db.session.commit()
