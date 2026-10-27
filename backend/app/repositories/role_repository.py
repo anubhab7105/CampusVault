@@ -78,10 +78,27 @@ class PermissionRepository(BaseRepository[Permission]):
         db.session.add(link)
         return link
 
-    def revoke_from_role(self, role_id: uuid.UUID, permission_id: uuid.UUID) -> int:
-        stmt = sa.delete(RolePermission).where(
-            RolePermission.role_id == role_id,
-            RolePermission.permission_id == permission_id,
-        )
-        result = db.session.execute(stmt)
-        return int(result.rowcount or 0)
+    def grant_permissions(self, role_id: uuid.UUID, permission_codes: list[str]) -> int:
+        """Replace the role's permission set with the given codes (idempotent)."""
+        # Remove existing grants
+        self.revoke_from_role(role_id)
+        # Add new grants
+        granted = 0
+        for code in permission_codes:
+            perm = self.get_by_code(code)
+            if perm is None:
+                continue  # unknown code; skip
+            link = RolePermission(role_id=role_id, permission_id=perm.id)
+            db.session.add(link)
+            granted += 1
+        return granted
+
+    def revoke_permissions(self, role_id: uuid.UUID, permission_codes: list[str]) -> int:
+        """Remove specific permission grants from a role."""
+        granted = 0
+        for code in permission_codes:
+            perm = self.get_by_code(code)
+            if perm is None:
+                continue
+            granted += self.revoke_from_role(role_id, perm.id)
+        return granted

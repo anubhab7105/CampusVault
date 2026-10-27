@@ -81,6 +81,12 @@ class AuthService:
         google_sub = info.get("sub")
         if not email or not google_sub or not info.get("email_verified", False):
             raise UnauthorizedError("Google account is not eligible for CampusVault.")
+        # Domain restriction — only allowed domains may sign in.
+        allowed_domains = current_app.config.get("GOOGLE_ALLOWED_DOMAINS", "")
+        if allowed_domains:
+            domain = email.split("@")[-1]
+            if domain not in [d.strip() for d in allowed_domains.split(",")]:
+                raise UnauthorizedError("Google email domain is not authorised for CampusVault.")
         return self._authorize_user(
             email=email,
             full_name=info.get("name") or email.split("@")[0],
