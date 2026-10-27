@@ -8,7 +8,6 @@ import {
 import { socketService } from "@services/socketService";
 import { useAuthStore } from "@stores/useAuthStore";
 import { useEffect, useCallback } from "react";
-import { v4 as uuidv4 } from "uuid";
 
 import { fetchMessages } from "@services/apiClient";
 
@@ -34,7 +33,7 @@ export const useChatMessages = ({
   pageSize = 20,
 }: UseChatOptions) => {
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
+  const { user, access_token } = useAuthStore();
 
   const {
     data,
@@ -44,7 +43,6 @@ export const useChatMessages = ({
     isLoading,
     isError,
     status,
-    isPlaceholder,
   } = useInfiniteQuery<Message[], Error>(
     ["messages", conversationId],
     async ({ pageParam }) => {
@@ -104,14 +102,13 @@ export const useChatMessages = ({
     hasNextPage,
     isFetchingNextPage,
     status,
-    placeholder: isPlaceholder,
   };
 };
 
 /** Send message mutation with idempotency key. */
 export const useSendMessage = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
+  const { user, access_token } = useAuthStore();
 
   const sendMutation = useMutation(
     async ({
@@ -127,7 +124,7 @@ export const useSendMessage = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${user?.access_token}`,
+          Authorization: `Bearer ${access_token}`,
         },
         body: JSON.stringify({ conversationId, content, idempotencyKey }),
       });
