@@ -94,6 +94,7 @@ def finalize_upload():
     except Exception as exc:  # noqa: broad
         return error_response("Invalid payload", error_code="VALIDATION_ERROR", details=str(exc)), 400
 
+    user_id = ensure_authenticated()
     file_id = UUID(body.get("file_id")) if body.get("file_id") else None
     declared_size = body.get("declared_size", 0) or 0
     declared_mime = body.get("declared_mime")
