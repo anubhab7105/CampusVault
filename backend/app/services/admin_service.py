@@ -32,7 +32,6 @@ class AdminService(BaseService):
         self.resources = ResourceRepository()
         self.audit_logs = AuditLogRepository()
         self.notifications = NotificationRepository()
-        self.teacher_allowlist = TeacherAllowlistRepository()
 
     # ---- Admin gate ------------------------------------------------------- #
 
