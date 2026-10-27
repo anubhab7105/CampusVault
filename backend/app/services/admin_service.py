@@ -17,6 +17,7 @@ from app.models import (
     Department,
     FileRecord,
     Group,
+    Message,
     Notification,
     Program,
     Resource,
