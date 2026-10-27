@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import mimetypes
-import magic
 from urllib.parse import urlparse
 
 from app.extensions import db
@@ -36,7 +35,7 @@ def allowed_extension(extension: str) -> bool:
 def validate_mime_type(mime_type: str, extension: str) -> bool:
     """Validate that the MIME type matches the extension.
 
-    Uses python-magic as the gold standard; falls back to mimetypes.
+    Falls back to extension-based check; mimetypes as last resort.
     """
     if not mime_type:
         return True  # MIME optional; extension is required
@@ -63,12 +62,6 @@ def validate_mime_type(mime_type: str, extension: str) -> bool:
     if expected and mime_type != expected:
         return False
 
-    # Fallback: use python-magic if available
-    try:
-        detected = magic.from_buffer(b"dummy", mime=True)
-        # If magic works, trust it; otherwise fall through
-        return True
-    except Exception:
-        # mimetypes fallback
-        guessed = mimetypes.guess_type(f"file.{extension.lower()}")[0]
-        return guessed == mime_type if guessed else True
+    # mimetypes fallback
+    guessed = mimetypes.guess_type(f"file.{extension.lower()}")[0]
+    return guessed == mime_type if guessed else True
