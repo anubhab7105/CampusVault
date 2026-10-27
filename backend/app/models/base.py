@@ -25,7 +25,7 @@ UUIDType = sa.Uuid(as_uuid=True)
 class UuidPk:
     """Mixin column: UUID primary key generated client-side."""
 
-    id: sa.Column = sa.Column(  # type: ignore[assignment]
+    id = sa.Column(
         UUIDType,
         primary_key=True,
         default=uuid.uuid4,

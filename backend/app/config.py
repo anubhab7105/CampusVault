@@ -139,8 +139,8 @@ class BaseConfig:
 
     @classmethod
     def environ_required(cls) -> list[str]:
-        """Settings that MUST be present for this environment to boot."""
-        return ["APP_SECRET_KEY", "JWT_SECRET_KEY"]
+        """Flask config keys that MUST be non-empty for this environment to boot."""
+        return ["SECRET_KEY", "JWT_SECRET_KEY"]
 
 
 class DevelopmentConfig(BaseConfig):
