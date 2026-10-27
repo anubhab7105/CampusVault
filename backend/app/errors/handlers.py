@@ -89,6 +89,7 @@ def _register_framework_handlers(app: Flask) -> None:
 
 def _register_jwt_handlers(app: Flask) -> None:
     """flask-jwt-extended error surface normalized to the envelope."""
+    from app.extensions import jwt
 
     @jwt.expired_token_loader
     def expired(_hdr: str, _payload: dict) -> tuple:
