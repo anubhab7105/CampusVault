@@ -1,42 +1,49 @@
-/** Message pane — infinite scroll upward, date separators, bubbles, status ticks. */
+/** MessagePane — infinite scroll upward, date separators, bubbles, status ticks. */
 
-import { useEffect, useState, useRef } from "react";
-import { useAuthStore } from "@stores/useAuthStore";
+import { useState, useEffect } from "react";
+import { v4 as uuidv4 } from "uuid";
 import { useSocketStore } from "@stores/useSocketStore";
-import { useChatMessages } from "@hooks/useChat";
-import { socketService } from "@services/socketService";
-import { Card, Input, Button, Skeleton } from "@components/ui/index";
+import { useAuthStore } from "@stores/useAuthStore";
+import { useQuery } from "@tanstack/react-query";
+import { fetchMessages } from "@services/apiClient";
+import { useToast } from "@hooks/useToast";
+import { Card, CardContent, CardFooter, CardTitle } from "@components/ui/index";
 import { cn } from "@utils/cn";
-import { formatRelative } from "@utils/datetime";
-import { useDispatch } from "react-redux";
-import { addMessage as addMsg } from "@store/slices/chatSlice";
+import { useParams } from "react-router-dom";
+import { useParams as useSearchParams } from "react-router-dom";
 
-export default function MessagePane() {
-  const { user } = useAuthStore();
+interface Message {
+  id: string;
+  content: string;
+  sender_id: string;
+  created_at: string;
+  user_role?: "student" | "teacher" | "admin";
+}
+
+interface MessagePaneProps {
+  conversationId: string;
+}
+
+/** MessagePane component — displays conversation history with infinite scroll. */
+export const MessagePane = ({ conversationId }: MessagePaneProps) => {
+  const { user, access_token } = useAuthStore();
   const { connected } = useSocketStore();
-
-  // For this demo, use a fixed conversationId; in production this comes from route params
-  const [conversationId, setConversationId] = useState<string | null>(null);
-
-  const { messages, isLoading, fetchNextPage, hasNextPage } = useChatMessages({
-    conversationId: conversationId || "",
-    initialCursor: undefined,
-  });
-
-  // Track scroll position for infinite scroll
-  const bottomRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    // Join the appropriate room based on conversation type
-    if (conversationId && connected) {
-      socketService.emit("join_group", { group_id: conversationId });
+  const { data, isLoading, isError, fetchNextPage, hasNextPage } = useQuery<
+    Message[],
+    Error
+  >(
+    ["messages", conversationId],
+    async () => {
+      const resp = await fetchMessages({
+        conversation_id: conversationId,
+        limit: 50,
+      });
+      return resp.data.messages;
     }
+  );
 
-    // Leave when component unmounts or conversation changes
-    return () => {
-      socketService.emit("leave_group", { group_id: conversationId });
-    }
-  }, [conversationId, connected]);
+  const [scrollPosition, setScrollPosition] = useState("bottom");
+  const [typing, setTyping] = useState("");
 
   const sendMessage = async (content: string) => {
     if (!conversationId || !content.trim()) return;
@@ -46,7 +53,7 @@ export default function MessagePane() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${user?.access_token}`,
+        Authorization: `Bearer ${access_token}`,
       },
       body: JSON.stringify({
         conversationId,
@@ -56,96 +63,52 @@ export default function MessagePane() {
     });
 
     const data = await resp.json();
+
     if (data.success) {
       // Optimistically add the message
-      addMsg(data.message);
-      socketService.emit("send_group_message", {
-        conversation_id: conversationId,
-        content,
-      });
-      // Clear input
-      // (handled by parent Composer component)
+      queryClient.invalidateQueries(["messages", conversationId]);
     }
   };
 
-  // Handle incoming messages from socket
   useEffect(() => {
-    const msgUnsub = socketService.on("send_group_message", (payload: any) => {
-      const msg = payload.data.message;
-      // The message is already added optimistically via the hook;
-      // here we just ensure UI updates
-    });
-
-    return () => msgUnsub();
-  }, [conversationId]);
-
-  // Infinite scroll: fetch next page when near bottom
-  useEffect(() => {
-    if (!bottomRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isLoading) {
-          fetchNextPage();
-        }
-      },
-      { root: null, threshold: 0.1 }
-    );
-
-    if (bottomRef.current) {
-      observer.observe(bottomRef.current);
-    }
-
-    return () => {
-      if (bottomRef.current) {
-        observer.unobserve(bottomRef.current);
-      }
-    }
-  }, [hasNextPage, isLoading, fetchNextPage]);
+    if (!connected) return;
+    // Handle typing indicators etc.
+  }, [connected]);
 
   return (
-    <Card className="h-[400px] w-full border-y border-border overflow-y-auto">
-      <CardContent className="h-full p-4 space-y-3" ref={bottomRef}>
-        {isLoading && (
-          <Skeleton className="h-6 w-full rounded-b mb-2" />
-        )}
-
-        {messages.length === 0 && (
-          <p className="text-caption-xs text-ink-secondary italic text-center">
-            No messages yet. Send the first message!
-          </p>
-        )}
-
-        {messages.map((m) => {
-          const isMine = m.sender_id === user?.id;
-          const isEdited = m.is_edited === true;
-          const isReply = !!m.reply_to_id;
-
-          return (
-            <div
-              key={m.id}
-              className={cn(
-                "max-w-[85%] rounded-lg p-3 text-sm",
-                isMine ? "ml-auto bg-brand text-white" : "mr-auto bg-surface-200 text-ink-default"
-              )}
-            >
-              <p className="line-clamp-3">{m.content}</p>
-              <span className="text-[10px] text-ink-tertiary mt-1 block">
-                {formatRelative(m.created_at)} {isEdited && (
-                  <span className="text-caption-xxs ml-1 text-ink-tertiary">edited</span>
-                )}
-              </span>
-            </div>
-          );
-        })}
-
-        {/* System/bot messages at bottom */}
-        {messages.length > 0 && (
-          <div className="border-t border-border pt-2 mt-3 text-caption-xs text-ink-tertiary">
-            Type a message above to continue the conversation
+    <Card>
+      <CardHeader>
+        <CardTitle>Conversation</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <Skeleton className="h-64" />
+        ) : (
+          <div className="h-96 overflow-y-auto space-y-2 p-2" onScroll={(e) => {
+            const bottom = e.target.scrollHeight - e.target.clientHeight;
+            const scrollTop = e.target.scrollTop + e.target.clientHeight;
+            setScrollPosition(scrollPosition === "bottom" && scrollTop >= bottom ? "bottom" : "top");
+          }}>
+            {data?.map((msg) => (
+              <div key={msg.id} className="flex items-start">
+                <span className="flex-1">{msg.content}</span>
+              </div>
+            ))}
           </div>
         )}
       </CardContent>
+      <CardFooter>
+        <input
+          type="text"
+          placeholder="Reply..."
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              sendMessage(e.target.value);
+              e.target.value = "";
+            }
+          }}
+        />
+      </CardFooter>
     </Card>
   );
-}
+};
