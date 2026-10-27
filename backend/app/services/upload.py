@@ -177,7 +177,7 @@ class UploadService:
         try:
             # Download the file bytes from storage to scan them.
             data = self.storage.download(file_record.storage_key)
-        except Exception:  # noqa: broad – network / permission issues
+        except Exception:
             file_record.scan_status = "failed"
             db.session.commit()
             return {"scan_status": "failed", "resource_payload": self._resource_payload(file_record)}

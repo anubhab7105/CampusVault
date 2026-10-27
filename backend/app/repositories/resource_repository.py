@@ -63,7 +63,7 @@ class ResourceRepository(BaseRepository[Resource]):
                 conditions.append(
                     Resource.fts.match(q, postgresql_regconfig="english")
                 )
-            except Exception:  # noqa: broad – SQLite has no tsvector
+            except Exception:
                 conditions.append(
                     or_(
                         Resource.title.ilike(f"%{q}%"),
