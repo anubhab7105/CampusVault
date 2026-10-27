@@ -7,8 +7,10 @@ import uuid
 
 from flask import Blueprint
 
+from flask_jwt_extended import jwt_required
+
 from app.constants import DEFAULT_AUTH_RATE_LIMIT
-from app.extensions import jwt, limiter
+from app.extensions import limiter
 from app.middleware.auth import ensure_authenticated
 from app.schemas.auth_schema import (
     OAuthExchangeSchema,
@@ -64,7 +66,7 @@ def teacher_verify_otp():
 
 
 @bp.post("/refresh")
-@jwt.refresh_token_required
+@jwt_required(refresh=True)
 def refresh():
     """Rotate the refresh token; returns a fresh access + refresh pair."""
     tokens = TokenService.rotate()
@@ -72,7 +74,7 @@ def refresh():
 
 
 @bp.post("/logout")
-@jwt.refresh_token_required
+@jwt_required(refresh=True)
 def logout():
     """Revoke the presented refresh token (jti blocklist)."""
     TokenService.revoke_current_refresh()

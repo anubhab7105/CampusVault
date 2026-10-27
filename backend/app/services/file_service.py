@@ -15,10 +15,7 @@ from datetime import datetime, timezone
 
 from flask import current_app
 
-from app.constants import (
-    SCAN_STATUS_PENDING,
-    UPLOAD_ALLOWED_EXTENSIONS,
-)
+from app.constants import SCAN_STATUS_PENDING
 from app.errors.exceptions import ValidationError
 from app.extensions import db
 from app.models import FileRecord
@@ -34,8 +31,9 @@ class FileService(BaseService):
     @staticmethod
     def validate_upload(filename: str, content_type: str, size_bytes: int) -> None:
         cfg = current_app.config
+        allowed: frozenset[str] = frozenset(cfg["UPLOAD_ALLOWED_EXTENSIONS"])
         extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
-        if extension not in UPLOAD_ALLOWED_EXTENSIONS:
+        if extension not in allowed:
             raise ValidationError(f"File type .{extension or 'unknown'} is not allowed.")
         if int(size_bytes) > cfg["UPLOAD_MAX_SIZE_BYTES"]:
             max_mb = cfg["UPLOAD_MAX_SIZE_BYTES"] // (1024 * 1024)
