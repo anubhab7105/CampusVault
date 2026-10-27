@@ -9,6 +9,7 @@ Contract (docs/03_DATABASE_GUIDE.md / security checklist):
 
 from __future__ import annotations
 
+import os
 import time
 from abc import ABC, abstractmethod
 from typing import Any

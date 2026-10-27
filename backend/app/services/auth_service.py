@@ -29,7 +29,7 @@ from app.errors.exceptions import (
     UnauthorizedError,
 )
 from app.extensions import db
-from app.models import TeacherAllowlist, User
+from app.models import TeacherAllowlist, User, UserRole
 from app.repositories import UserRepository
 from app.services.otp_service import OTP_TTL_SECONDS, otp_service
 from app.services.token_service import TokenService
