@@ -9,6 +9,7 @@ The service never touches the Supabase client directly; it delegates to a
 
 from __future__ import annotations
 
+import base64
 import os
 from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
