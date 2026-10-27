@@ -5,10 +5,12 @@ from __future__ import annotations
 from datetime import UTC
 
 from celery.utils.log import get_task_logger
+from celery_app import celery_task
 from sqlalchemy import select
 
 from app.extensions import db
 from app.models import FileRecord
+from app.tasks.scan import scan_file_task
 
 logger = get_task_logger(__name__)
 
