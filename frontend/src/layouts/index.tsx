@@ -23,7 +23,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
 
   return (
     <div className="flex h-screen bg-surface-100">
-      <aside className={cn(`fixed inset-y-0 left-0 z-40 w-64 border-r border-border bg-surface-50 transition-transform duration-300 ease-in-out ${collapsed ? "-translate-x-full" : "translate-x-0"}`)} aria-label="Main navigation">
+      <aside className={cn("fixed inset-y-0 left-0 z-40 w-64 border-r border-border bg-surface-50 transition-transform duration-300 ease-in-out", collapsed ? "-translate-x-full" : "translate-x-0")} aria-label="Main navigation">
         <div className="flex h-16 items-center justify-between border-b border-border px-4">
           <span className="text-body-lg font-bold tracking-tight text-brand">CampusVault</span>
           <button onClick={toggle} className="p-2 text-muted-foreground hover:text-ink-default" aria-label="Toggle sidebar">
