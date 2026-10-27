@@ -9,18 +9,15 @@ The service never touches the Supabase client directly; it delegates to a
 
 from __future__ import annotations
 
-import mimetypes
 import os
-import struct
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
+from app.errors.exceptions import BadRequestError, ServiceUnavailableError
 from app.extensions import db
-from app.errors.exceptions import BadRequestError, ConflictError, ServiceUnavailableError
-from app.models import FileRecord, Resource, User
-from app.repositories import FileRepository, ResourceRepository
-from app.services.scanner import Scanner, ClamAVScanner, NoOpScanner
-from app.services.storage import LocalFileStorage, SupabaseStorage, StorageBackend
+from app.models import FileRecord
+from app.services.scanner import ClamAVScanner, NoOpScanner, Scanner
+from app.services.storage import LocalFileStorage, StorageBackend, SupabaseStorage
 from app.utils.validators import allowed_extension, validate_mime_type
 
 # --- Helpers ---
@@ -125,7 +122,7 @@ class UploadService:
         db.session.flush()  # get the generated file_id
 
         # ---- 6. Signed upload URL ------------------------------------------------
-        expires_at = datetime.now(timezone.utc) + timedelta(minutes=5)
+        expires_at = datetime.now(UTC) + timedelta(minutes=5)
         upload_url = self.storage.upload(key=storage_key, fileobj=b"", mime_type=mime_type, size=declared_size)
         # The real file will be streamed by the frontend to the signed URL; we just
         # return the URL here.  In a real flow the frontend PUTs/POSTs the bytes to
@@ -180,7 +177,7 @@ class UploadService:
         try:
             # Download the file bytes from storage to scan them.
             data = self.storage.download(file_record.storage_key)
-        except Exception as exc:  # noqa: broad – network / permission issues
+        except Exception:  # noqa: broad – network / permission issues
             file_record.scan_status = "failed"
             db.session.commit()
             return {"scan_status": "failed", "resource_payload": self._resource_payload(file_record)}

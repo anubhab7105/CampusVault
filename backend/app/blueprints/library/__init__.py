@@ -4,17 +4,16 @@ from __future__ import annotations
 
 import json
 
-from flask import Blueprint, current_app, request, jsonify
+from flask import Blueprint, current_app, jsonify, request
 from marshmallow import Schema, fields, validate
 
-from app.extensions import db
-from app.extensions import limiter
+from app.extensions import db, limiter
 from app.middleware.auth import ensure_authenticated
 from app.repositories.resource_repository import resource_repository
-from app.services.upload import UploadService
+from app.schemas.resource_schema import ResourceQuerySchema, ResourceUploadSchema
 from app.services.role_service import role_service
-from app.schemas.resource_schema import ResourceUploadSchema, ResourceQuerySchema
-from app.utils.responses import success_response, error_response
+from app.services.upload import UploadService
+from app.utils.responses import error_response, success_response
 from app.utils.validation import get_json_body, load_schema
 
 bp = Blueprint("library", __name__, url_prefix="/api/v1/library")
@@ -57,7 +56,6 @@ def request_upload():
     subject_id = body.get("subject_id")
 
     # Permission check: Teacher/Admin may upload; Students may not.
-    from app.services.role_service import role_service
     user_id = ensure_authenticated()
     role_name, _ = role_service.load_user_role_bundle(user_id)
     if role_name not in ("Teacher", "Admin"):
@@ -178,7 +176,6 @@ def download_resource(resource_id: str):
         return error_response("Resource not found", error_code="NOT_FOUND")
 
     # Permission check: Teacher/Admin may download any; Students only their own.
-    from app.services.role_service import role_service
     user_id = ensure_authenticated()
     role_name, _ = role_service.load_user_role_bundle(user_id)
     if role_name == "Admin":
@@ -186,9 +183,8 @@ def download_resource(resource_id: str):
     elif role_name == "Teacher":
         if resource.uploader_id != user_id:
             return error_response("Not your resource", error_code="FORBIDDEN")
-    else:  # Student
-        if resource.uploader_id != user_id:
-            return error_response("Not your resource", error_code="FORBIDDEN")
+    elif resource.uploader_id != user_id:
+        return error_response("Not your resource", error_code="FORBIDDEN")
 
     # Increment download counter atomically.
     from app.repositories.resource_repository import resource_repository as rr
@@ -210,8 +206,8 @@ def download_resource(resource_id: str):
 @bp.get("/my")
 def my_uploads():
     """List resources uploaded by the current user."""
-    from app.repositories.resource_repository import resource_repository as rr
     from app.models import User
+    from app.repositories.resource_repository import resource_repository as rr
     user_id = ensure_authenticated()
     user = db.session.get(User, user_id)
     items, total = rr.by_hierarchy(

@@ -12,10 +12,6 @@ This migration adds no new columns/ tables — the edit-window logic is entirely
 
 from __future__ import annotations
 
-import sqlalchemy as sa
-
-from alembic import op
-
 # revision identifiers, used by Alembic.
 revision = "0008"
 down_revision = "0007"

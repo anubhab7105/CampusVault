@@ -142,7 +142,6 @@ class GroupService(BaseService):
         if self.groups.is_member(group_id, new_member_id):
             raise ForbiddenError("User is already a member of this group.")
 
-        from app.models import UserGroup
         membership = UserGroup(
             user_id=new_member_id,
             group_id=group.id,
@@ -175,7 +174,6 @@ class GroupService(BaseService):
             raise ForbiddenError("Cannot remove the group owner.")
 
         # Remove from user_groups table
-        from app.models import UserGroup
         self.groups.db.session.query(UserGroup).filter(
             UserGroup.group_id == group.id,
             UserGroup.user_id == user_id,

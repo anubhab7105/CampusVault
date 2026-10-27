@@ -3,11 +3,6 @@
 from __future__ import annotations
 
 import mimetypes
-from urllib.parse import urlparse
-
-from app.extensions import db
-from app.models.file_model import FileRecord
-
 
 ALLOWED_EXTENSIONS = {
     "pdf",

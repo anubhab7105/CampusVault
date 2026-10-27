@@ -8,7 +8,6 @@ import sqlalchemy as sa
 
 from app.constants import ROLE_ADMIN, SYSTEM_ROLES
 from app.extensions import db
-from app.models import Role, Permission, UserRole
 from app.repositories import PermissionRepository, RoleRepository, UserRepository
 
 
@@ -31,8 +30,8 @@ class RoleService:
         codes = set(self.permissions.get_role_permission_codes(role.id))
         if role.name == ROLE_ADMIN:
             # Admin is the emergency override: every permission is implied.
-            from app.models import Permission as _Permission
             from app.extensions import db as _db
+            from app.models import Permission as _Permission
 
             all_codes = _db.session.scalars(
                 sa.select(_Permission.code)

@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Sequence
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app.errors.exceptions import (
     ConflictError,
@@ -13,8 +12,30 @@ from app.errors.exceptions import (
     ValidationError,
 )
 from app.extensions import db
-from app.models import User, Department, Program, Semester, Section, Subject, Group, Resource, FileRecord, AuditLog, Notification, TeacherAllowlist
-from app.repositories import UserRepository, DepartmentRepository, ProgramRepository, SemesterRepository, SectionRepository, SubjectRepository, GroupRepository, ResourceRepository, AuditLogRepository, NotificationRepository
+from app.models import (
+    AuditLog,
+    Department,
+    FileRecord,
+    Group,
+    Notification,
+    Program,
+    Resource,
+    Section,
+    TeacherAllowlist,
+    User,
+)
+from app.repositories import (
+    AuditLogRepository,
+    DepartmentRepository,
+    GroupRepository,
+    NotificationRepository,
+    ProgramRepository,
+    ResourceRepository,
+    SectionRepository,
+    SemesterRepository,
+    SubjectRepository,
+    UserRepository,
+)
 from app.services.base_service import BaseService
 
 
@@ -44,7 +65,7 @@ class AdminService(BaseService):
 
     def platform_stats(self) -> dict:
         """Return aggregated stats for the admin dashboard overview."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         seven_ago = now - timedelta(days=7)
         thirty_ago = now - timedelta(days=30)
 
@@ -74,7 +95,6 @@ class AdminService(BaseService):
         resources_by_dept = {str(r.department_id): r.count for r in resource_dept_rows if r.department_id}
 
         # Storage used: total file sizes
-        from app.models import FileRecord
         storage_stmt = db.select(db.func.sum(FileRecord.file_size)).select_from(FileRecord)
         storage_total_bytes = int(db.session.scalar(storage_stmt) or 0)
 
@@ -190,7 +210,6 @@ class AdminService(BaseService):
 
     def assign_role(self, *, target_user_id: uuid.UUID, new_role: str, acting_admin_id: uuid.UUID) -> User:
         """Assign a role to a user (Student/Teacher/Admin)."""
-        from app.services.role_service import role_service
 
         if new_role not in ("Student", "Teacher", "Admin"):
             raise ValidationError(f"Invalid role: {new_role}.")
@@ -241,7 +260,6 @@ class AdminService(BaseService):
         return dept
 
     def department_update(self, *, dept_id: uuid.UUID, name: str | None, code: str | None, description: str | None, acting_admin_id: uuid.UUID) -> Department:
-        from app.models import Department
         dept = self.departments.get_active_by_id(dept_id)
         if dept is None:
             raise NotFoundError("Department not found.")
@@ -255,7 +273,6 @@ class AdminService(BaseService):
         return dept
 
     def department_delete(self, *, dept_id: uuid.UUID, acting_admin_id: uuid.UUID) -> None:
-        from app.models import Department
         dept = self.departments.get_active_by_id(dept_id)
         if dept is None:
             raise NotFoundError("Department not found.")
@@ -278,7 +295,6 @@ class AdminService(BaseService):
         return prog
 
     def program_update(self, *, prog_id: uuid.UUID, name: str | None, code: str | None, description: str | None, acting_admin_id: uuid.UUID) -> Program:
-        from app.models import Program
         prog = self.programs.get_active_by_id(prog_id)
         if prog is None:
             raise NotFoundError("Program not found.")
@@ -309,7 +325,6 @@ class AdminService(BaseService):
         if group is None:
             raise NotFoundError("Group not found.")
         # Check participant count
-        from app.repositories import GroupRepository
         member_count = db.session.query(db.func.count()).select_from(group.__class__.__table__ if hasattr(group, '__class__') else "user_groups").filter(group.__class__.__table__.c.group_id == group_id, group.__class__.__table__.c.left_at.is_(None)) if hasattr(group, '__table__') else 0
         # Simpler check via group service
         members = group_service.groups.list_group_members(group_id)
@@ -327,7 +342,6 @@ class AdminService(BaseService):
     # ---- Management: Resources -------------------------------------------- #
 
     def resource_unpublish(self, *, resource_id: uuid.UUID, acting_admin_id: uuid.UUID) -> Resource:
-        from app.models import Resource
         res = self.resources.get_active_by_id(resource_id)
         if res is None:
             raise NotFoundError("Resource not found.")
@@ -336,7 +350,6 @@ class AdminService(BaseService):
         return res
 
     def resource_soft_delete(self, *, resource_id: uuid.UUID, acting_admin_id: uuid.UUID) -> Resource:
-        from app.models import Resource
         res = self.resources.get_active_by_id(resource_id)
         if res is None:
             raise NotFoundError("Resource not found.")
@@ -345,7 +358,6 @@ class AdminService(BaseService):
         return res
 
     def resource_scan_status(self, *, resource_id: uuid.UUID) -> dict:
-        from app.models import FileRecord
         res = self.resources.get_active_by_id(resource_id)
         if res is None:
             raise NotFoundError("Resource not found.")
@@ -395,14 +407,14 @@ class AdminService(BaseService):
     # ---- Moderation Queue ------------------------------------------------- #
 
     def moderation_quarantine_list(self) -> list[dict]:
-        from app.models import FileRecord, Resource
+        from app.models import Resource
         stmt = db.select(FileRecord, Resource).select_from(FileRecord).outerjoin(Resource, Resource.file_id == FileRecord.id)
         rows = db.session.execute(stmt).fetchall()
 
         result = []
         for file_rec, resource in rows:
             if file_rec.scan_status == "infected":
-                days_infected = max(0, (datetime.now(timezone.utc) - file_rec.created_at.replace(tzinfo=timezone.utc)).days)
+                days_infected = max(0, (datetime.now(UTC) - file_rec.created_at.replace(tzinfo=UTC)).days)
                 result.append({
                     "file_id": str(file_rec.id),
                     "file_original": file_rec.original_filename,
@@ -415,7 +427,7 @@ class AdminService(BaseService):
         return result
 
     def moderation_confirm_delete(self, *, file_id: uuid.UUID, justification: str, acting_admin_id: uuid.UUID) -> dict:
-        from app.models import FileRecord, Resource
+        from app.models import Resource
         file_rec = db.session.get(FileRecord, file_id)
         if file_rec is None:
             raise NotFoundError("File record not found.")
@@ -466,7 +478,6 @@ class AdminService(BaseService):
         page: int,
         page_size: int,
     ) -> tuple[list[AuditLog], int]:
-        from app.repositories import AuditLogRepository
         # Use the repository's filter method if available, otherwise build query
         # For now, build a simple filtered query
         query = db.session.query(AuditLog)

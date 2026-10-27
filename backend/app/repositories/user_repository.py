@@ -56,7 +56,7 @@ class UserRepository(BaseRepository[User]):
 
     def can_deactivate(self, user_id: uuid.UUID, actor_id: uuid.UUID | None = None) -> bool:
         """Return False if deactivating this user would violate last-admin protection."""
-        from app.models import User, Role, UserRole
+        from app.models import Role, UserRole
 
         # Cannot deactivate self via actor check if actor is the same user
         if actor_id and user_id == actor_id:

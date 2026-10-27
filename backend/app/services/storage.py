@@ -13,11 +13,10 @@ Design rationale:
 
 from __future__ import annotations
 
-import abc
 import base64
-import mimetypes
 import os
 import uuid
+from datetime import UTC
 from pathlib import Path
 from typing import Protocol
 
@@ -97,12 +96,12 @@ class SupabaseStorage:
         # Upload the byte slice; then generate a signed URL valid for 5 minutes.
         client.storage.from_(self.bucket_name).upload(key, fileobj)
         signed = client.storage.from_(self.bucket_name).get_public_url(key, expires_in=300)
-        from datetime import timezone, datetime
+        from datetime import datetime
 
         return {
             "storage_key": key,
             "url": signed,
-            "expires_at": datetime.now(timezone.utc).replace(tzinfo=None),
+            "expires_at": datetime.now(UTC).replace(tzinfo=None),
         }
 
     def download(self, key: str) -> bytes:

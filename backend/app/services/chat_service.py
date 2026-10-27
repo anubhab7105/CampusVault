@@ -12,14 +12,13 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Sequence
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 from app.errors.exceptions import ForbiddenError, NotFoundError
 from app.extensions import db
-from app.models import Conversation, Message, User
-from app.repositories import ConversationRepository, MessageRepository, UserRepository
+from app.models import Conversation, Message
+from app.repositories import ConversationRepository, MessageRepository
 from app.services.base_service import BaseService
-
 
 #: How many minutes a message can be edited after sending.
 MESSAGE_EDIT_WINDOW_MINUTES = 15

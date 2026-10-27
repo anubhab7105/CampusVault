@@ -12,19 +12,19 @@ import os
 import sys
 from pathlib import Path
 
-from alembic import context
 from sqlalchemy import engine_from_config, pool
+
+from alembic import context
 
 # Make `app` importable when alembic runs from backend/.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import app.config as config_module  # noqa: E402
-
-from app import create_app  # noqa: E402
-
+from app import (
+    create_app,  # noqa: E402
+    models,  # noqa: F401,E402 — register all tables on the metadata
+)
 from app.extensions import db  # noqa: E402
-
-from app import models  # noqa: F401,E402 — register all tables on the metadata
 
 config = context.config
 

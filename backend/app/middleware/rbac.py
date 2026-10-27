@@ -19,7 +19,6 @@ from flask_jwt_extended import get_jwt, verify_jwt_in_request
 from app.constants import ROLE_ADMIN
 from app.errors.exceptions import ForbiddenError
 from app.middleware.auth import CLAIMS_ROLE, CLAIMS_ROLE_PERMISSIONS
-from app.services.role_service import role_service
 
 
 def permission_required(
@@ -104,7 +103,7 @@ def last_admin_protected() -> Callable:
                 raise ForbiddenError("user_id is required for this decorator.")
 
             # Check if the target user is an Admin.
-            from app.models import User, Role, UserRole
+            from app.models import Role, UserRole
 
             target_is_admin = (
                 db.session.query(UserRole)

@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-import csv
-import io
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app.extensions import celery, db
-from app.models import User, Resource, Message, FileRecord, Notification
+from app.models import FileRecord, Message, Resource, User
 
 
 @celery.task(bind=True, ignore_result=True)
@@ -17,8 +15,8 @@ def refresh_daily_stats(self) -> None:
     Idempotent: uses UPSERT (INSERT ... ON CONFLICT DO UPDATE) so running
     multiple times a day is safe.
     """
-    yesterday = datetime.now(timezone.utc) - timedelta(days=1)
-    day_start = datetime(yesterday.year, yesterday.month, yesterday.day, tzinfo=timezone.utc)
+    yesterday = datetime.now(UTC) - timedelta(days=1)
+    day_start = datetime(yesterday.year, yesterday.month, yesterday.day, tzinfo=UTC)
     day_end = day_start + timedelta(days=1)
 
     # Users active (had any activity: login, upload, message, etc.)
@@ -52,7 +50,6 @@ def refresh_daily_stats(self) -> None:
     messages_sent = int(db.session.scalar(messages_stmt) or 0)
 
     # Scan outcomes yesterday
-    from app.models import FileRecord
     scan_clean_stmt = (
         db.select(db.func.count(FileRecord.id))
         .select_from(FileRecord)

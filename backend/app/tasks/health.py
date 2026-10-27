@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from celery import Celery
+from datetime import UTC
+
 from celery.utils.log import get_task_logger
 from sqlalchemy import select
 
@@ -15,9 +16,9 @@ logger = get_task_logger(__name__)
 @celery_task.task(bind=True, ignore_result=True)
 def requeue_stuck_files(self):
     """Re‑queue files stuck in ``pending`` or ``scanning`` for > 30 minutes."""
-    from datetime import datetime, timezone, timedelta
+    from datetime import datetime, timedelta
 
-    stale_threshold = datetime.now(timezone.utc) - timedelta(minutes=30)
+    stale_threshold = datetime.now(UTC) - timedelta(minutes=30)
 
     # Find files stuck in ``pending``.
     stmt = select(FileRecord).where(

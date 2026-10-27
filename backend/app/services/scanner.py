@@ -11,16 +11,14 @@ from __future__ import annotations
 
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
-
-from app.errors.exceptions import ServiceUnavailableError
+from typing import Any
 
 
 class Scanner(ABC):
     """Abstract base class for malware scanners."""
 
     @abstractmethod
-    def scan(self, data: bytes, mime_type: str | None = None) -> Dict[str, Any]:
+    def scan(self, data: bytes, mime_type: str | None = None) -> dict[str, Any]:
         """Return ``{status, mime_type, confidence}``.
 
         ``status`` is one of: ``"clean"``, ``"infected"``, ``"failed"``.
@@ -58,7 +56,7 @@ class ClamAVScanner(Scanner):
             except Exception:  # noqa: broad – clamd not reachable
                 self._conn = None
 
-    def scan(self, data: bytes, mime_type: str | None = None) -> Dict[str, Any]:
+    def scan(self, data: bytes, mime_type: str | None = None) -> dict[str, Any]:
         """Scan *data* and return a result dict."""
 
         # Try ClamAV first, with a couple of retries.
@@ -85,7 +83,6 @@ class ClamAVScanner(Scanner):
         # Very naive check: if the data begins with a known magic string we
         # declare it "clean", otherwise we err on the side of safety and call it
         # infected so that the file is quarantined rather than served.
-        import struct  # noqa: F815  (import inside function, kept tiny)
 
         # Very simple heuristic: check for PDF header, ZIP header, PNG, JPEG, etc.
         headers = {
@@ -111,5 +108,5 @@ class ClamAVScanner(Scanner):
 class NoOpScanner(Scanner):
     """Always returns ``clean``; used when no AV is configured (tests, local dev)."""
 
-    def scan(self, data: bytes, mime_type: str | None = None) -> Dict[str, Any]:
+    def scan(self, data: bytes, mime_type: str | None = None) -> dict[str, Any]:
         return {"status": "clean", "mime_type": mime_type or "unknown", "confidence": 1.0}

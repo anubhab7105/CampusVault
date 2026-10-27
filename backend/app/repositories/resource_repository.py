@@ -7,7 +7,7 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 
 from app.extensions import db
-from app.models import Resource, FileRecord, User, Department, Program, Semester, Section, Subject
+from app.models import Resource
 from app.repositories.base_repository import BaseRepository
 
 
@@ -38,7 +38,6 @@ class ResourceRepository(BaseRepository[Resource]):
 
         Returns ``(items, total)``.
         """
-        from app.models.base import BaseModel
 
         conditions = []
         if department_id is not None:
@@ -57,7 +56,7 @@ class ResourceRepository(BaseRepository[Resource]):
             conditions.append(Resource.visibility == visibility)
         if q:
             # Full‑text search via tsvector (PostgreSQL) – fallback to LIKE on SQLite.
-            from sqlalchemy import func, or_, text
+            from sqlalchemy import or_
 
             try:
                 # PostgreSQL: try the GIN index path.

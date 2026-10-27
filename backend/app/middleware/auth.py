@@ -6,10 +6,10 @@ around their own authorization.
 
 from __future__ import annotations
 
-from flask import request, current_app, abort
+from flask import request
 from flask_jwt_extended import get_jwt, get_jwt_identity, verify_jwt_in_request
 
-from app.errors.exceptions import UnauthorizedError, CSRFTokenMissingError
+from app.errors.exceptions import CSRFTokenMissingError, UnauthorizedError
 
 CLAIMS_ROLE = "role"
 CLAIMS_ROLE_PERMISSIONS = "role_permissions"

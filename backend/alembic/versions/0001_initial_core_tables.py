@@ -22,17 +22,17 @@ views, analytics tables, archival strategy — see docs/03_DATABASE_GUIDE.md.
 
 from __future__ import annotations
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 
+from alembic import op
 from app.models import JSONType, UUIDType
 
 revision: str = "0001"
-down_revision: Union[str, None] = None
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = None
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 JSON_TS = sa.text("CURRENT_TIMESTAMP")
 

@@ -4,20 +4,18 @@ from __future__ import annotations
 
 import secrets
 
-from flask import Blueprint, request, session
-from flask_jwt_extended import jwt_required, create_access_token, create_refresh_token, get_jwt_identity
-
-from flask import current_app
+from flask import Blueprint, current_app, request, session
+from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt_identity, jwt_required
 
 from app.constants import DEFAULT_AUTH_RATE_LIMIT
 from app.extensions import limiter
 from app.middleware.auth import ensure_authenticated, require_csrf_token
 from app.schemas.auth_schema import (
+    LogoutSchema,
     OAuthExchangeSchema,
+    RefreshTokenSchema,
     TeacherRequestOtpSchema,
     TeacherVerifyOtpSchema,
-    RefreshTokenSchema,
-    LogoutSchema,
 )
 from app.services.auth_service import auth_service
 from app.services.token_service import TokenService

@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import celery_task  # placeholder for Celery app instance
-from app.services.scanner import Scanner, ClamAVScanner, NoOpScanner
-from app.services.storage import SupabaseStorage, LocalFileStorage
+
+from app.services.scanner import ClamAVScanner, NoOpScanner
+from app.services.storage import LocalFileStorage, SupabaseStorage
 
 
 @celery_task.task(bind=True, max_retries=3, default_retry_delay=2)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify, request
 
 from app.errors.exceptions import ForbiddenError, NotFoundError
 from app.extensions import db

@@ -4,18 +4,16 @@ from __future__ import annotations
 import uuid
 
 from sqlalchemy import (
+    Boolean,
     Column,
     DateTime,
-    String,
-    Boolean,
     ForeignKey,
-    Index,
-    func,
+    String,
+)
+from sqlalchemy import (
     Uuid as SqlAlchemyUuid,
 )
-from sqlalchemy.orm import relationship
 
-from app.extensions import db
 from app.models.base import BaseModel, UUIDType
 
 
@@ -50,9 +48,6 @@ class TeacherAllowlist(BaseModel):
         DateTime(timezone=True),
         nullable=True,
     )
-
-    __table_args__ = (
-    ),
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<TeacherAllowlist id={self.id} email={self.email!r} approved={self.is_approved}>"
