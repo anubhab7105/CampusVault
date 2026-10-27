@@ -1,6 +1,6 @@
 /** Route map — lazy-loaded routes with code splitting + route guard. */
 
-import { lazy } from "react-router-dom";
+import { lazy } from "react";
 
 const Login = lazy(() => import("@pages/auth/Login"));
 const Dashboard = lazy(() => import("@pages/Dashboard"));

@@ -1,8 +1,7 @@
 /** Library service — resource catalog reads + accounting. */
 
 import { apiClient } from "@services/apiClient";
-import type { Resource } from "@types/library";
-import type { ResourceListFilters } from "@types/library";
+import type { Resource, ResourceListFilters } from "@/types/library";
 
 export const libraryService = {
   list: async (filters: ResourceListFilters = {}) => {

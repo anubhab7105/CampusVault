@@ -23,7 +23,7 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error("[CampusVault ErrorBoundary]", _errorInfo.componentStack);
   }
 
-  reset = (): void => this.setState({ hasError: false, error: null });
+  override reset = (): void => this.setState({ hasError: false, error: null });
 
   render(): ReactNode {
     if (this.state.hasError) {

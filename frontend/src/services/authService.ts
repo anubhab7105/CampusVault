@@ -1,7 +1,7 @@
 /** Auth service layer — thin wrapper over the Axios client. */
 
 import { apiClient } from "@services/apiClient";
-import type { GoogleAuthorizeResponse } from "@types/auth";
+import type { GoogleAuthorizeResponse } from "@/types/auth";
 
 export const authService = {
   /** Builds the Google OAuth authorize URL for the SPA consent step. */
