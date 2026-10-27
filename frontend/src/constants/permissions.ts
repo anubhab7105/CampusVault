@@ -1,5 +1,7 @@
 /** Permission catalog — wired to backend RBAC codes. Admin implies all. */
 
+import { RoleName } from "@types/common";
+
 export const PERMISSIONS = {
   /** Library */
   LIBRARY_READ: "library:resource:read",

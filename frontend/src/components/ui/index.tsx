@@ -1,6 +1,8 @@
 /** Base UI components — accessible, mobile-first, dark-mode aware. */
 
+import React from "react";
 import { cn } from "@utils/cn";
+import { useToastStore } from "@stores/useToastStore";
 
 // --- Button -----------------------------------------------------------------
 
@@ -30,8 +32,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         className={cn(
           "inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brandFocus disabled:pointer-events-none disabled:opacity-50",
-          variants[variant],
-          sizes[size],
+          variants[variant as keyof typeof variants],
+          sizes[size as keyof typeof sizes],
           className,
         )}
         disabled={disabled || isLoading}
@@ -106,10 +108,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
   ({ className, children, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn(
-        "rounded-lg border border-border bg-surface-50 shadow-sm",
-        className,
-      )}
+      className={cn("rounded-lg border border-border bg-surface-50 shadow-sm", className)}
       {...props}
     >
       {children}
@@ -127,26 +126,28 @@ export const CardHeader = React.forwardRef<HTMLDivElement, CardProps>(
 );
 CardHeader.displayName = "CardHeader";
 
-export const CardTitle = React.forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTMLHeadingElement>>(
-  ({ className, children, ...props }, ref) => (
-    <h3
-      ref={ref}
-      className={cn("text-2xl font-semibold leading-none tracking-tight text-ink-default", className)}
-      {...props}
-    >
-      {children}
-    </h3>
-  ),
-);
+export const CardTitle = React.forwardRef<
+  HTMLHeadingElement,
+  React.HTMLAttributes<HTMLHeadingElement>
+>(({ className, children, ...props }, ref) => (
+  <h3
+    ref={ref}
+    className={cn("text-2xl font-semibold leading-none tracking-tight text-ink-default", className)}
+    {...props}
+  >
+    {children}
+  </h3>
+));
 CardTitle.displayName = "CardTitle";
 
-export const CardDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
-  ({ className, children, ...props }, ref) => (
-    <p ref={ref} className={cn("text-body-sm text-ink-tertiary", className)} {...props}>
-      {children}
-    </p>
-  ),
-);
+export const CardDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, children, ...props }, ref) => (
+  <p ref={ref} className={cn("text-body-sm text-ink-tertiary", className)} {...props}>
+    {children}
+  </p>
+));
 CardDescription.displayName = "CardDescription";
 
 export const CardContent = React.forwardRef<HTMLDivElement, CardProps>(
@@ -234,11 +235,14 @@ export const Dialog = ({ open, onOpenChange, title, description, children }: Dia
 
 // --- Toast ------------------------------------------------------------------
 
-export interface ToastItemProps extends Toast {
-  onDismiss: () => void;
+export interface ToastItem {
+  id: string;
+  title: string;
+  description?: string;
+  variant: "default" | "destructive" | "success" | "warning";
 }
 
-export const ToastItem = ({ id, title, description, variant, onDismiss }: ToastItemProps) => {
+export const ToastItem = ({ id, title, description, variant, onDismiss }: ToastItem & { onDismiss: () => void }) => {
   const variants = {
     default: "border-border bg-surface-50 text-ink-default",
     destructive: "border-red-500 bg-red-50 text-red-900",
@@ -249,9 +253,8 @@ export const ToastItem = ({ id, title, description, variant, onDismiss }: ToastI
     <div
       key={id}
       className={cn(
-        "flex items-start gap-3 rounded-md border px-4 py-3 text-sm shadow-lg",
-        variants[variant],
-        "animate-in slide-in-from-right-2 duration-200",
+        "flex items-start gap-3 rounded-md border px-4 py-3 text-sm shadow-lg animate-in slide-in-from-right-2 duration-200",
+        variants[variant as keyof typeof variants],
       )}
       role="alert"
       aria-live="polite"
@@ -262,7 +265,7 @@ export const ToastItem = ({ id, title, description, variant, onDismiss }: ToastI
         ) : variant === "destructive" ? (
           <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
         ) : variant === "warning" ? (
-          <svg className="h-5 w-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.257 3.099c.765-0.86 3.116-0.86 3.882 0l0.848 0.955a1 1 0 001.48 0l1.48-1.667c0.473-0.532 1.618-0.532 2.092 0l3.977 4.479a1 1 0 001.48 0l0.848-0.955a1 1 0 011.48 0l0.848 0.955a1 1 0 001.48 0l3.977-4.479c0.474-0.532 1.618-0.532 2.092 0l0.848 0.955a1 1 0 001.48 0l0.848-0.955a1 1 0 111.48 0l3.977 4.479a1 1 0 001.48 0l1.48-1.667c0.474-0.532 1.618-0.532 2.092 0l1.48 1.667a1 1 0 001.48 0l3.977-4.479a1 1 0 111.48 0l-8.734 9.827c-0.474 0.532-1.618 0.532-2.092 0l-3.977-4.479a1 1 0 00-1.48 0l-3.977 4.479a1 1 0 001.48 0l1.48 1.667a1 1 0 001.48 0l-0.848 0.955a1 1 0 01-1.48 0l-0.848-0.955a1 1 0 10-1.48 0l-1.48 1.667a1 1 0 01-1.48 0l-8.734-9.827a1 1 0 010-1.48z" clipRule="evenodd"></path></svg>
+          <svg className="h-5 w-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.257 3.099c.765-0.86 3.116-0.86 3.882 0l0.848 0.955a1 1 0 001.48 0l1.48-1.667c0.473-0.532 1.618-0.532 2.092 0l3.977 4.479a1 1 0 001.48 0l0.848-0.955a1 1 0 011.48 0l0.848 0.955a1 1 0 001.48 0l3.977-4.479c0.474-0.532 1.618-0.532 2.092 0l0.848 0.955a1 1 0 011.48 0l0.848-0.955a1 1 0 10-1.48 0l-1.48 1.667a1 1 0 01-1.48 0l-8.734-9.827a1 1 0 010-1.48z" clipRule="evenodd"></path></svg>
         ) : (
           <svg className="h-5 w-5 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path></svg>
         )}
@@ -279,11 +282,11 @@ export const ToastItem = ({ id, title, description, variant, onDismiss }: ToastI
 };
 
 export const ToastContainer = () => {
-  const { toasts, dismiss } = useToast();
+  const { toasts, dismiss } = useToastStore();
   return (
     <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
       {toasts.map((toast) => (
-        <ToastItem key={toast.id} {...toast} onDismiss={() => dismiss(toast.id)} />
+        <ToastItem key={toast.id} id={toast.id} title={toast.title} description={toast.description} variant={toast.variant} onDismiss={() => dismiss(toast.id)} />
       ))}
     </div>
   );

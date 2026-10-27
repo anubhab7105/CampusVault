@@ -1,7 +1,7 @@
 /** Main app shell: router + error boundary + toasts. */
 
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { Suspense } from "react-router-dom";
+import { Suspense, lazy } from "react";
 import { ErrorBoundary } from "@components/error-boundary/ErrorBoundary";
 import { ToastContainer } from "@components/ui/index";
 import { AuthLayout } from "@layouts/index";
@@ -51,12 +51,12 @@ function AppContent() {
     {
       path: "/",
       element: <AppShell />,
-      children: routes.filter((r) => r.path !== "/login"),
+      children: routes.filter((r: RouteConfig) => r.path !== "/login"),
     },
   ]);
 
   return (
-    <ErrorBoundary fallback={DefaultFallback}>
+    <ErrorBoundary fallback={({ error, reset }: { error: Error; reset: () => void }) => DefaultFallback({ error, reset })}>
       <ToastContainer />
       <RouterProvider router={router} />
     </ErrorBoundary>

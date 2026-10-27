@@ -10,7 +10,7 @@ export interface Toast {
   duration?: number;
 }
 
-interface ToastState {
+export interface ToastState {
   toasts: Toast[];
   add: (toast: Omit<Toast, "id">) => void;
   remove: (id: string) => void;
