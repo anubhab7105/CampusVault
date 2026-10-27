@@ -1,0 +1,42 @@
+# Shared runtime dependencies (development, staging, production).
+# Keep versions exact-pinned per release; bump deliberately.
+
+# --- Web framework ---
+Flask==3.0.3
+Flask-Cors==5.0.0
+
+# --- Database ---
+Flask-SQLAlchemy==3.1.1
+SQLAlchemy==2.0.36
+alembic==1.14.0
+psycopg[binary]==3.2.3          # Supabase PostgreSQL driver
+sqlalchemy-utils==0.41.2
+
+# --- Validation (request/response schemas) ---
+marshmallow==3.23.1
+
+# --- Auth & security ---
+flask-jwt-extended==4.6.0       # JWT access + refresh token rotation
+authlib==1.3.2                  # Google OAuth for students
+PyJWT==2.9.0                    # Socket.IO handshake token verification
+passlib[bcrypt]==1.7.4          # legacy password hashing / OTP helper hashes
+email-validator==2.2.0          # email strict validation at the edge
+
+# --- Rate limiting ---
+Flask-Limiter==3.8.0
+
+# --- Email (OTP for teachers; Gmail SMTP in development only) ---
+Flask-Mail==0.9.1
+
+# --- Real-time ---
+Flask-SocketIO==5.3.9
+python-socketio[client]==5.11.4
+eventlet==0.37.0
+redis==5.2.0
+
+# --- Background work ---
+celery[redis]==5.4.0
+
+# --- Utilities ---
+python-dotenv==1.0.1
+python-dateutil==2.9.0.post0

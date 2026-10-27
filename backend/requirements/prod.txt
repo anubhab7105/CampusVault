@@ -1,0 +1,6 @@
+-r base.txt
+
+# Production-only packages (used by gunicorn workers).
+gunicorn==23.0.0
+eventlet==0.37.0
+gevent==24.10.0
