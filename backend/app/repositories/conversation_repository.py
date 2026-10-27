@@ -30,7 +30,10 @@ class ConversationRepository(BaseRepository[Conversation]):
         )
         db.session.execute(stmt)
 
-    def find_direct_between(
+    DIRECT_MESSAGE_PARTICIPANT_COUNT = 2  # canonical DM shape
+
+
+def find_direct_between(
         self, user_a: uuid.UUID, user_b: uuid.UUID
     ) -> Conversation | None:
         """Single canonical DM conversation per unordered pair."""
@@ -44,7 +47,7 @@ class ConversationRepository(BaseRepository[Conversation]):
                 participants.user_id.in_([user_a, user_b]),
             )
             .group_by(Conversation.id)
-            .having(sa.func.count(participants.user_id) == 2)
+            .having(sa.func.count(participants.user_id) == DIRECT_MESSAGE_PARTICIPANT_COUNT)
             .limit(1)
         )
         return db.session.scalar(stmt)

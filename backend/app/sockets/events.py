@@ -240,12 +240,15 @@ def _check_spam(user_id: str) -> None:
     """Token bucket: 30 messages / 30 s. Excess increments a strike counter."""
     from app.utils.redis_utils import get_redis
 
+    MESSAGE_BUDGET = 30
+    MESSAGE_WINDOW_SECONDS = 30
+
     redis = get_redis()
-    key = f"chat:rate:{user_id}:30s"
+    key = f"chat:rate:{user_id}:{MESSAGE_WINDOW_SECONDS}s"
     count = redis.incr(key)
     if count == 1:
-        redis.expire(key, 30)
-    if count > 30:
+        redis.expire(key, MESSAGE_WINDOW_SECONDS)
+    if count > MESSAGE_BUDGET:
         strike_key = f"chat:strikes:{user_id}"
         redis.incr(strike_key)
         redis.expire(strike_key, 300)

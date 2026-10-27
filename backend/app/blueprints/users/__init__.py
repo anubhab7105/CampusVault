@@ -6,7 +6,6 @@ import uuid
 
 from flask import Blueprint, request
 
-from app.extensions import limiter
 from app.middleware.auth import ensure_authenticated
 from app.middleware.rbac import permission_required
 from app.repositories import UserRepository
