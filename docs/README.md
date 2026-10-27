@@ -19,6 +19,10 @@ This documentation is the single source of truth for the CampusVault project.
 10. 09_UI_DESIGN_SYSTEM.md
 11. 10_TESTING_GUIDE.md
 12. 11_DEPLOYMENT_GUIDE.md
+13. docs/api/README.md — API contract, endpoint catalog, real-time spec
+14. docs/api/openapi.md — OpenAPI/Swagger reference
+15. docs/features/README.md — per-feature documentation index
+16. docs/features/AUTH.md — authentication feature doc
 
 ## Locked Tech Stack
 
