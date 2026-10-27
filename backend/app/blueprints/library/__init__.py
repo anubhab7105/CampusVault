@@ -89,7 +89,7 @@ def finalize_upload():
     """Verify the uploaded object, run the scanner, update state."""
     try:
         body = load_schema(ResourceQuerySchema(), get_json_body())
-    except Exception as exc:  # noqa: broad
+    except Exception as exc:
         return error_response("Invalid payload", error_code="VALIDATION_ERROR", details=str(exc)), 400
 
     user_id = ensure_authenticated()
@@ -107,7 +107,7 @@ def finalize_upload():
 
     try:
         envelope = svc.finalize_upload(file_id, declared_size, declared_mime)
-    except Exception as exc:  # noqa: broad
+    except Exception as exc:
         return error_response(str(exc), error_code="SERVICE_ERROR")
 
     return success_response(data=envelope, message="Upload finalized.")
@@ -120,7 +120,7 @@ def browse_resources():
     """Browse resources with hierarchy filters, search, sort, pagination."""
     try:
         qry = load_schema(ResourceQuerySchema(), request.args)
-    except Exception as exc:  # noqa: broad
+    except Exception as exc:
         return error_response("Invalid query parameters", error_code="VALIDATION_ERROR", details=str(exc)), 400
 
     items, total = resource_repository.by_hierarchy(
