@@ -10,6 +10,17 @@ export default function Admin() {
   const { user } = useAuthStore();
   const allowed = hasPermission(user?.role, [PERMISSIONS.ADMIN_DASHBOARD_VIEW]);
 
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin", "stats"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/admin/stats", {
+        headers: { Authorization: `Bearer ${useAuthStore.getState().access_token}` },
+      });
+      return res.json();
+    },
+    enabled: allowed && !!user,
+  });
+
   if (!allowed) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -21,17 +32,6 @@ export default function Admin() {
       </div>
     );
   }
-
-  const { data, isLoading } = useQuery({
-    queryKey: ["admin", "stats"],
-    queryFn: async () => {
-      const res = await fetch("/api/v1/admin/stats", {
-        headers: { Authorization: `Bearer ${useAuthStore.getState().access_token}` },
-      });
-      return res.json();
-    },
-    enabled: !!user,
-  });
 
   return (
     <div className="space-y-6">

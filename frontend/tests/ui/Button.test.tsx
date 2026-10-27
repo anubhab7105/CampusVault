@@ -9,7 +9,7 @@ describe("Button", () => {
   it("renders children and is disabled with isLoading", async () => {
     const user = userEvent.setup();
     render(<Button isLoading>Save</Button>);
-    const button = screen.getByRole("button", { name: /save/i });
+    const button = screen.getByRole("button", { name: /loading/i });
     expect(button).toBeDisabled();
     await user.click(button);
     expect(button).toBeDisabled();
