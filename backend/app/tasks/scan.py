@@ -3,21 +3,12 @@
 from __future__ import annotations
 
 import celery_task  # placeholder for Celery app instance
+from uuid import UUID
 
 from app.services.scanner import ClamAVScanner, NoOpScanner
 from app.services.storage import LocalFileStorage, SupabaseStorage
-
-
-@celery_task.task(bind=True, max_retries=3, default_retry_delay=2)
-def scan_file_task(self, file_id: str, storage_type: str = "supabase", scanner_type: str = "auto"):
-    """Scan a file and update its ``scan_status`` in the database.
-
-    Args:
-        file_id: string UUID of the ``files`` row.
-        storage_type: ``"supabase"`` or ``"local"`` — which storage back-end to use.
-        scanner_type: ``"clamav"`` or ``"noop"`` — which scanner to use.
-    """
-    from app.extensions import db
+from app.errors.exceptions import ServiceUnavailableError
+from app.extensions import db
     from app.models import FileRecord
 
     file_record = db.session.get(FileRecord, UUID(file_id))
