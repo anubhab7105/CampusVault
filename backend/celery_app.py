@@ -32,6 +32,7 @@ celery_app = Celery(
         "app.tasks.emails",
         "app.tasks.malware_scan",
         "app.tasks.offline_notifications",
+        "app.tasks.daily_stats",
     ],
 )
 
