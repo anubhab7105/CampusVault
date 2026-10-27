@@ -38,7 +38,7 @@ def scan_file_task(self, file_id: str, storage_type: str = "supabase", scanner_t
 
     try:
         data = storage.download(file_record.storage_key)
-    except Exception as exc:  # noqa: broad – network / permission issues
+    except Exception as exc:
         raise self.retry(exc=exc, countdown=60)
 
     result = scanner.scan(data, file_record.mime_type)

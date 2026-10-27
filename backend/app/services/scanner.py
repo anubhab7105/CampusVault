@@ -53,7 +53,7 @@ class ClamAVScanner(Scanner):
                 self._conn = clamd.ClamdSocket(host=self.host, port=self.port)
                 # Quick ping; if it fails we fall through to the heuristic below.
                 self._conn.ping()
-            except Exception:  # noqa: broad – clamd not reachable
+            except Exception:
                 self._conn = None
 
     def scan(self, data: bytes, mime_type: str | None = None) -> dict[str, Any]:
@@ -75,7 +75,7 @@ class ClamAVScanner(Scanner):
                         "mime_type": mime_type or "unknown",
                         "confidence": 0.9,
                     }
-            except Exception:  # noqa: broad – clamd might be temporarily down
+            except Exception:
                 time.sleep(2 ** attempt)  # exponential backoff: 1s, 2s, 4s
                 continue
 
