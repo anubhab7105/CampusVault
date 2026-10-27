@@ -31,7 +31,7 @@ omit = [
 # Ratchet policy (docs/10_TESTING_GUIDE.md): the failure floor starts at 40%
 # for the scaffolding phase and must be raised in every Phase-2 feature PR
 # until it reaches the 80% Definition-of-Done bar. Never lower it.
-fail_under = 40
+fail_under = 80
 show_missing = true
 skip_empty = true
 
