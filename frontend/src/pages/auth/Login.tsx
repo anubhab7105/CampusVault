@@ -20,7 +20,6 @@ import {
 } from "@components/ui/index";
 import { cn } from "@utils/cn";
 import { PATHS } from "@constants/routes";
-import { useThemeStore } from "@stores/useThemeStore";
 
 const teacherSchema = z.object({
   email: z.string().email("Enter a valid college email address."),
@@ -43,8 +42,7 @@ function LoginPage() {
     defaultValues: { email: "", code: "" },
   });
 
-  const handleGoogle = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogle = async () => {
     setPending(true);
     try {
       const data = await authService.googleAuthorize("init");
@@ -166,12 +164,12 @@ function LoginCallback() {
   // button immediately.
   const navigate = useNavigate();
   const { setTokens, setUser, clear } = useAuthStore();
-  const { toast } = useToast();
-  const [pending, setPending] = useState(false);
 
   // If we came in with a google_authorize_url query param, render the Google
-  // button; otherwise show the phase selector.
-  if (window.location.search.google_authorize_url) {
+  // button; otherwise show the normal login page.
+  const hasGoogleCallback = !!window.location.search.match(/\bgoogle_authorize_url\b/);
+
+  if (hasGoogleCallback) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-surface-100 px-4 py-12 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
@@ -180,18 +178,17 @@ function LoginCallback() {
             <p className="mt-2 text-body-md text-ink-secondary">Sign in to your academic library.</p>
           </div>
 
-          <Card className={cn("w-full", pending ? "pt-6" : "pt-0")}>
+          <Card className="w-full">
             <CardHeader>
               <CardTitle>Sign in</CardTitle>
               <CardDescription>Open the authorize_url in a browser context.</CardDescription>
             </CardHeader>
             <CardContent>
               <Button
-                onClick={() => handleGoogle()}
-                disabled={pending}
+                onClick={() => authService.googleAuthorize("init")}
+                disabled={false}
                 className="w-full justify-center"
                 variant="default"
-                isLoading={pending}
               >
                 Continue with Google
               </Button>
@@ -212,7 +209,9 @@ function LoginCallback() {
 export default function Login() {
   // If we came in with a google_authorize_url query param, render the Google
   // button; otherwise show the normal login page.
-  if (window.location.search.google_authorize_url) {
+  const hasGoogleCallback = !!window.location.search.match(/\bgoogle_authorize_url\b/);
+
+  if (hasGoogleCallback) {
     return <LoginCallback />;
   }
   return <LoginPage />;
