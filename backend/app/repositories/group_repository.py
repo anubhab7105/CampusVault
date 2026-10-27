@@ -23,6 +23,29 @@ class GroupRepository(BaseRepository[Group]):
         )
         return db.session.scalar(stmt) is not None
 
+    def is_moderator(self, group_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+        """Check if user is a moderator of the group."""
+        stmt = (
+            sa.select(UserGroup.group_id)
+            .where(
+                UserGroup.group_id == group_id,
+                UserGroup.user_id == user_id,
+                UserGroup.left_at.is_(None),  # active membership
+            )
+            .group_by(UserGroup.user_id)
+            .having(sa.func.count(UserGroup.group_id) == 1)  # single active membership
+        )
+        # A moderator is a member who is not the owner
+        owner_stmt = sa.select(UserGroup.user_id).where(
+            UserGroup.group_id == group_id, UserGroup.left_at.is_(None)
+        )
+        owner_id = db.session.scalar(owner_stmt)
+        if owner_id is not None and owner_id == user_id:
+            return False
+        # Check if user has an active membership
+        is_active_member = db.session.scalar(stmt) is not None
+        return is_active_member
+
     def add_member(self, group_id: uuid.UUID, user_id: uuid.UUID, added_by: uuid.UUID | None) -> UserGroup:
         link = UserGroup(group_id=group_id, user_id=user_id, added_by=added_by)
         db.session.add(link)
