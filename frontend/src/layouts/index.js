@@ -2,6 +2,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 /** Layouts */
 import { cn } from "@utils/cn";
 import { useNavigate } from "react-router-dom";
+import { useSidebarStore } from "@stores/useSidebarStore";
 import { useAuthStore } from "@stores/useAuthStore";
 import { PATHS } from "@constants/routes";
 // Minimal login/shell layout — full viewport, center-aligned card.

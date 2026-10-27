@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { authService } from "@services/authService";
 import { useAuthStore } from "@stores/useAuthStore";
 import { Card, CardContent, CardHeader, CardTitle, Skeleton, EmptyState } from "@components/ui/index";
+import { cn } from "@utils/cn";
 import { PATHS } from "@constants/routes";
 
 export default function Dashboard() {

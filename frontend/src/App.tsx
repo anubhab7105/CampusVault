@@ -11,52 +11,37 @@ import { ProtectedRoute } from "@routes/ProtectedRoute";
 
 import "./styles/index.css";
 
-function AuthShell() {
-  return (
-    <AuthLayout>
-      <Suspense fallback={null}>
-        <LoginFallback />
-      </Suspense>
-    </AuthLayout>
-  );
-}
-
-function LoginFallback() {
-  return null; // Login page renders its own form
-}
-
-function AppShell() {
-  return (
-    <DashboardLayout>
-      <Suspense fallback={null}>
-        <ProtectedRoute>
-          <OutletFallback />
-        </ProtectedRoute>
-      </Suspense>
-    </DashboardLayout>
-  );
-}
-
-function OutletFallback() {
-  return null;
-}
+const LoginPage = lazy(() => import("@pages/auth/Login"));
 
 function AppContent() {
   const router = createBrowserRouter([
     {
       path: "/login",
-      element: <AuthShell />,
-      children: [{ path: "/login", element: <LoginPage /> }],
+      element: (
+        <AuthLayout>
+          <Suspense fallback={null}>
+            <LoginPage />
+          </Suspense>
+        </AuthLayout>
+      ),
     },
     {
       path: "/",
-      element: <AppShell />,
+      element: (
+        <DashboardLayout>
+          <Suspense fallback={null}>
+            <ProtectedRoute>
+              <Outlet />
+            </ProtectedRoute>
+          </Suspense>
+        </DashboardLayout>
+      ),
       children: routes.filter((r: RouteConfig) => r.path !== "/login"),
     },
   ]);
 
   return (
-    <ErrorBoundary fallback={({ error, reset }: { error: Error; reset: () => void }) => DefaultFallback({ error, reset })}>
+    <ErrorBoundary fallback={({ error, reset }) => DefaultFallback({ error, reset })}>
       <ToastContainer />
       <RouterProvider router={router} />
     </ErrorBoundary>
@@ -69,12 +54,14 @@ function DefaultFallback({ error, reset }: { error: Error; reset: () => void }) 
       <div className="max-w-md">
         <h2 className="text-body-lg font-semibold text-ink-default">Something went wrong</h2>
         <p className="text-body-sm text-ink-secondary mt-2">{error.message}</p>
-        <button onClick={reset} className="mt-4 px-4 py-2 text-brand font-medium hover:underline">Try again</button>
+        <button onClick={reset} className="mt-4 px-4 py-2 text-brand font-medium hover:underline">
+          Try again
+        </button>
       </div>
     </div>
   );
 }
 
-const LoginPage = lazy(() => import("@pages/auth/Login"));
-
 export default AppContent;
+
+const Outlet = () => null;

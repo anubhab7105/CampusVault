@@ -1,10 +1,12 @@
 /** useToast hook — component-friendly toast API. */
 import { useToastStore } from "@stores/useToastStore";
 export function useToast() {
-    const toasts = useToastStore((state) => state.toasts);
-    const add = useToastStore((state) => state.add);
-    const remove = useToastStore((state) => state.remove);
-    const clear = useToastStore((state) => state.clear);
+    const { toasts, add, remove, clear } = useToastStore((state) => ({
+        toasts: state.toasts,
+        add: state.add,
+        remove: state.remove,
+        clear: state.clear,
+    }));
     return {
         toasts,
         toast: add,
