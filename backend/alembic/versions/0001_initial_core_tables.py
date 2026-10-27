@@ -152,7 +152,12 @@ def upgrade() -> None:  # noqa: PLR0915
     op.create_table(
         "sections",
         sa.Column("id", UUIDType, primary_key=True, nullable=False),
-        sa.Column("semester_id", UUIDType, sa.ForeignKey("semesters.id", ondelete="RESTRICT"), nullable=False),
+        sa.Column(
+            "semester_id",
+            UUIDType,
+            sa.ForeignKey("semesters.id", ondelete="RESTRICT"),
+            nullable=False,
+        ),
         sa.Column("name", sa.String(24), nullable=False),
         sa.Column("capacity", sa.Integer),
         sa.Column("deleted_at", sa.DateTime(timezone=True)),
@@ -165,7 +170,12 @@ def upgrade() -> None:  # noqa: PLR0915
     op.create_table(
         "subjects",
         sa.Column("id", UUIDType, primary_key=True, nullable=False),
-        sa.Column("semester_id", UUIDType, sa.ForeignKey("semesters.id", ondelete="RESTRICT"), nullable=False),
+        sa.Column(
+            "semester_id",
+            UUIDType,
+            sa.ForeignKey("semesters.id", ondelete="RESTRICT"),
+            nullable=False,
+        ),
         sa.Column("name", sa.String(160), nullable=False),
         sa.Column("code", sa.String(24), nullable=False),
         sa.Column("credits", sa.SmallInteger),
