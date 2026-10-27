@@ -55,8 +55,8 @@ def test_error_details_round_trip(flask_scope):
 
 
 @pytest.mark.unit
-def test_paging_meta_bounds():  # noqa: S104
-    from app.utils.pagination import PagingMeta
+def test_paging_meta_bounds():
+    from app.utils.pagination import PagingMeta  # noqa: S104
 
     meta = PagingMeta(page=2, page_size=10, total=25).as_dict()
     assert meta["total_pages"] == 3
