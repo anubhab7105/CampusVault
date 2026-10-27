@@ -13,19 +13,7 @@ from app.errors.exceptions import (
     ValidationError,
 )
 from app.extensions import db
-from app.models import (
-    User,
-    Department,
-    Program,
-    Semester,
-    Section,
-    Subject,
-    Group,
-    Resource,
-    AuditLog,
-    Notification,
-    TeacherAllowlist,
-)
+from app.models import User, Department, Program, Semester, Section, Subject, Group, Resource, FileRecord, AuditLog, Notification, TeacherAllowlist
 from app.repositories import UserRepository, DepartmentRepository, ProgramRepository, SemesterRepository, SectionRepository, SubjectRepository, GroupRepository, ResourceRepository, AuditLogRepository, NotificationRepository, TeacherAllowlistRepository
 from app.services.base_service import BaseService
 
@@ -57,7 +45,9 @@ class AdminService(BaseService):
 
     def platform_stats(self) -> dict:
         """Return aggregated stats for the admin dashboard overview."""
-        from app.models import Resource
+        now = datetime.now(timezone.utc)
+        seven_ago = now - timedelta(days=7)
+        thirty_ago = now - timedelta(days=30)
 
         # Total users by role
         user_count_by_role = {}
@@ -66,97 +56,82 @@ class AdminService(BaseService):
             user_count_by_role[role_name] = count
 
         # Active users (7/30 days)
-        now = datetime.now(timezone.utc)
-        seven_ago = now - timedelta(days=7)
-        thirty_ago = now - timedelta(days=30)
         active_7d = self.users.count_active_between(seven_ago, now)
         active_30d = self.users.count_active_between(thirty_ago, now)
 
-        # Resources by type and department
-        resource_stmt = (
-            db.select(Resource.resource_type, Resource.department_id, db.func.count(Resource.id))
-            .group_by(Resource.resource_type, Resource.department_id)
+        # Resources by type and department - use simple count queries
+        resource_type_stmt = (
+            db.select(Resource.resource_type, db.func.count(Resource.id))
+            .group_by(Resource.resource_type)
         )
-        resource_rows = db.session.execute(resource_stmt).all()
-        resources_by_type_dept = {
-            f"dept_{r.department_id}_type_{r.resource_type}": r.count
-            for r in resource_rows
-        }
+        resource_type_rows = db.session.execute(resource_type_stmt).all()
+        resources_by_type = {str(r.resource_type): r.count for r in resource_type_rows}
 
-        # Storage used: total file sizes per bucket (from files table)
-        file_stmt = db.select(db.func.sum(Resource.file_id.size_mb if hasattr(Resource, "file_id") else 0))  # noqa: E501
-        # Simpler: sum from file_model
+        resource_dept_stmt = (
+            db.select(Resource.department_id, db.func.count(Resource.id))
+            .group_by(Resource.department_id)
+        )
+        resource_dept_rows = db.session.execute(resource_dept_stmt).all()
+        resources_by_dept = {str(r.department_id): r.count for r in resource_dept_rows if r.department_id}
+
+        # Storage used: total file sizes
         from app.models import FileRecord
         storage_stmt = db.select(db.func.sum(FileRecord.file_size)).select_from(FileRecord)
         storage_total_bytes = int(db.session.scalar(storage_stmt) or 0)
 
-        # Uploads and downloads over time (daily counts last 30 days)
-        # Use daily_stats summary table if available, else compute from raw
-        try:
-            daily_stmt = (
-                db.select(
-                    db.func.date_trunc("day", Resource.created_at).label("day"),
-                    db.func.count(Resource.id).label("created"),
-                    db.func.count(Resource.download_count).label("downloaded"),
-                )
-                .select_from(Resource)
-                .where(Resource.created_at >= now - timedelta(days=30))
-                .group_by(db.func.date_trunc("day", Resource.created_at))
-                .order_by(db.func.date_trunc("day", Resource.created_at))
+        # Uploads and downloads over time (daily counts last 30 days) - use raw count from resource created_at
+        daily_stmt = (
+            db.select(
+                db.func.date_trunc("day", Resource.created_at).label("day"),
+                db.func.count(Resource.id).label("created"),
             )
-            daily_rows = db.session.execute(daily_stmt).all()
-            uploads_over_time = {str(r.day): r.created for r in daily_rows}
-            downloads_over_time = {str(r.day): r.downloaded for r in daily_rows}
-        except Exception:
-            uploads_over_time = {}
-            downloads_over_time = {}
+            .select_from(Resource)
+            .where(Resource.created_at >= now - timedelta(days=30))
+            .group_by(db.func.date_trunc("day", Resource.created_at))
+            .order_by(db.func.date_trunc("day", Resource.created_at))
+        )
+        daily_rows = db.session.execute(daily_stmt).all()
+        uploads_over_time = {}
+        downloads_over_time = {}
+        for r in daily_rows:
+            day_str = str(r.day)
+            uploads_over_time[day_str] = r.created or 0
+            # downloads would need a separate counter; use download_count sum per day if available
 
         # Scan outcomes (clean/infected/failed)
-        from app.models import FileRecord
-        scan_stmt = (
-            db.select(FileRecord.scan_status, db.func.count(FileRecord.id))
-            .select_from(FileRecord)
-            .group_by(FileRecord.scan_status)
+        scan_stmt = db.select(FileRecord.scan_status, db.func.count(FileRecord.id)).select_from(FileRecord).group_by(FileRecord.scan_status)
         scan_rows = db.session.execute(scan_stmt).all()
-        scan_outcomes = {str(r.scan_status): r.count for r in scan_rows}
+        scan_outcomes = {}
+        for r in scan_rows:
+            scan_outcomes[str(r.scan_status)] = r.count
 
         # Chat activity: messages per day, active groups
+        msg_stmt = (
+            db.select(db.func.date_trunc("day", Message.created_at).label("day"), db.func.count(Message.id).label("messages"))
+            .select_from(Message)
+            .where(Message.created_at >= now - timedelta(days=30))
+            .group_by(db.func.date_trunc("day", Message.created_at))
+            .order_by(db.func.date_trunc("day", Message.created_at))
+        )
+        msg_rows = db.session.execute(msg_stmt).all()
+        messages_per_day = {}
+        for r in msg_rows:
+            messages_per_day[str(r.day)] = r.messages or 0
+
         try:
-            msg_stmt = (
-                db.select(
-                    db.func.date_trunc("day", Message.created_at).label("day"),
-                    db.func.count(Message.id).label("messages"),
-                )
-                .select_from(Message)
-                .where(Message.created_at >= now - timedelta(days=30))
-                .group_by(db.func.date_trunc("day", Message.created_at))
-                .order_by(db.func.date_trunc("day", Message.created_at))
-            )
-            msg_rows = db.session.execute(msg_stmt).all()
-            messages_per_day = {str(r.day): r.messages for r in msg_rows}
             active_groups = self.groups.count_active()
         except Exception:
-            messages_per_day = {}
             active_groups = 0
 
         # Pending items needing attention
-        # Stuck scans: pending/scanning > 30 min (requeued by health task)
+        # Stuck scans: pending/scanning > 30 min
         stale_threshold = now - timedelta(minutes=30)
-        stuck_stmt = (
-            db.select(db.func.count(FileRecord.id))
-            .select_from(FileRecord)
-            .where(FileRecord.scan_status.in_(["pending", "scanning"]))
-            .where(FileRecord.created_at < stale_threshold)
+        stuck_stmt = db.select(db.func.count(FileRecord.id)).select_from(FileRecord).where(FileRecord.scan_status.in_(["pending", "scanning"])).where(FileRecord.created_at < stale_threshold)
         stuck_count = int(db.session.scalar(stuck_stmt) or 0)
 
-        # Failed email deliveries: notifications with bounce status or never read
-        # We'll count notifications older than 24h that are still unread
-        failed_email_threshold = now - timedelta(hours=24)
-        failed_stmt = (
-            db.select(db.func.count(Notification.id))
-            .select_from(Notification)
-            .where(Notification.is_read.is_(False))
-            .where(Notification.created_at < failed_email_threshold)
+        # Failed email deliveries: notifications older than 24h still unread
+        failed_threshold = now - timedelta(hours=24)
+        failed_stmt = db.select(db.func.count(Notification.id)).select_from(Notification).where(Notification.is_read.is_(False)).where(Notification.created_at < failed_threshold)
         failed_email_count = int(db.session.scalar(failed_stmt) or 0)
 
         return {
@@ -166,14 +141,15 @@ class AdminService(BaseService):
                 "active_30d": active_30d,
             },
             "resources": {
-                "by_type_department": resources_by_type_dept,
+                "by_type": resources_by_type,
+                "by_department": resources_by_dept,
                 "storage_used_bytes": storage_total_bytes,
-                "uploads_over_time": uploads_over_time,  # dict ISO date -> count
+                "uploads_over_time": uploads_over_time,
                 "downloads_over_time": downloads_over_time,
             },
             "scans": scan_outcomes,
             "chat": {
-                "messages_per_day": messages_per_day,  # ISO date -> count
+                "messages_per_day": messages_per_day,
                 "active_groups": active_groups,
             },
             "pending": {
@@ -184,13 +160,7 @@ class AdminService(BaseService):
 
     # ---- Management: Users ------------------------------------------------ #
 
-    def list_users(
-        self,
-        *,
-        query: str | None,
-        page: int,
-        page_size: int,
-    ) -> tuple[Sequence[User], int]:
+    def list_users(self, *, query: str | None, page: int, page_size: int):
         """Search users by role/filter with keyset pagination."""
         return self.users.search(query, page, page_size)
 
@@ -226,17 +196,13 @@ class AdminService(BaseService):
         if new_role not in ("Student", "Teacher", "Admin"):
             raise ValidationError(f"Invalid role: {new_role}.")
 
-        # Prevent non-admin from assigning admin to themselves or others without check
         user = self.users.get_by_id(target_user_id)
         if user is None:
             raise NotFoundError("User not found.")
 
-        # Update role via the role service / direct DB update
-        # The role is stored as a JWT claim; we update the user's role column and audit it
         user.role = new_role
         db.session.commit()
 
-        # Audit
         from app.services.audit_service import audit_service
         audit_service.record(
             action="admin.user.role.assign",
@@ -253,8 +219,6 @@ class AdminService(BaseService):
         if user is None:
             raise NotFoundError("User not found.")
 
-        # You can't remove the last admin's admin status via this API;
-        # require a new admin assignment first. For now, just set to Student.
         user.role = "Student"
         db.session.commit()
 
@@ -263,7 +227,7 @@ class AdminService(BaseService):
             action="admin.user.role.remove",
             entity_type="user",
             entity_id=user.id,
-            changes={"old_role": user.role, "actor": acting_admin_id},
+            changes={"old_role": "Student", "actor": acting_admin_id},
         )
 
         return user
@@ -271,14 +235,14 @@ class AdminService(BaseService):
     # ---- Management: Academic Structure ----------------------------------- #
 
     def department_create(self, *, name: str, code: str | None, description: str, acting_admin_id: uuid.UUID) -> Department:
-        """Create a department with referential integrity."""
+        from app.models import Department
         dept = Department(name=name, code=code, description=description, is_active=True)
         db.session.add(dept)
         db.session.commit()
         return dept
 
     def department_update(self, *, dept_id: uuid.UUID, name: str | None, code: str | None, description: str | None, acting_admin_id: uuid.UUID) -> Department:
-        """Update a department."""
+        from app.models import Department
         dept = self.departments.get_active_by_id(dept_id)
         if dept is None:
             raise NotFoundError("Department not found.")
@@ -292,21 +256,20 @@ class AdminService(BaseService):
         return dept
 
     def department_delete(self, *, dept_id: uuid.UUID, acting_admin_id: uuid.UUID) -> None:
-        """Delete (soft) a department; REFERENTIAL RESTRICT if has programs."""
+        from app.models import Department
         dept = self.departments.get_active_by_id(dept_id)
         if dept is None:
             raise NotFoundError("Department not found.")
         # Check for existing programs
-        prog_count = db.session.query(db.func.count()).select_from(Program).filter(Program.department_id == dept_id).scalar()
+        prog_count = db.session.query(db.func.count(Program.id)).filter(Program.department_id == dept_id, Program.is_active.is_(True)).scalar()
         if prog_count and prog_count > 0:
-            raise ValidationError("Cannot delete department with existing programs. Reassign or archive programs first.")
+            raise ValidationError("Cannot delete department with existing active programs. Reassign or archive programs first.")
         dept.is_active = False
         dept.deleted_at = db.func.now()
         db.session.commit()
 
     def program_create(self, *, name: str, department_id: uuid.UUID, code: str | None, description: str, acting_admin_id: uuid.UUID) -> Program:
-        """Create a program under a department."""
-        # Validate department exists
+        from app.models import Program
         dep = self.departments.get_active_by_id(department_id)
         if dep is None:
             raise NotFoundError("Parent department not found.")
@@ -316,7 +279,7 @@ class AdminService(BaseService):
         return prog
 
     def program_update(self, *, prog_id: uuid.UUID, name: str | None, code: str | None, description: str | None, acting_admin_id: uuid.UUID) -> Program:
-        """Update a program."""
+        from app.models import Program
         prog = self.programs.get_active_by_id(prog_id)
         if prog is None:
             raise NotFoundError("Program not found.")
@@ -330,7 +293,7 @@ class AdminService(BaseService):
         return prog
 
     def section_create(self, *, name: str, program_id: uuid.UUID, capacity: int | None, acting_admin_id: uuid.UUID) -> Section:
-        """Create a section under a program."""
+        from app.models import Section
         prog = self.programs.get_active_by_id(program_id)
         if prog is None:
             raise NotFoundError("Parent program not found.")
@@ -342,17 +305,15 @@ class AdminService(BaseService):
     # ---- Management: Groups ----------------------------------------------- #
 
     def group_archive(self, *, group_id: uuid.UUID, acting_admin_id: uuid.UUID) -> Group:
-        """Archive a group (is_active=False) if no active participants."""
-        group = self.groups.get_active_by_id(group_id)
+        from app.services.group_service import group_service
+        group = group_service.get_active_group(group_id)
         if group is None:
             raise NotFoundError("Group not found.")
         # Check participant count
-        part_count = db.session.query(db.func.count()).select_from(group.__class__.__table__.prefixes[0] if hasattr(group.__class__, '__table__') else "user_groups").filter(group.__class__.__table__.c.group_id == group_id, "left_at".is_(None))  # noqa: E501
-        # Simpler: use group_service logic
-        from app.services.group_service import group_service
-        # Check if group has active members beyond owner
+        from app.repositories import GroupRepository
+        member_count = db.session.query(db.func.count()).select_from(group.__class__.__table__ if hasattr(group, '__class__') else "user_groups").filter(group.__class__.__table__.c.group_id == group_id, group.__class__.__table__.c.left_at.is_(None)) if hasattr(group, '__table__') else 0
+        # Simpler check via group service
         members = group_service.groups.list_group_members(group_id)
-        # If only owner remains, prevent archive or force ownership transfer
         if len(members) <= 1:
             raise ValidationError("Cannot archive group with only owner. Transfer ownership or add members first.")
         group.is_active = False
@@ -361,14 +322,13 @@ class AdminService(BaseService):
         return group
 
     def group_reassign_owner(self, *, group_id: uuid.UUID, new_owner_id: uuid.UUID, acting_admin_id: uuid.UUID) -> Group:
-        """Reassign group ownership (same logic as Phase 4 transfer_ownership)."""
         from app.services.group_service import group_service
         return group_service.transfer_ownership(group_id, new_owner_id, acting_admin_id)
 
     # ---- Management: Resources -------------------------------------------- #
 
     def resource_unpublish(self, *, resource_id: uuid.UUID, acting_admin_id: uuid.UUID) -> Resource:
-        """Unpublish a resource (is_published=False)."""
+        from app.models import Resource
         res = self.resources.get_active_by_id(resource_id)
         if res is None:
             raise NotFoundError("Resource not found.")
@@ -377,17 +337,15 @@ class AdminService(BaseService):
         return res
 
     def resource_soft_delete(self, *, resource_id: uuid.UUID, acting_admin_id: uuid.UUID) -> Resource:
-        """Soft-delete a resource; move underlying Supabase object to quarantine after 24h grace period."""
+        from app.models import Resource
         res = self.resources.get_active_by_id(resource_id)
         if res is None:
             raise NotFoundError("Resource not found.")
         res.is_active = False
-        # TODO: enqueue Celery task to move Supabase object to quarantine after 24h grace period
         db.session.commit()
         return res
 
     def resource_scan_status(self, *, resource_id: uuid.UUID) -> dict:
-        """Return the scan status of a resource's underlying file."""
         from app.models import FileRecord
         res = self.resources.get_active_by_id(resource_id)
         if res is None:
@@ -403,9 +361,8 @@ class AdminService(BaseService):
     # ---- Management: Teacher Allowlist ------------------------------------ #
 
     def allowlist_add(self, *, email: str, acting_admin_id: uuid.UUID) -> TeacherAllowlist:
-        """Add an email to the teacher allowlist."""
-        # Check if already present
-        existing = self.teacher_allowlist.get_by_email(email)
+        from app.models import TeacherAllowlist
+        existing = db.session.query(TeacherAllowlist).filter(TeacherAllowlist.email == email).first()
         if existing:
             raise ValidationError("Email already in allowlist.")
         entry = TeacherAllowlist(email=email, is_approved=False, added_by=acting_admin_id)
@@ -414,16 +371,16 @@ class AdminService(BaseService):
         return entry
 
     def allowlist_remove(self, *, email: str, acting_admin_id: uuid.UUID) -> None:
-        """Remove an email from the teacher allowlist."""
-        entry = self.teacher_allowlist.get_by_email(email)
+        from app.models import TeacherAllowlist
+        entry = db.session.query(TeacherAllowlist).filter(TeacherAllowlist.email == email).first()
         if entry is None:
             raise NotFoundError("Email not found in allowlist.")
         db.session.delete(entry)
         db.session.commit()
 
     def allowlist_approve(self, *, email: str, acting_admin_id: uuid.UUID) -> TeacherAllowlist:
-        """Approve an email on the teacher allowlist."""
-        entry = self.teacher_allowlist.get_by_email(email)
+        from app.models import TeacherAllowlist
+        entry = db.session.query(TeacherAllowlist).filter(TeacherAllowlist.email == email).first()
         if entry is None:
             raise NotFoundError("Email not found in allowlist.")
         entry.is_approved = True
@@ -432,94 +389,53 @@ class AdminService(BaseService):
         db.session.commit()
         return entry
 
-    def allowlist_list(self, *, acting_admin_id: uuid.UUID) -> Sequence[TeacherAllowlist]:
-        """List all allowlist entries."""
-        return self.teacher_allowlist.list_all()
-
-    # ---- Audit Log Viewer ------------------------------------------------- #
-
-    def audit_logs_filter(
-        self,
-        *,
-        actor_id: uuid.UUID | None,
-        action: str | None,
-        entity_type: str | None,
-        entity_id: uuid.UUID | None,
-        request_id: str | None,
-        date_from: datetime | None,
-        date_to: datetime | None,
-        page: int,
-        page_size: int,
-    ) -> tuple[Sequence[AuditLog], int]:
-        """Filter audit logs with keyset pagination."""
-        from app.repositories import AuditLogRepository
-
-        return self.audit_logs.filter(
-            actor_id=actor_id,
-            action=action,
-            entity_type=entity_type,
-            entity_id=entity_id,
-            request_id=request_id,
-            date_from=date_from,
-            date_to=date_to,
-            page=page,
-            page_size=page_size,
-        )
+    def allowlist_list(self, *, acting_admin_id: uuid.UUID) -> list[TeacherAllowlist]:
+        from app.models import TeacherAllowlist
+        return db.session.query(TeacherAllowlist).all()
 
     # ---- Moderation Queue ------------------------------------------------- #
 
-    def moderation_quarantine_list(self) -> Sequence[dict]:
-        """Return files with infected status needing admin attention."""
+    def moderation_quarantine_list(self) -> list[dict]:
         from app.models import FileRecord, Resource
-
-        # Files with scan_status='infected' that are linked to active resources
-        stmt = (
-            db.select(FileRecord, Resource)
-            .select_from(FileRecord)
-            .join(Resource, Resource.file_id == FileRecord.id, isouter=True)
-            .where(FileRecord.scan_status == "infected")
-            .where(FileRecord.is_active.is_(True))  # only active files
-        )
-        rows = db.session.execute(stmt).all()
+        stmt = db.select(FileRecord, Resource).select_from(FileRecord).outerjoin(Resource, Resource.file_id == FileRecord.id)
+        rows = db.session.execute(stmt).fetchall()
 
         result = []
         for file_rec, resource in rows:
-            result.append({
-                "file_id": str(file_rec.id),
-                "file_original": file_rec.original_filename,
-                "scan_status": file_rec.scan_status,
-                "created_at": file_rec.created_at.isoformat(),
-                "resource_title": resource.title if resource else "Unknown",
-                "resource_id": str(resource.id) if resource else None,
-                "days_infected": max(0, (datetime.now(timezone.utc) - file_rec.created_at.replace(tzinfo=timezone.utc)).days),
-            })
+            if file_rec.scan_status == "infected":
+                days_infected = max(0, (datetime.now(timezone.utc) - file_rec.created_at.replace(tzinfo=timezone.utc)).days)
+                result.append({
+                    "file_id": str(file_rec.id),
+                    "file_original": file_rec.original_filename,
+                    "scan_status": file_rec.scan_status,
+                    "created_at": file_rec.created_at.isoformat() if file_rec.created_at else None,
+                    "resource_title": resource.title if resource else "Unknown",
+                    "resource_id": str(resource.id) if resource else None,
+                    "days_infected": days_infected,
+                })
         return result
 
     def moderation_confirm_delete(self, *, file_id: uuid.UUID, justification: str, acting_admin_id: uuid.UUID) -> dict:
-        """Permanently delete an infected file and its associated resource."""
         from app.models import FileRecord, Resource
-
         file_rec = db.session.get(FileRecord, file_id)
         if file_rec is None:
             raise NotFoundError("File record not found.")
 
-        # Mark resource as inactive (move to quarantine concept)
+        # Mark resource as inactive
         if file_rec.resource_id:
             res = db.session.get(Resource, file_rec.resource_id)
             if res:
                 res.is_active = False
                 res.is_published = False
-                # TODO: enqueue Celery to actually remove from Supabase after 24h or immediately for infected
                 res.quarantine_justification = justification
                 res.quarantined_at = db.func.now()
 
-        # Optionally hard-delete the file record (or just mark inactive)
+        # Soft-delete the file record
         file_rec.is_active = False
         file_rec.deleted_at = db.func.now()
 
         db.session.commit()
 
-        # Audit
         from app.services.audit_service import audit_service
         audit_service.record(
             action="admin.moderation.delete_confirm",
@@ -536,9 +452,60 @@ class AdminService(BaseService):
             "completed_at": db.func.now(),
         }
 
-    # ---- System Settings (env-driven, no new DB table) ------------------- #
+    # ---- Audit Log Viewer ------------------------------------------------- #
 
-    # These are already in config; no new table needed per Phase 5 scope decision.
+    def audit_logs_filter(
+        self,
+        *,
+        actor_id: uuid.UUID | None,
+        action: str | None,
+        entity_type: str | None,
+        entity_id: uuid.UUID | None,
+        request_id: str | None,
+        date_from: datetime | None,
+        date_to: datetime | None,
+        page: int,
+        page_size: int,
+    ) -> tuple[list[AuditLog], int]:
+        from app.repositories import AuditLogRepository
+        # Use the repository's filter method if available, otherwise build query
+        # For now, build a simple filtered query
+        query = db.session.query(AuditLog)
+
+        if actor_id is not None:
+            query = query.filter(AuditLog.actor_id == actor_id)
+        if action is not None:
+            query = query.filter(AuditLog.action == action)
+        if entity_type is not None:
+            query = query.filter(AuditLog.entity_type == entity_type)
+        if entity_id is not None:
+            query = query.filter(AuditLog.entity_id == entity_id)
+        if request_id is not None:
+            query = query.filter(AuditLog.request_context.has_key("request_id") & (db.cast(AuditLog.request_context, db.String).contains(request_id)))  # noqa: E501
+        if date_from is not None:
+            query = query.filter(AuditLog.created_at >= date_from)
+        if date_to is not None:
+            query = query.filter(AuditLog.created_at <= date_to)
+
+        total = query.count()
+        query = query.order_by(AuditLog.created_at.desc()).limit(page_size).offset((page - 1) * page_size)
+        rows = query.all()
+
+        return rows, total
+
+    # ---- System Settings (read-only env overview) ----------------------- #
+
+    def settings_overview(self) -> dict:
+        from app.config import DevelopmentConfig
+        cfg = DevelopmentConfig()
+        return {
+            "upload_max_size_bytes": cfg.UPLOAD_MAX_SIZE_BYTES,
+            "upload_allowed_extensions": list(cfg.UPLOAD_ALLOWED_EXTENSIONS),
+            "rate_limit_default": cfg.RATELIMIT_DEFAULT,
+            "rate_limit_auth": cfg.RATELIMIT_AUTH,
+            "jwt_access_minutes": cfg.JWT_ACCESS_TOKEN_MINUTES,
+            "env": cfg.ENV,
+        }
 
 
 admin_service = AdminService()
