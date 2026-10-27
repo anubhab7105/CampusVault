@@ -127,7 +127,11 @@ def upgrade() -> None:  # noqa: PLR0915
         sa.Column(
             "department_id", UUIDType, sa.ForeignKey("departments.id", ondelete="RESTRICT"), nullable=False
         ),
-        sa.Column("name", sa.String(160), nullable=False),
+        sa.Column(
+            "name",
+            sa.String(160),
+            nullable=False,
+        ),
         sa.Column("code", sa.String(24), nullable=False),
         sa.Column("description", sa.String(255)),
         sa.Column("deleted_at", sa.DateTime(timezone=True)),
@@ -176,7 +180,11 @@ def upgrade() -> None:  # noqa: PLR0915
             sa.ForeignKey("semesters.id", ondelete="RESTRICT"),
             nullable=False,
         ),
-        sa.Column("name", sa.String(160), nullable=False),
+        sa.Column(
+            "name",
+            sa.String(160),
+            nullable=False,
+        ),
         sa.Column("code", sa.String(24), nullable=False),
         sa.Column("credits", sa.SmallInteger),
         sa.Column("deleted_at", sa.DateTime(timezone=True)),
