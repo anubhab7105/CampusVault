@@ -1,45 +1,47 @@
-"""Library resource/query schemas."""
+"""Resource request/response schemas."""
 
 from __future__ import annotations
 
 from marshmallow import Schema, fields, validate
 
-from app.constants import RESOURCE_TYPES, VISIBILITY_CHOICES
+
+class ResourceQuerySchema(Schema):
+    """Query parameters for the library browse endpoint."""
+
+    department_id = fields.UUID(allow_none=True)
+    program_id = fields.UUID(allow_none=True)
+    semester_id = fields.UUID(allow_none=True)
+    section_id = fields.UUID(allow_none=True)
+    subject_id = fields.UUID(allow_none=True)
+    resource_type = fields.Str(allow_none=True)
+    visibility = fields.Str(allow_none=True)
+    q = fields.Str(allow_none=True, validate=validate.Length(max=255))
+    sort = fields.Str(validate=validate.OneOf(["title", "download_count", "view_count", "created_at"]))
+    order = fields.Str(validate=validate.OneOf(["asc", "desc"]))
+    page = fields.Int(missing=1, validate=validate.GreaterThan(0))
+    page_size = fields.Int(missing=20, validate=validate.Range(min=1, max=100))
 
 
-class ListResourcesQuerySchema(Schema):
-    """Hierarchical browse + search + sort for the Library module."""
+class ResourceUploadSchema(Schema):
+    """Schema for the upload‑request phase A payload."""
 
-    department_id = fields.UUID(load_default=None, allow_none=True)
-    program_id = fields.UUID(load_default=None, allow_none=True)
-    semester_id = fields.UUID(load_default=None, allow_none=True)
-    section_id = fields.UUID(load_default=None, allow_none=True)
-    subject_id = fields.UUID(load_default=None, allow_none=True)
-
-    resource_type = fields.Str(
-        load_default=None, allow_none=True, validate=validate.OneOf(sorted(RESOURCE_TYPES))
-    )
-    visibility = fields.Str(
-        load_default=None, allow_none=True, validate=validate.OneOf(sorted(VISIBILITY_CHOICES))
-    )
-
-    q = fields.Str(load_default=None, allow_none=True, validate=validate.Length(max=128))
-    sort = fields.Str(
-        load_default="created_at",
-        validate=validate.OneOf(["created_at", "title", "download_count"]),
-    )
-    order = fields.Str(load_default="desc", validate=validate.OneOf(["asc", "desc"]))
-
-    page = fields.Int(load_default=1, validate=validate.Range(min=1))
-    page_size = fields.Int(load_default=20, validate=validate.Range(min=1, max=100))
-
-
-class CreateResourceSchema(Schema):
+    extension = fields.Str(required=True, validate=validate.Length(max=10))
+    mime_type = fields.Str(allow_none=True)
+    size = fields.Int(allow_none=True)
     subject_id = fields.UUID(required=True)
-    file_id = fields.UUID(load_default=None, allow_none=True)
-    external_url = fields.Url(load_default=None, allow_none=True, validate=validate.Length(max=2048))
 
-    title = fields.Str(required=True, validate=validate.Length(min=3, max=160))
-    description = fields.Str(load_default="", validate=validate.Length(max=2000))
-    resource_type = fields.Str(required=True, validate=validate.OneOf(sorted(RESOURCE_TYPES)))
-    visibility = fields.Str(load_default="college", validate=validate.OneOf(sorted(VISIBILITY_CHOICES)))
+
+class ResourceResponseSchema(Schema):
+    """Schema for a resource in the browse/list response."""
+
+    id = fields.UUID()
+    title = fields.Str()
+    description = fields.Str()
+    resource_type = fields.Str()
+    visibility = fields.Str()
+    uploader_name = fields.Str()
+    download_count = fields.Int()
+    view_count = fields.Int()
+    scan_status = fields.Str()
+    created_at = fields.DateTime()
+    is_published = fields.Bool()
