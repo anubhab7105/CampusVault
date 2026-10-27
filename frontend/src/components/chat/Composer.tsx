@@ -36,24 +36,43 @@ export const Composer = ({ conversationId }: ComposerProps) => {
     form.reset();
   };
 
-  const onTypingChange = (e: React.KeyboardEvent) => {
-    if (!connected || !user) return;
-    setTyping(true);
-    socketService.emit("typing", {
-      conversation_id: conversationId,
-      user_id: user.id,
-      typing: true,
-    });
-    const timer = setTimeout(() => {
-      setTyping(false);
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+
+    const handleTyping = () => {
+      if (!connected || !user) return;
+      setTyping(true);
       socketService.emit("typing", {
         conversation_id: conversationId,
         user_id: user.id,
-        typing: false,
+        typing: true,
       });
-    }, 1000); // 1s after last keystroke
-    return () => clearTimeout(timer);
-  }, [connected, user, setTyping, conversationId]);
+      timer = setTimeout(() => {
+        setTyping(false);
+        socketService.emit("typing", {
+          conversation_id: conversationId,
+          user_id: user.id,
+          typing: false,
+        });
+      }, 1000); // 1s after last keystroke
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") {
+        onSubmit({ content: e.target.value });
+      }
+      handleTyping();
+    };
+
+    if (connected && user) {
+      handleTyping();
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      socketService.off("typing");
+    };
+  }, [conversationId, connected, user]);
 
   return (
     <Card>
@@ -66,7 +85,7 @@ export const Composer = ({ conversationId }: ComposerProps) => {
           maxlength={MAX_MESSAGE_LENGTH}
           value={form.getValues().content}
           onChange={form.handleChange}
-          onKeyDown={onTypingChange}
+          onKeyDown={handleKeyDown}
         />
       </CardContent>
       <CardFooter>
