@@ -20,6 +20,7 @@ from app.models.message import Message
 from app.models.notification import Notification
 from app.models.resource import Resource
 from app.models.role import Permission, Role, RolePermission
+from app.models.teacher_allowlist import TeacherAllowlist
 from app.models.user import User, UserRole
 
 __all__ = [
@@ -47,4 +48,5 @@ __all__ = [
     "Resource",
     "Notification",
     "AuditLog",
+    "TeacherAllowlist",
 ]
