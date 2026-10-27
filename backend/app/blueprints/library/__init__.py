@@ -61,7 +61,7 @@ def request_upload():
     user_id = ensure_authenticated()
     role_name, _ = role_service.load_user_role_bundle(user_id)
     if role_name not in ("Teacher", "Admin"):
-        return error_response("Only teachers and admins may upload resources.", error_code="FORBIDDEN")
+        return error_response("FORBIDDEN",
 
     # Build the upload request via the service layer.
     svc = current_app.extensions.get("upload_service")
@@ -100,7 +100,7 @@ def finalize_upload():
     declared_mime = body.get("declared_mime")
 
     if not file_id:
-        return error_response("file_id is required", error_code="VALIDATION_ERROR")
+        return error_response("VALIDATION_ERROR",
 
     svc = current_app.extensions.get("upload_service")
     if svc is None:
@@ -175,7 +175,7 @@ def download_resource(resource_id: str):
     rid = _UUID(resource_id)
     resource = db.session.get(Resource, rid)
     if resource is None or not resource.is_active:
-        return error_response("Resource not found", error_code="NOT_FOUND")
+        return error_response("NOT_FOUND",
 
     # Permission check: Teacher/Admin may download any; Students only their own.
     user_id = ensure_authenticated()
@@ -184,9 +184,9 @@ def download_resource(resource_id: str):
         pass  # allowed
     elif role_name == "Teacher":
         if resource.uploader_id != user_id:
-            return error_response("Not your resource", error_code="FORBIDDEN")
+            return error_response("FORBIDDEN",
     elif resource.uploader_id != user_id:
-        return error_response("Not your resource", error_code="FORBIDDEN")
+        return error_response("FORBIDDEN",
 
     # Increment download counter atomically.
     from app.repositories.resource_repository import resource_repository as rr
