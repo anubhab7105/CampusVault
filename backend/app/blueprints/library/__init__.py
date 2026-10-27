@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-import uuid
+from uuid import UUID
 
 from flask import Blueprint, current_app, jsonify, request
 from marshmallow import Schema, fields, validate

@@ -18,6 +18,7 @@ from flask_jwt_extended import get_jwt, verify_jwt_in_request
 
 from app.constants import ROLE_ADMIN
 from app.errors.exceptions import ForbiddenError
+from app.extensions import db
 from app.middleware.auth import CLAIMS_ROLE, CLAIMS_ROLE_PERMISSIONS
 
 
