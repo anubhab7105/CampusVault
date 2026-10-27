@@ -26,7 +26,7 @@ Error codes: `VALIDATION_ERROR`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`,
 | Area | Endpoints | Auth |
 | ---- | --------- | ---- |
 | Health | GET `/health/live`, GET `/health/ready` | none |
-| Auth | GET `/auth/google/authorize`, POST `/auth/google`, POST `/auth/teachers/otp/request`, POST `/auth/teachers/otp/verify`, POST `/auth/refresh`, POST `/auth/logout`, GET `/auth/me` | refresh endpoints need JWT |
+| Auth | GET `/auth/google/authorize`, POST `/auth/google`, POST `/auth/teachers/otp/request`, POST `/auth/teachers/otp/verify`, POST `/auth/refresh`, POST `/auth/logout`, GET `/auth/me` | refresh endpoints need JWT + CSRF token; OTP endpoints anti-enumeration |
 | Users | GET `/users/me`, GET `/users` | JWT + `admin:users:manage` for list |
 | RBAC | GET `/rbac/roles`, GET `/rbac/permissions`, POST/DELETE `/rbac/roles/{id}/permissions/*`, POST `/rbac/users/{id}/roles` | admin |
 | Academic | GET/POST `/academic/departments|programs|semesters|sections|subjects` | read: any; write: admin |

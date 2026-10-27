@@ -29,25 +29,14 @@ const teacherSchema = z.object({
 
 type TeacherForm = z.infer<typeof teacherSchema>;
 
-export default function Login() {
+/** Render the login page for the normal (non-Google-callback) case. */
+function LoginPage() {
   const navigate = useNavigate();
   const { setTokens, setUser, clear } = useAuthStore();
   const { toast } = useToast();
   const [phase, setPhase] = useState<"provider" | "teacher" | "verifying">("provider");
   const [pending, setPending] = useState(false);
   const { user } = useAuthStore();
-
-  // Silent session restore on app load.
-  useState(() => {
-    if (!user && !pending) {
-      // Attempt to restore from the refresh cookie / in-memory state.
-      // The backend sets the refresh cookie; the frontend reads it via
-      // the auth interceptor. If the user is already authenticated,
-      // the interceptor will set tokens in the store.
-      setPhase("provider");
-    }
-    return () => {};
-  }, []);
 
   const form = useForm<TeacherForm>({
     resolver: zodResolver(teacherSchema),
@@ -59,7 +48,6 @@ export default function Login() {
     setPending(true);
     try {
       const data = await authService.googleAuthorize("init");
-      // Scaffold note: Google consent-screen flow completes at /auth/google?code=…
       navigate(`${PATHS.LOGIN}?google_authorize_url=${encodeURIComponent(data.authorize_url)}`);
     } catch (err: any) {
       toast.error("Sign-in failed", err?.campusvaultError?.message ?? String(err ?? ""));
@@ -95,85 +83,6 @@ export default function Login() {
     }
   };
 
-  // If we came in with a google_authorize_url query param, render the Google
-  // button; otherwise show the phase selector.
-  if (window.location.search.google_authorize_url) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-surface-100 px-4 py-12 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div>
-            <h2 className="text-heading-lg font-semibold tracking-tight text-ink-default">CampusVault</h2>
-            <p className="mt-2 text-body-md text-ink-secondary">Sign in to your academic library.</p>
-          </div>
-
-          <Card className={cn("w-full", phase === "provider" ? "pt-6" : "pt-0")}>
-            <CardHeader>
-              <CardTitle>{phase === "provider" ? "Sign in" : "Teacher verification"}</CardTitle>
-              <CardDescription>
-                {phase === "provider"
-                  ? "Students sign in with Google. Teachers use email OTP."
-                  : "Enter the code sent to your college email."}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {phase === "provider" ? (
-                <>
-                  <Button
-                    onClick={handleGoogle}
-                    disabled={pending}
-                    className="w-full justify-center"
-                    variant="default"
-                    isLoading={pending}
-                  >
-                    Continue with Google
-                  </Button>
-                  <p className="mt-4 text-caption-xs text-ink-tertiary">
-                    College Google Workspace account required.
-                  </p>
-                </>
-              ) : (
-                <form onSubmit={form.handleSubmit(handleOtpRequest)} className="space-y-4">
-                  <Input
-                    label="College email"
-                    type="email"
-                    placeholder="name@college.edu"
-                    {...form.register("email")}
-                  />
-                  <Button type="submit" disabled={pending} isLoading={pending} className="w-full">
-                    Send verification code
-                  </Button>
-                </form>
-              )}
-              {phase === "verifying" && (
-                <form onSubmit={form.handleSubmit(handleOtpVerify)} className="mt-6 space-y-4">
-                  <Input label="6-digit code" {...form.register("code")} />
-                  <Button type="submit" disabled={pending} isLoading={pending} className="w-full">
-                    Verify & sign in
-                  </Button>
-                </form>
-              )}
-            </CardContent>
-            {phase === "provider" ? (
-              <Button
-                type="button"
-                onClick={() => setPhase("teacher")}
-                variant="ghost"
-                className="w-full text-left text-ink-secondary"
-              >
-                Teacher sign-in with email OTP
-              </Button>
-            ) : (
-              <Button type="button" onClick={() => setPhase("provider")} variant="ghost" className="w-full">
-                Back to provider selection
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
-      </div>
-    );
-  }
-
-  // Normal login page (no google_authorize_url in query).
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-surface-100 px-4 py-12 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -194,7 +103,6 @@ export default function Login() {
           <CardContent>
             {phase === "provider" ? (
               <>
-
                 <Button
                   onClick={handleGoogle}
                   disabled={pending}
@@ -208,7 +116,6 @@ export default function Login() {
                   College Google Workspace account required.
                 </p>
               </>
-
             ) : (
               <form onSubmit={form.handleSubmit(handleOtpRequest)} className="space-y-4">
                 <Input
@@ -231,23 +138,82 @@ export default function Login() {
               </form>
             )}
           </CardContent>
-          {phase === "provider" ? (
-            <Button
-              type="button"
-              onClick={() => setPhase("teacher")}
-              variant="ghost"
-              className="w-full text-left text-ink-secondary"
-            >
-              Teacher sign-in with email OTP
-            </Button>
-          ) : (
-            <Button type="button" onClick={() => setPhase("provider")} variant="ghost" className="w-full">
-              Back to provider selection
-            </Button>
-          )}
+          <CardFooter className="flex flex-col gap-3 pt-6 border-t">
+            {phase === "provider" ? (
+              <Button
+                type="button"
+                onClick={() => setPhase("teacher")}
+                variant="ghost"
+                className="w-full text-left text-ink-secondary"
+              >
+                Teacher sign-in with email OTP
+              </Button>
+            ) : (
+              <Button type="button" onClick={() => setPhase("provider")} variant="ghost" className="w-full">
+                Back to provider selection
+              </Button>
+            )}
           </CardFooter>
         </Card>
       </div>
     </div>
   );
+}
+
+/** Render the login page when coming from the Google callback. */
+function LoginCallback() {
+  // The google_authorize_url will be in the query string; we render the Google
+  // button immediately.
+  const navigate = useNavigate();
+  const { setTokens, setUser, clear } = useAuthStore();
+  const { toast } = useToast();
+  const [pending, setPending] = useState(false);
+
+  // If we came in with a google_authorize_url query param, render the Google
+  // button; otherwise show the phase selector.
+  if (window.location.search.google_authorize_url) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-surface-100 px-4 py-12 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div>
+            <h2 className="text-heading-lg font-semibold tracking-tight text-ink-default">CampusVault</h2>
+            <p className="mt-2 text-body-md text-ink-secondary">Sign in to your academic library.</p>
+          </div>
+
+          <Card className={cn("w-full", pending ? "pt-6" : "pt-0")}>
+            <CardHeader>
+              <CardTitle>Sign in</CardTitle>
+              <CardDescription>Open the authorize_url in a browser context.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                onClick={() => handleGoogle()}
+                disabled={pending}
+                className="w-full justify-center"
+                variant="default"
+                isLoading={pending}
+              >
+                Continue with Google
+              </Button>
+              <p className="mt-4 text-caption-xs text-ink-tertiary">
+                College Google Workspace account required.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback — normal login page.
+  return <LoginPage />;
+}
+
+export default function Login() {
+  // If we came in with a google_authorize_url query param, render the Google
+  // button; otherwise show the normal login page.
+  if (window.location.search.google_authorize_url) {
+    return <LoginCallback />;
+  }
+  return <LoginPage />;
 }

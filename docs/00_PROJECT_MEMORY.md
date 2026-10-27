@@ -39,13 +39,23 @@ Phase 1 — Scaffolding (done). Next: Phase 2 — Authentication end-to-end.
   - CI: GitHub Actions workflow (lint, type check, pytest, vitest, build, dependency review, deploy smoke test)
   - Tests: backend 17 passing (unit + integration), frontend 2 passing (vitest + RTL); ruff + eslint clean
   - .env.example (backend + frontend), CODEOWNERS, pull request template
+- Phase 2 scaffolding:
+  - Google OAuth email domain validation + auto-provision Student role
+  - Teacher OTP two-phase flow with Redis rate limiting and anti-enumeration
+  - Refresh token rotation with Redis jti blocklist + reuse detection + family revocation
+  - Refresh token delivered via HttpOnly, Secure, SameSite=Lax cookie; access token in memory
+  - CSRF protection for /auth/refresh endpoint
+  - RBAC: system roles (Student, Teacher, Admin) idempotently seeded; role/permission CRUD; effective permissions in /auth/me; @permission_required decorator on all protected routes; last-admin protection
+  - Admin UI: teacher allowlist management, user list with role assignment and deactivation (last-admin guard), roles/permissions grant matrix
+  - Audit logging: login success/failure, logout, refresh reuse detection, role changes, user deactivation
+  - Frontend: Login page (Google + OTP), Auth store (in-memory tokens, silent session restore), ProtectedRoute with redirect-back, PermissionGate + usePermission hook, Admin UI
 
 ## Pending
 
-- Database Schema — DONE (migration 0001)
-- Authentication — scaffolded; end-to-end flows next
-- RBAC — scaffolded; permission grants via admin UI next
-- Admin Dashboard — scaffolded placeholder
+- Database Schema — DONE (migration 0001 + 0002 teacher_allowlist)
+- Authentication — end-to-end flows completed (see above)
+- RBAC — permission grants via admin UI completed; last-admin protection implemented
+- Admin Dashboard — full UI implemented (allowlist, user deactivation, role matrix)
 - Chat — scaffolded (REST + Socket.IO events)
 - Library — scaffolded placeholder
 - Notifications — scaffolded placeholder
