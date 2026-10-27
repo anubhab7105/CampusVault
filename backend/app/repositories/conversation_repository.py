@@ -32,8 +32,7 @@ class ConversationRepository(BaseRepository[Conversation]):
 
     DIRECT_MESSAGE_PARTICIPANT_COUNT = 2  # canonical DM shape
 
-
-def find_direct_between(
+    def find_direct_between(
         self, user_a: uuid.UUID, user_b: uuid.UUID
     ) -> Conversation | None:
         """Single canonical DM conversation per unordered pair."""
