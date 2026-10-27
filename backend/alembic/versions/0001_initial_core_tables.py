@@ -37,13 +37,23 @@ depends_on: Union[str, Sequence[str], None] = None
 JSON_TS = sa.text("CURRENT_TIMESTAMP")
 
 
-def _uuid_column():
-    return sa.Column("", nullable=False)  # replaced by real columns below
-
-
 def upgrade() -> None:
+    # ---- departments (referenced by users.department_id) ------------------- #
+    op.create_table(
+        "departments",
+        sa.Column("id", UUIDType, primary_key=True, nullable=False),
+        sa.Column("name", sa.String(120), nullable=False),
+        sa.Column("code", sa.String(16), nullable=False),
+        sa.Column("description", sa.String(255)),
+        sa.Column("deleted_at", sa.DateTime(timezone=True)),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=JSON_TS),
+        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=JSON_TS),
+        sa.UniqueConstraint("name", name="uq_departments_name"),
+        sa.UniqueConstraint("code", name="uq_departments_code"),
+    )
+
     # ---- users ------------------------------------------------------------ #
-    users = op.create_table(
+    op.create_table(
         "users",
         sa.Column("id", UUIDType, primary_key=True, nullable=False),
         sa.Column("email", sa.String(255), nullable=False),
@@ -63,20 +73,6 @@ def upgrade() -> None:
     )
     op.create_index("ix_users_email", "users", ["email"])
     op.create_index("ix_users_department_id", "users", ["department_id"])
-
-    # departments must exist before users.department_id FK resolves.
-    op.create_table(
-        "departments",
-        sa.Column("id", UUIDType, primary_key=True, nullable=False),
-        sa.Column("name", sa.String(120), nullable=False),
-        sa.Column("code", sa.String(16), nullable=False),
-        sa.Column("description", sa.String(255)),
-        sa.Column("deleted_at", sa.DateTime(timezone=True)),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=JSON_TS),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=JSON_TS),
-        sa.UniqueConstraint("name", name="uq_departments_name"),
-        sa.UniqueConstraint("code", name="uq_departments_code"),
-    )
 
     # ---- roles / permissions ------------------------------------------------ #
     op.create_table(
