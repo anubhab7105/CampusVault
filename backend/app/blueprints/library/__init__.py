@@ -44,7 +44,7 @@ def request_upload():
     """Create a pending upload row and return a signed URL."""
     try:
         body = load_schema(ResourceQuerySchema(), get_json_body())
-    except Exception as exc:  # noqa: broad – schema validation failed
+    except Exception as exc:
         return error_response("Invalid query parameters", error_code="VALIDATION_ERROR", details=str(exc)), 400
 
     # Determine the extension from the eventual filename; for now the frontend
@@ -75,7 +75,7 @@ def request_upload():
             declared_size=declared_size,
             permission_check=False,  # already checked above
         )
-    except Exception as exc:  # noqa: broad – upstream validation errors
+    except Exception as exc:
         return error_response(str(exc), error_code="VALIDATION_ERROR")
 
     return success_response(data=envelope, message="Upload request created. Use the signed URL to upload the file.")
