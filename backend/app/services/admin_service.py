@@ -14,7 +14,7 @@ from app.errors.exceptions import (
 )
 from app.extensions import db
 from app.models import User, Department, Program, Semester, Section, Subject, Group, Resource, FileRecord, AuditLog, Notification, TeacherAllowlist
-from app.repositories import UserRepository, DepartmentRepository, ProgramRepository, SemesterRepository, SectionRepository, SubjectRepository, GroupRepository, ResourceRepository, AuditLogRepository, NotificationRepository, TeacherAllowlistRepository
+from app.repositories import UserRepository, DepartmentRepository, ProgramRepository, SemesterRepository, SectionRepository, SubjectRepository, GroupRepository, ResourceRepository, AuditLogRepository, NotificationRepository
 from app.services.base_service import BaseService
 
 
