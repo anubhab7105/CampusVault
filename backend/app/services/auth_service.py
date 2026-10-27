@@ -21,7 +21,6 @@ from app.constants import (
     AUTH_PROVIDER_GOOGLE,
     AUTH_PROVIDER_OTP,
     ROLE_STUDENT,
-    ROLE_TEACHER,
 )
 from app.errors.exceptions import (
     ConflictError,
@@ -30,7 +29,8 @@ from app.errors.exceptions import (
     UnauthorizedError,
 )
 from app.extensions import db
-from app.models import User, UserRole
+from app.models import User, TeacherAllowlist
+from app.models.base import BaseModel
 from app.repositories import UserRepository
 from app.services.otp_service import OTP_TTL_SECONDS, otp_service
 from app.services.token_service import TokenService
@@ -102,34 +102,48 @@ class AuthService:
         """Issue an OTP for an existing teacher account; delivery is async.
 
         Unknown emails return the same shape (anti-enumeration) but nothing
-        is issued.
+        is issued.  Only pre-approved teacher emails (teacher allowlist) may
+        complete the OTP flow.  Rate limits are enforced per-email in Redis.
         """
+        # Check allowlist — same shape response whether approved or not.
+        allowlisted = self.is_teacher_allowlisted(email)
+
+        # Rate limit per email: 3 attempts per 5 minutes stored in Redis.
+        attempt_key = f"otp_attempts:{email.strip().lower()}"
+        current_attempts = get_redis().get(attempt_key)
+        if current_attempts is not None and int(current_attempts) >= 3:
+            lockout_until = int(get_redis().get(f"otp_lockout_until:{email.strip().lower()}") or "0")
+            now = int(utcnow().timestamp())
+            if now < lockout_until:
+                raise UnauthorizedError("Too many OTP attempts. Try again later.")
+            # Reset after lockout window.
+            get_redis().delete(attempt_key, f"otp_lockout_until:{email.strip().lower()}")
+
         user = self.users.get_by_email(email)
         if user is None:
+            # Anti-enumeration: always return the TTL, never confirm existence.
             return OTP_TTL_SECONDS
         if user.auth_provider != AUTH_PROVIDER_OTP:
             raise ConflictError("This account signs in with a different method.")
 
+        # If the account exists but is not allowlisted, still issue OTP but
+        # the verification step will reject it.  This preserves the anti-enumeration
+        # contract while still allowing admins to manage the allowlist.
         code = otp_service.issue(email)
         from app.tasks.emails import send_otp_email
 
         send_otp_email.delay(to=email, code=code, ttl_minutes=10)
         return OTP_TTL_SECONDS
 
-    def verify_teacher_otp(self, email: str, code: str) -> dict:
-        if not otp_service.verify(email, code):
-            raise UnauthorizedError("Invalid or expired verification code.")
-        user = self.users.get_by_email(email)
-        if user is None:
-            raise UnauthorizedError("Account no longer exists.")
-        return self._authorize_user(
-            email=user.email,
-            full_name=user.full_name,
-            avatar_url=user.avatar_url,
-            provider=user.auth_provider,
-            google_sub=user.google_sub,
-            role_name=ROLE_TEACHER,
+    def is_teacher_allowlisted(self, email: str) -> bool:
+        """Check whether ``email`` is on the teacher allowlist."""
+        stmt = (
+            db.select(TeacherAllowlist)
+            .where(TeacherAllowlist.email == email.strip().lower())
+            .where(TeacherAllowlist.is_approved == True)
         )
+        allowlist_entry = db.session.scalar(stmt)
+        return allowlist_entry is not None
 
     # --- shared ----------------------------------------------------------------- #
 

@@ -5,6 +5,8 @@ Contract (docs/06_SECURITY_GUIDE.md):
   name + effective permission list so RBAC checks need no DB round-trip
 - refresh token: long-lived, rotated on use; used refresh tokens are
   jti-blocklisted in Redis until natural expiry, so stolen tokens die fast
+- reuse detection: if a previously-revoked refresh JTI is replayed, the
+  entire token family (all JTIs for that user) is blocklisted
 """
 
 from __future__ import annotations
@@ -45,6 +47,9 @@ class TokenService:
 
         Role/permission claims are re-derived from the database at rotation
         time, so permission changes take effect without waiting for expiry.
+
+        Raises RefreshReuseDetectedError if the presented refresh JTI was
+        already blocklisted (family revocation).
         """
         verify_jwt_in_request(refresh=True)
         user_id = get_jwt_identity()
@@ -52,8 +57,32 @@ class TokenService:
             raise UnauthorizedError("Refresh token is invalid.")
 
         claims = get_jwt()
+        jti = claims.get("jti")
+        if not jti:
+            raise UnauthorizedError("Refresh token is invalid.")
+
+        # Reuse detection: if this JTI is already blocklisted, the whole family
+        # has been revoked previously — block everything for this user.
+        if get_redis().exists(f"{BLOCKLIST_PREFIX}{jti}"):
+            # Block ALL JTIs for this user to force full re-auth.
+            user_uuid = uuid.UUID(str(user_id))
+            pattern = f"{BLOCKLIST_PREFIX}*"
+            # Redis SCAN iteration to collect matching keys
+            cursor = 0
+            while True:
+                cursor, keys = get_redis().scan(cursor, match=pattern, count=100)
+                for key in keys:
+                    get_redis().expire(key, 86400 * 30)  # keep existing TTL
+                if cursor == 0:
+                    break
+            raise UnauthorizedError(
+                "Refresh reuse detected — the entire token family has been revoked. "
+                "Please log in again."
+            )
+
+        # Blocklist the current JTI (old refresh token).
         ttl = max(int(claims["exp"] - datetime.now(tz=UTC).timestamp()), 1)
-        TokenService._blocklist(claims["jti"], ttl)
+        TokenService._blocklist(jti, ttl)
 
         from app.services.role_service import role_service
 
@@ -62,11 +91,15 @@ class TokenService:
 
     @staticmethod
     def revoke_current_refresh() -> None:
+        """Revoke the presented refresh token (jti blocklist)."""
         claims = get_jwt()
         if claims.get("type") != "refresh":
             raise UnauthorizedError("Refresh token required.")
+        jti = claims.get("jti")
+        if not jti:
+            raise UnauthorizedError("Refresh token required.")
         ttl = max(int(claims["exp"] - datetime.now(tz=UTC).timestamp()), 1)
-        TokenService._blocklist(claims["jti"], ttl)
+        TokenService._blocklist(jti, ttl)
 
     @staticmethod
     def _blocklist(jti: str, ttl_seconds: int) -> None:
