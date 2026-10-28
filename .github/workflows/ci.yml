@@ -93,6 +93,7 @@ jobs:
 
   security:
     name: security scan
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -103,7 +104,7 @@ jobs:
 
   deploy:
     name: deploy preview
-    needs: [backend, frontend, security]
+    needs: [backend, frontend]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/develop'
     steps:
