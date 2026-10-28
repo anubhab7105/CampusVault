@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-import { Card, CardContent, CardHeader, Avatar, Badge, Skeleton, Button } from "@components/ui/index";
+import { Card, CardContent, CardHeader, Skeleton, Button } from "@components/ui/index";
 import { cn } from "@utils/cn";
 import { useChatMessages } from "@hooks/useChat";
 import { socketService } from "@services/socketService";
@@ -63,9 +63,7 @@ export default function ConversationList() {
                   }}
                 >
                   <span className="font-medium text-ink-default">{group.name}</span>
-                  <Badge variant="secondary" className="text-caption-xs">
-                    {group.unread_count ?? 0}
-                  </Badge>
+                  <span className="rounded-full bg-surface-100 px-2 py-0.5 text-caption-xs">{group.unread_count ?? 0}</span>
                 </Button>
               ))}
             </div>
@@ -86,13 +84,11 @@ export default function ConversationList() {
                     // TODO: set the active conversation and load its messages.
                   }}
                 >
-                  <Avatar className="w-6 h-6">{dm.last_sender_initial ?? "A"}</Avatar>
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-surface-100 text-caption-xs">{dm.last_sender_initial ?? "A"}</span>
                   <span className="font-medium text-ink-default ml-2 line-clamp-1">
                     {dm.last_sender_name ?? "Unknown"}
                   </span>
-                  <Badge variant="secondary" className="text-caption-xs ml-auto">
-                    {dm.unread_count ?? 0}
-                  </Badge>
+                  <span className="ml-auto rounded-full bg-surface-100 px-2 py-0.5 text-caption-xs">{dm.unread_count ?? 0}</span>
                 </Button>
               ))}
             </div>
