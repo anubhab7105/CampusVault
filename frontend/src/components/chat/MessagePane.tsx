@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { fetchMessages } from "@services/apiClient";
+import { apiClient, fetchMessages } from "@services/apiClient";
 import { useAuthStore } from "@stores/useAuthStore";
 import { useSocketStore } from "@stores/useSocketStore";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, Skeleton } from "@components/ui/index";
@@ -22,7 +22,6 @@ interface MessagePaneProps {
 
 /** Displays conversation history and sends replies. */
 export const MessagePane = ({ conversationId }: MessagePaneProps) => {
-  const { access_token } = useAuthStore();
   const { connected } = useSocketStore();
   const queryClient = useQueryClient();
   const [scrollPosition, setScrollPosition] = useState<"bottom" | "top">("bottom");
@@ -42,24 +41,16 @@ export const MessagePane = ({ conversationId }: MessagePaneProps) => {
   const sendMessage = async (content: string) => {
     if (!conversationId || !content.trim()) return;
 
-    const response = await fetch("/api/v1/chat/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${access_token}`,
-      },
-      body: JSON.stringify({
-        conversationId,
+    const response = await apiClient.post<{ success?: boolean }>(
+      `/chat/conversations/${encodeURIComponent(conversationId)}/messages`,
+      {
+        conversation_id: conversationId,
         content: content.trim(),
-        idempotencyKey: `msg-${crypto.randomUUID()}`,
-      }),
-    });
+        reply_to_id: null,
+      },
+    );
 
-    if (!response.ok) {
-      throw new Error("Message could not be sent.");
-    }
-
-    const result = (await response.json()) as { success?: boolean };
+    const result = response.data;
     if (result.success) {
       await queryClient.invalidateQueries({
         queryKey: ["messages", conversationId],
