@@ -57,7 +57,6 @@ ignore = [
     "S101",  # assert in tests
     "PLR0913", # many args acceptable in service signatures
     "PLE1205", # logging exception formatting quirks
-    "E501",  # existing long lines are tolerated; functional lint rules remain enforced
 ]
 
 [tool.ruff.lint.isort]
