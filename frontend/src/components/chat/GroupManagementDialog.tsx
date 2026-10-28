@@ -11,20 +11,29 @@ interface GroupMember {
 }
 
 export function GroupManagementDialog({ groupId }: { groupId: string }) {
-  const { user, permissions } = useAuthStore();
+  const { user } = useAuthStore();
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [selectedMemberId, setSelectedMemberId] = useState("");
   const [role, setRole] = useState<"member" | "moderator" | "owner">("member");
 
   useEffect(() => {
+    if (!user) {
+      setMembers([]);
+      return;
+    }
+
     // TODO: replace the sample members with a request to the groups API.
     setMembers([
       { id: user.id, name: user.full_name, role: "owner" },
       { id: "user2", name: "Jane Student", role: "member" },
     ]);
-  }, [groupId, user.id, user.full_name]);
+  }, [groupId, user?.id, user?.full_name]);
 
-  const canManage = permissions.includes("group:manage_members");
+  const canManage = Boolean(
+    user && members.some(
+      (member) => member.id === user.id && (member.role === "owner" || member.role === "moderator"),
+    ),
+  );
 
   const handleLeave = () => {
     // TODO: call the leave-group API and notify the parent to close this dialog.
@@ -43,7 +52,7 @@ export function GroupManagementDialog({ groupId }: { groupId: string }) {
           <div
             key={member.id}
             className="flex items-center justify-between p-2 rounded-md mb-2"
-            style={{ background: user.id === member.id ? "var(--brand-100)" : "transparent" }}
+            style={{ background: user?.id === member.id ? "var(--brand-100)" : "transparent" }}
           >
             <span className="font-medium text-ink-default">{member.name}</span>
             <span className="rounded-full bg-surface-100 px-2 py-0.5 text-caption-xs">
