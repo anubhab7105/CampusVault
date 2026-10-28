@@ -187,8 +187,4 @@ class GroupService(BaseService):
         db.session.commit()
         return group
 
-    def list_for_user(self, user_id: uuid.UUID) -> Sequence[Group]:
-        return self.groups.list_for_user(user_id)
-
-
 group_service = GroupService()
