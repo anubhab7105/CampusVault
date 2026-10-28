@@ -100,3 +100,40 @@ async function rotateRefresh(): Promise<string | null> {
     return null;
   }
 }
+
+
+export interface ChatMessageRecord {
+  id: string;
+  content: string;
+  sender_id: string | null;
+  created_at: string | null;
+  conversation_id: string;
+  message_type?: string;
+  reply_to_id?: string | null;
+  is_edited?: boolean;
+}
+
+export interface FetchMessagesParams {
+  conversation_id: string;
+  before_id?: string;
+  limit?: number;
+}
+
+/** Fetch paginated history from the authenticated chat REST endpoint. */
+export async function fetchMessages(params: FetchMessagesParams): Promise<{ data: { messages: ChatMessageRecord[] } }> {
+  const response = await apiClient.get<{
+    success: boolean;
+    data?: { items?: ChatMessageRecord[] };
+  }>(`/chat/conversations/${encodeURIComponent(params.conversation_id)}/messages`, {
+    params: {
+      before_id: params.before_id,
+      limit: params.limit ?? 50,
+    },
+  });
+
+  return {
+    data: {
+      messages: response.data.data?.items ?? [],
+    },
+  };
+}
