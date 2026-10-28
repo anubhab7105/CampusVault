@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-import celery_task  # placeholder for Celery app instance
 from uuid import UUID
 
+from app.extensions import db
 from app.services.scanner import ClamAVScanner, NoOpScanner
 from app.services.storage import LocalFileStorage, SupabaseStorage
-from app.errors.exceptions import ServiceUnavailableError
-from app.extensions import db
+from celery_app import celery_app
 
-@celery_task.task(bind=True, max_retries=3, default_retry_delay=2)
+
+@celery_app.task(bind=True, max_retries=3, default_retry_delay=2)
 def scan_file_task(self, file_id: str, storage_type: str = "supabase", scanner_type: str = "auto"):
     """Scan a file and update its ``scan_status`` in the database.
 
@@ -52,7 +52,7 @@ def scan_file_task(self, file_id: str, storage_type: str = "supabase", scanner_t
     except Exception as exc:
         # --- Transient failure: retry with exponential backoff ------------------
         if self.request.retries < self.max_retries:
-            raise self.retry(exc=exc, countdown=2 ** self.request.retries)
+            raise self.retry(exc=exc, countdown=2 ** self.request.retries) from exc
 
         # --- Permanent failure -------------------------------------------------
         file_record.scan_status = "failed"

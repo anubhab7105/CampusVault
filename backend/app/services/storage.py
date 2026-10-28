@@ -53,7 +53,7 @@ class BaseStorage:
 
     def _random_key(self, prefix: str = "files") -> str:
         """Generate a random storage key (32‑char base64, URL‑safe)."""
-        return base64.urlsafe_b64strip(uuid.uuid4().bytes[:24]).decode("ascii") + ".upload"
+        return base64.urlsafe_b64encode(uuid.uuid4().bytes[:24]).rstrip(b"=").decode("ascii") + ".upload"
 
 
 # ------------------------------------------------------------------- #
@@ -139,8 +139,8 @@ class LocalFileStorage:
     is deliberately absent.
     """
 
-    def __init__(self, base_dir: str = "/tmp/cv-storage", bucket_name: str = "campusvault-files") -> None:
-        self.base_dir = Path(base_dir)
+    def __init__(self, base_dir: str | None = None, bucket_name: str = "campusvault-files") -> None:
+        self.base_dir = Path(base_dir) if base_dir else Path.home() / ".cache" / "campusvault"
         self.bucket_name = bucket_name
         self._dir = self.base_dir / self.bucket_name
         self._dir.mkdir(parents=True, exist_ok=True)

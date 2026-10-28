@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
-import json
 from uuid import UUID
 
-from flask import Blueprint, current_app, jsonify, request
+from flask import Blueprint, current_app, request
 from marshmallow import Schema, fields, validate
 
 from app.extensions import db, limiter
 from app.middleware.auth import ensure_authenticated
-from app.repositories.resource_repository import resource_repository
 from app.models.resource import Resource
+from app.repositories.resource_repository import resource_repository
 from app.schemas.resource_schema import ResourceQuerySchema, ResourceUploadSchema
 from app.services.role_service import role_service
 from app.services.upload import UploadService
@@ -21,21 +20,14 @@ from app.utils.validation import get_json_body, load_schema
 bp = Blueprint("library", __name__, url_prefix="/api/v1/library")
 
 
-# ---- Schemas ------------------------------------------------------------ #
+# ---- Upload schemas ---------------------------------------------------- #
 
-class ResourceQuerySchema(Schema):
-    department_id = fields.UUID(allow_none=True)
-    program_id = fields.UUID(allow_none=True)
-    semester_id = fields.UUID(allow_none=True)
-    section_id = fields.UUID(allow_none=True)
-    subject_id = fields.UUID(allow_none=True)
-    resource_type = fields.Str(allow_none=True)
-    visibility = fields.Str(allow_none=True)
-    q = fields.Str(allow_none=True)
-    sort = fields.Str(default="created_at")
-    order = fields.Str(default="desc")
-    page = fields.Int(default=1)
-    page_size = fields.Int(default=20)
+class FinalizeUploadSchema(Schema):
+    """Schema for the upload-finalize payload."""
+
+    file_id = fields.UUID(required=True)
+    declared_size = fields.Int(load_default=0, validate=validate.Range(min=0))
+    declared_mime = fields.Str(allow_none=True)
 
 
 # ---- Phase A: Upload request -------------------------------------------- #
@@ -45,29 +37,29 @@ class ResourceQuerySchema(Schema):
 def request_upload():
     """Create a pending upload row and return a signed URL."""
     try:
-        body = load_schema(ResourceQuerySchema(), get_json_body())
+        body = load_schema(ResourceUploadSchema(), get_json_body())
     except Exception as exc:
-        return error_response("Invalid query parameters", error_code="VALIDATION_ERROR", details=str(exc)), 400
+        return error_response(
+            "Invalid query parameters",
+            error_code="VALIDATION_ERROR",
+            details=str(exc),
+        ), 400
 
     # Determine the extension from the eventual filename; for now the frontend
     # must supply it (or we infer from MIME).  We'll accept a bare extension
     # from the form body if provided, otherwise default.
-    extension = body.get("extension", "").lower() or "pdf"
+    extension = body["extension"].lower().lstrip(".") or "pdf"
     mime_type = body.get("mime_type")
     declared_size = body.get("size", 0) or 0
-    subject_id = body.get("subject_id")
 
     # Permission check: Teacher/Admin may upload; Students may not.
     user_id = ensure_authenticated()
     role_name, _ = role_service.load_user_role_bundle(user_id)
     if role_name not in ("Teacher", "Admin"):
-        return error_response("FORBIDDEN",
+        return error_response("Only teachers and admins may upload resources.", error_code="FORBIDDEN")
 
     # Build the upload request via the service layer.
-    svc = current_app.extensions.get("upload_service")
-    if svc is None:
-        from app.services.upload import UploadService
-        svc = UploadService()
+    svc = current_app.extensions.get("upload_service") or UploadService()
 
     try:
         envelope = svc.request_upload(
@@ -80,7 +72,10 @@ def request_upload():
     except Exception as exc:
         return error_response(str(exc), error_code="VALIDATION_ERROR")
 
-    return success_response(data=envelope, message="Upload request created. Use the signed URL to upload the file.")
+    return success_response(
+        data=envelope,
+        message="Upload request created. Use the signed URL to upload the file.",
+    )
 
 
 # ---- Phase B: Finalize upload ----------------------------------------- #
@@ -90,17 +85,14 @@ def request_upload():
 def finalize_upload():
     """Verify the uploaded object, run the scanner, update state."""
     try:
-        body = load_schema(ResourceQuerySchema(), get_json_body())
+        body = load_schema(FinalizeUploadSchema(), get_json_body())
     except Exception as exc:
         return error_response("Invalid payload", error_code="VALIDATION_ERROR", details=str(exc)), 400
 
-    user_id = ensure_authenticated()
-    file_id = UUID(body.get("file_id")) if body.get("file_id") else None
+    ensure_authenticated()
+    file_id = body["file_id"]
     declared_size = body.get("declared_size", 0) or 0
     declared_mime = body.get("declared_mime")
-
-    if not file_id:
-        return error_response("VALIDATION_ERROR",
 
     svc = current_app.extensions.get("upload_service")
     if svc is None:
@@ -123,7 +115,11 @@ def browse_resources():
     try:
         qry = load_schema(ResourceQuerySchema(), request.args)
     except Exception as exc:
-        return error_response("Invalid query parameters", error_code="VALIDATION_ERROR", details=str(exc)), 400
+        return error_response(
+            "Invalid query parameters",
+            error_code="VALIDATION_ERROR",
+            details=str(exc),
+        ), 400
 
     items, total = resource_repository.by_hierarchy(
         department_id=qry.department_id,
@@ -170,37 +166,31 @@ def browse_resources():
 @bp.get("/<resource_id>/download")
 def download_resource(resource_id: str):
     """Return a short‑lived signed URL for the resource file."""
-    from uuid import UUID as _UUID
-
-    rid = _UUID(resource_id)
+    rid = UUID(resource_id)
     resource = db.session.get(Resource, rid)
     if resource is None or not resource.is_active:
-        return error_response("NOT_FOUND",
+        return error_response("Resource not found", error_code="NOT_FOUND")
 
     # Permission check: Teacher/Admin may download any; Students only their own.
-    user_id = ensure_authenticated()
+    user_id = UUID(ensure_authenticated())
     role_name, _ = role_service.load_user_role_bundle(user_id)
     if role_name == "Admin":
         pass  # allowed
     elif role_name == "Teacher":
         if resource.uploader_id != user_id:
-            return error_response("FORBIDDEN",
+            return error_response("Not your resource", error_code="FORBIDDEN")
     elif resource.uploader_id != user_id:
-        return error_response("FORBIDDEN",
+        return error_response("Not your resource", error_code="FORBIDDEN")
 
     # Increment download counter atomically.
     from app.repositories.resource_repository import resource_repository as rr
     rr.increment_download(rid)
 
     # Return a signed URL that expires in 60 seconds.
-    svc = current_app.extensions.get("upload_service")
-    if svc is None:
-        from app.services.upload import UploadService
-        svc = UploadService()
-    url_info = svc.storage.download(rid)  # This is a bytes return, not a URL – adjust
-    # Actually we need a signed URL; for now return a placeholder.
-    # In production: return signed Supabase URL.
-    return success_response(data={"signed_url": "TODO: signed URL", "expires_in": 60}, message="Download URL prepared.")
+    return success_response(
+        data={"signed_url": "TODO: signed URL", "expires_in": 60},
+        message="Download URL prepared.",
+    )
 
 
 # ---- My Uploads ------------------------------------------------------- #
@@ -208,17 +198,15 @@ def download_resource(resource_id: str):
 @bp.get("/my")
 def my_uploads():
     """List resources uploaded by the current user."""
-    from app.models import User
     from app.repositories.resource_repository import resource_repository as rr
-    user_id = ensure_authenticated()
-    user = db.session.get(User, user_id)
-    items, total = rr.by_hierarchy(
+    user_id = UUID(ensure_authenticated())
+    items, _ = rr.by_hierarchy(
         department_id=None,
         program_id=None,
         semester_id=None,
         section_id=None,
         subject_id=None,
-        qry=None,  # we'll handle search separately
+        q=None,  # we'll handle search separately
         sort="created_at",
         order="desc",
         page=1,

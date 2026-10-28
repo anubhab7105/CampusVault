@@ -1,111 +1,108 @@
 /** Group management dialogs — create, members, roles, leave. Gated by PermissionGate. */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Card, Button } from "@components/ui/index";
 import { useAuthStore } from "@stores/useAuthStore";
-import { useDispatch } from "react-redux";
-import { hideModal, showModal } from "@store/slices/modalSlice";
-import { Card, Input, Button, Select, Badge } from "@components/ui/index";
-import { cn } from "@utils/cn";
-import { useNavigate } from "react-router-dom";
+
+interface GroupMember {
+  id: string;
+  name: string;
+  role: "owner" | "moderator" | "member";
+}
 
 export function GroupManagementDialog({ groupId }: { groupId: string }) {
-  const { user, permissions } = useAuthStore();
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const { user } = useAuthStore();
+  const [members, setMembers] = useState<GroupMember[]>([]);
+  const [selectedMemberId, setSelectedMemberId] = useState("");
+  const [role, setRole] = useState<"member" | "moderator" | "owner">("member");
 
-  const [members, setMembers] = useState<any[]>([]);
-  const [role, setRole] = useState<string>("member");
-  const [newMemberId, setNewMemberId] = useState<string>("");
-
-  // Fetch group members when dialog opens
   useEffect(() => {
-    // TODO: fetch members from API
+    if (!user) {
+      setMembers([]);
+      return;
+    }
+
+    // TODO: replace the sample members with a request to the groups API.
     setMembers([
       { id: user.id, name: user.full_name, role: "owner" },
       { id: "user2", name: "Jane Student", role: "member" },
     ]);
-  }, [groupId, user.id]);
+  }, [groupId, user]);
 
-  const canManage = permissions.includes("group:manage_members");
+  const canManage = Boolean(
+    user && members.some(
+      (member) => member.id === user.id && (member.role === "owner" || member.role === "moderator"),
+    ),
+  );
 
   const handleLeave = () => {
-    dispatch(hideModal());
-    // TODO: call leave group API
-    // socketService.emit("leave_group", { group_id: groupId });
+    // TODO: call the leave-group API and notify the parent to close this dialog.
   };
 
-  const handleRoleChange = (memberId: string, newRole: string) => {
-    // TODO: call change member role API
-    // dispatch(changeMemberRole({ groupId, memberId, newRole }));
-    setRole(newRole);
-  };
-
-  const handleAddMember = () => {
-    // TODO: call add member API
-    // dispatch(addMember({ groupId, memberId: newMemberId }));
-    setNewMemberId("");
-    dispatch(hideModal());
+  const handleApplyRole = () => {
+    if (!selectedMemberId || !canManage) return;
+    // TODO: call the change-member-role API with selectedMemberId and role.
   };
 
   return (
     <Card className="max-w-sm p-6">
-      <CardHeader>
-        <span className="text-body-sm font-semibold text-ink-default">
-          Group Management
-        </span>
-      </CardHeader>
-      <CardContent>
-        {/* Member list */}
-        {members.map((m) => (
+      <div className="text-body-sm font-semibold text-ink-default">Group Management</div>
+      <div className="mt-4">
+        {members.map((member) => (
           <div
-            key={m.id}
+            key={member.id}
             className="flex items-center justify-between p-2 rounded-md mb-2"
-            style={{ background: user.id === m.id ? "bg-brand-100" : "transparent" }}
+            style={{ background: user?.id === member.id ? "var(--brand-100)" : "transparent" }}
           >
-            <span className="font-medium text-ink-default">{m.name}</span>
-            <Badge
-              variant={m.role === "owner" ? "destructive" : m.role === "moderator" ? "secondary" : "outline"}
-              className="text-caption-xs"
-            >
-              {m.role}
-            </Badge>
+            <span className="font-medium text-ink-default">{member.name}</span>
+            <span className="rounded-full bg-surface-100 px-2 py-0.5 text-caption-xs">
+              {member.role}
+            </span>
           </div>
         ))}
+      </div>
 
-        {/* Role change section (owner/moderator only) */}
-        {canManage && (
-          <div className="mt-4">
-            <label className="text-caption-xs text-ink-tertiary mb-1">
-              Change role for:
-            </label>
-            <Select
-              onValueChange={handleRoleChange}
-              placeholder="Select member"
-            >
-              {members.map((m) => (
-                <Select.Item key={m.id} value={m.id}>
-                  {m.name} ({m.role})
-                </Select.Item>
-              ))}
-            </Select>
-            <Select.Item
-              value="member"
-              placeholder="Set role to member"
-            />
-            <Select.Item value="moderator" placeholder="Set role to moderator" />
-            <Select.Item value="owner" placeholder="Set role to owner" />
-          </div>
-        )}
+      {canManage && (
+        <div className="mt-4 space-y-3">
+          <label className="block text-caption-xs text-ink-tertiary mb-1" htmlFor="group-member">
+            Member
+          </label>
+          <select
+            id="group-member"
+            value={selectedMemberId}
+            onChange={(event) => setSelectedMemberId(event.currentTarget.value)}
+            className="w-full rounded-md border border-border bg-transparent px-3 py-2"
+          >
+            <option value="">Select member</option>
+            {members.map((member) => (
+              <option key={member.id} value={member.id}>
+                {member.name}
+              </option>
+            ))}
+          </select>
 
-        {/* Leave group button */}
-        <Button
-          variant="destructive"
-          onClick={handleLeave}
-          className="mt-4 w-full"
-        >
-          Leave Group
-        </Button>
-      </CardContent>
+          <label className="block text-caption-xs text-ink-tertiary mb-1" htmlFor="group-role">
+            New role
+          </label>
+          <select
+            id="group-role"
+            value={role}
+            onChange={(event) => setRole(event.currentTarget.value as "member" | "moderator" | "owner")}
+            className="w-full rounded-md border border-border bg-transparent px-3 py-2"
+          >
+            <option value="member">Member</option>
+            <option value="moderator">Moderator</option>
+            <option value="owner">Owner</option>
+          </select>
+          <Button onClick={handleApplyRole} disabled={!selectedMemberId} className="w-full">
+            Apply role
+          </Button>
+        </div>
+      )}
+
+      <Button variant="destructive" onClick={handleLeave} className="mt-4 w-full">
+        Leave Group
+      </Button>
     </Card>
   );
 }

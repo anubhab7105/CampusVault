@@ -49,7 +49,7 @@ class UserRepository(BaseRepository[User]):
 
         stmt = sa.select(TeacherAllowlist).where(
             TeacherAllowlist.email == email.strip().lower(),
-            TeacherAllowlist.is_approved == True,
+            TeacherAllowlist.is_approved.is_(True),
         )
         allowlist_entry = db.session.scalar(stmt)
         return allowlist_entry is not None and allowlist_entry.is_approved

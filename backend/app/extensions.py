@@ -27,10 +27,7 @@ jwt = JWTManager()
 cors = CORS()
 
 # --- Rate limiting -------------------------------------------------------------- #
-limiter = Limiter(
-    key_func=get_remote_address,
-    storage_uri="redis://localhost:6379/1",  # overridden from config in factory
-)
+limiter = Limiter(key_func=get_remote_address)  # storage URI comes from Flask config
 
 # --- Email (Gmail SMTP, development only) ----------------------------------------- #
 mail = Mail()

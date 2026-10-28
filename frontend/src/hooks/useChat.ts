@@ -1,17 +1,11 @@
 /** Chat hook — TanStack Query infinite query + socket resync. */
 
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+
+import { apiClient, fetchMessages } from "@services/apiClient";
 import { socketService } from "@services/socketService";
 import { useAuthStore } from "@stores/useAuthStore";
-import { useEffect, useCallback } from "react";
-
-import { fetchMessages } from "@services/apiClient";
-
-const CACHE_KEY = "/chat:messages";
 
 interface Message {
   id: string;
@@ -26,6 +20,17 @@ interface UseChatOptions {
   pageSize?: number;
 }
 
+interface SendMessageInput {
+  conversationId: string;
+  content: string;
+  idempotencyKey: string;
+}
+
+interface SendMessageResponse {
+  success: boolean;
+  message?: Message;
+}
+
 /** Fetch messages with keyset pagination. */
 export const useChatMessages = ({
   conversationId,
@@ -33,7 +38,7 @@ export const useChatMessages = ({
   pageSize = 20,
 }: UseChatOptions) => {
   const queryClient = useQueryClient();
-  const { user, access_token } = useAuthStore();
+  const { user } = useAuthStore();
 
   const {
     data,
@@ -43,44 +48,32 @@ export const useChatMessages = ({
     isLoading,
     isError,
     status,
-  } = useInfiniteQuery<Message[], Error>(
-    ["messages", conversationId],
-    async ({ pageParam }) => {
+  } = useInfiniteQuery({
+    queryKey: ["messages", conversationId],
+    enabled: Boolean(conversationId),
+    initialPageParam: initialCursor,
+    queryFn: async ({ pageParam }): Promise<Message[]> => {
       const before = pageParam as string | undefined;
       const resp = await fetchMessages({
         conversation_id: conversationId,
         before_id: before,
         limit: pageSize,
       });
-      return resp.data.messages;
+      return resp.data.messages as Message[];
     },
-    {
-      getPreviousPageParam: (firstPage) => {
-        if (firstPage.length === 0) return undefined;
-        return firstPage[0].id;
-      },
-      getNextPageParam: (lastPage) => {
-        if (lastPage.length === 0) return undefined;
-        return lastPage[lastPage.length - 1].id;
-      },
-      keepPreviousData: true,
-    }
-  );
+    getPreviousPageParam: (firstPage: Message[]) =>
+      firstPage.length > 0 ? firstPage[0].id : undefined,
+    getNextPageParam: (lastPage: Message[]) =>
+      lastPage.length > 0 ? lastPage[lastPage.length - 1].id : undefined,
+  });
 
-  /** Optimistic add a new message at the top */
-  const addMessageOptimistic = (newMessage: Message) => {
-    queryClient.setInfiniteQueryData(["messages", conversationId], (old) => {
-      if (!old) return [newMessage];
-      return [newMessage, ...old];
-    });
-  };
-
-  /** Refetch after socket reconnect */
   useEffect(() => {
     if (!user || !socketService.connected) return;
 
     const handleReconnect = () => {
-      queryClient.invalidateQueries(["messages", conversationId]);
+      void queryClient.invalidateQueries({
+        queryKey: ["messages", conversationId],
+      });
     };
 
     socketService.off("connect", handleReconnect);
@@ -89,10 +82,9 @@ export const useChatMessages = ({
     return () => {
       socketService.off("connect", handleReconnect);
     };
-  }, [conversationId, user]);
+  }, [conversationId, queryClient, user]);
 
-  // Merge all pages into flat list
-  const allMessages = data?.reduce((acc, page) => acc.concat(page), []) || [];
+  const allMessages = data?.pages.flat() ?? [];
 
   return {
     messages: allMessages,
@@ -105,39 +97,37 @@ export const useChatMessages = ({
   };
 };
 
-/** Send message mutation with idempotency key. */
+/** Send message mutation with an idempotency key. */
 export const useSendMessage = () => {
   const queryClient = useQueryClient();
-  const { user, access_token } = useAuthStore();
-
-  const sendMutation = useMutation(
-    async ({
+  const sendMutation = useMutation({
+    mutationFn: async ({
       conversationId,
       content,
       idempotencyKey,
-    }: {
-      conversationId: string;
-      content: string;
-      idempotencyKey: string;
-    }) => {
-      const resp = await fetch("/api/v1/chat/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${access_token}`,
+    }: SendMessageInput): Promise<SendMessageResponse> => {
+      const response = await apiClient.post<SendMessageResponse>(
+        `/chat/conversations/${encodeURIComponent(conversationId)}/messages`,
+        {
+          conversation_id: conversationId,
+          content,
+          reply_to_id: null,
         },
-        body: JSON.stringify({ conversationId, content, idempotencyKey }),
-      });
-      return resp.json();
+        {
+          headers: { "Idempotency-Key": idempotencyKey },
+        },
+      );
+
+      return response.data;
     },
-    {
-      onSuccess: (data) => {
-        if (data.success) {
-          addMessageOptimistic(data.message);
-        }
-      },
-    }
-  );
+    onSuccess: async (result, variables) => {
+      if (result.success) {
+        await queryClient.invalidateQueries({
+          queryKey: ["messages", variables.conversationId],
+        });
+      }
+    },
+  });
 
   return {
     sendMutation,

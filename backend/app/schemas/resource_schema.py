@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from marshmallow import Schema, fields, validate
 
+MAX_RESOURCE_PAGE = 1000
+MAX_RESOURCE_PAGE_SIZE = 100
+
 
 class ResourceQuerySchema(Schema):
     """Query parameters for the library browse endpoint."""
@@ -18,8 +21,8 @@ class ResourceQuerySchema(Schema):
     q = fields.Str(allow_none=True, validate=validate.Length(max=255))
     sort = fields.Str(validate=validate.OneOf(["title", "download_count", "view_count", "created_at"]))
     order = fields.Str(validate=validate.OneOf(["asc", "desc"]))
-    page = fields.Int(load_default=1, validate=lambda n: 0 < n <= 1000)
-    page_size = fields.Int(load_default=20, validate=lambda n: 0 < n <= 100)
+    page = fields.Int(load_default=1, validate=lambda n: 0 < n <= MAX_RESOURCE_PAGE)
+    page_size = fields.Int(load_default=20, validate=lambda n: 0 < n <= MAX_RESOURCE_PAGE_SIZE)
 
 
 class ResourceUploadSchema(Schema):

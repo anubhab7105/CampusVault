@@ -1,98 +1,77 @@
-/** Composer — React Hook Form + Zod, length counter, Enter/Sender, Shift+Enter, file picker, typing. */
+/** Message composer with validation, keyboard shortcuts, and delivery state. */
 
-import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useSocketStore } from "@stores/useSocketStore";
-import { useAuthStore } from "@stores/useAuthStore";
-import { useDispatch } from "react-redux";
-import { sendTyping } from "@store/slices/chatSlice";
-import { Card, Input, Button, Skeleton } from "@components/ui/index";
-import { cn } from "@utils/cn";
+import { z } from "zod";
+
+import { useSendMessage } from "@hooks/useChat";
 
 const MAX_MESSAGE_LENGTH = 4000;
+
+const composerSchema = z.object({
+  content: z.string().trim().min(1, "Enter a message.").max(MAX_MESSAGE_LENGTH),
+});
 
 interface ComposerProps {
   conversationId: string;
 }
 
-/** Composer component — sends messages via socket, uses RHForm + Zod. */
-export const Composer = ({ conversationId }: ComposerProps) => {
-  const { user, access_token, setSending } = useAuthStore();
-  const { connected, setTyping, typing } = useSocketStore();
-  const dispatch = useDispatch();
+type ComposerValues = z.infer<typeof composerSchema>;
 
-  const form = useForm<{
-    content: string;
-  }>({
-    resolver: zodResolver(z.object({ content: z.string().max(MAX_MESSAGE_LENGTH) })),
+export const Composer = ({ conversationId }: ComposerProps) => {
+  const { sendMutation, isPending } = useSendMessage();
+  const form = useForm<ComposerValues>({
+    resolver: zodResolver(composerSchema),
     defaultValues: { content: "" },
   });
+  const content = form.watch("content");
 
-  const onSubmit = async (values: { content: string }) => {
-    const idempotencyKey = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    dispatch(sendMessage({ conversationId, content: values.content, idempotencyKey }));
+  const onSubmit = (values: ComposerValues) => {
+    sendMutation.mutate({
+      conversationId,
+      content: values.content.trim(),
+      idempotencyKey: `msg-${crypto.randomUUID()}`,
+    });
     form.reset();
   };
 
-  useEffect(() => {
-    let timer: NodeJS.Timeout | null = null;
-
-    const handleTyping = () => {
-      if (!connected || !user) return;
-      setTyping(true);
-      socketService.emit("typing", {
-        conversation_id: conversationId,
-        user_id: user.id,
-        typing: true,
-      });
-      timer = setTimeout(() => {
-        setTyping(false);
-        socketService.emit("typing", {
-          conversation_id: conversationId,
-          user_id: user.id,
-          typing: false,
-        });
-      }, 1000); // 1s after last keystroke
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-      if (e.key === "Enter") {
-        onSubmit({ content: e.target.value });
-      }
-      handleTyping();
-    };
-
-    if (connected && user) {
-      handleTyping();
-    }
-
-    return () => {
-      if (timer) clearTimeout(timer);
-      socketService.off("typing");
-    };
-  }, [conversationId, connected, user]);
+  const submitForm = form.handleSubmit(onSubmit);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Message</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Input
-          placeholder="Type a message..."
-          maxlength={MAX_MESSAGE_LENGTH}
-          value={form.getValues().content}
-          onChange={form.handleChange}
-          onKeyDown={handleKeyDown}
-        />
-      </CardContent>
-      <CardFooter>
-        <Button type="submit" form={form}>
-          Send
-        </Button>
-      </CardFooter>
-    </Card>
+    <form onSubmit={submitForm} className="space-y-2 rounded-lg border border-border p-3">
+      <label htmlFor="message-content" className="sr-only">
+        Message
+      </label>
+      <textarea
+        id="message-content"
+        {...form.register("content")}
+        maxLength={MAX_MESSAGE_LENGTH}
+        placeholder="Type a message…"
+        rows={3}
+        aria-invalid={Boolean(form.formState.errors.content)}
+        className="w-full resize-y rounded-md border border-border bg-transparent p-3 text-body-md outline-none focus:ring-2 focus:ring-brand-500"
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            void submitForm();
+          }
+        }}
+      />
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-caption-xs text-ink-tertiary" aria-live="polite">
+          {content.length}/{MAX_MESSAGE_LENGTH}
+        </span>
+        <button
+          type="submit"
+          disabled={isPending || !content.trim()}
+          className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isPending ? "Sending…" : "Send"}
+        </button>
+      </div>
+      {form.formState.errors.content?.message && (
+        <p className="text-caption-xs text-red-600">{form.formState.errors.content.message}</p>
+      )}
+    </form>
   );
 };

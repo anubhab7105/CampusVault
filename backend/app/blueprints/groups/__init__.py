@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify
 
 from app.errors.exceptions import ForbiddenError, NotFoundError
 from app.extensions import db
@@ -89,7 +89,12 @@ def leave_group(group_id: uuid.UUID):
         members = group_service.groups.list_group_members(group.id)
         other_members = [m for m in members if m != user_id]
         if not other_members:
-            return jsonify({"success": False, "error": "The last owner must transfer ownership before leaving."}), 403
+            return jsonify(
+                {
+                    "success": False,
+                    "error": "The last owner must transfer ownership before leaving.",
+                }
+            ), 403
 
     group_service.leave_group(group_id, user_id)
     return success_response(message="Left group.")

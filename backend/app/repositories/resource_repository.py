@@ -73,7 +73,11 @@ class ResourceRepository(BaseRepository[Resource]):
                 )
 
         # --- Pagination & sorting ------------------------------------------------
-        stmt = sa.select(Resource).where(conditions).where(Resource.is_active == True)  # type: ignore[arg-type]  # noqa: E712
+        stmt = (
+            sa.select(Resource)
+            .where(conditions)  # type: ignore[arg-type]
+            .where(Resource.is_active == True)  # noqa: E712
+        )
         stmt = stmt.order_by(
             sa.asc(getattr(Resource, sort)) if order == "asc" else sa.desc(getattr(Resource, sort))
         )
@@ -83,7 +87,12 @@ class ResourceRepository(BaseRepository[Resource]):
         items = db.session.scalars(stmt).unique().all()
 
         # Total count (without offset/limit), using the same WHERE clause.
-        count_stmt = sa.select(sa.func.count()).select_from(Resource).where(conditions).where(Resource.is_active == True)  # type: ignore[arg-type]  # noqa: E712
+        count_stmt = (
+            sa.select(sa.func.count())
+            .select_from(Resource)
+            .where(conditions)  # type: ignore[arg-type]
+            .where(Resource.is_active == True)  # noqa: E712
+        )
         total = db.session.scalar(count_stmt) or 0
 
         return items, total

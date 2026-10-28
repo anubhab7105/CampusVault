@@ -73,7 +73,12 @@ class GroupService(BaseService):
         group = self.get_active_group(group_id)
         return group.owner_id == user_id
 
-    def transfer_ownership(self, group_id: uuid.UUID, new_owner_id: uuid.UUID, current_owner_id: uuid.UUID) -> Group:
+    def transfer_ownership(
+        self,
+        group_id: uuid.UUID,
+        new_owner_id: uuid.UUID,
+        current_owner_id: uuid.UUID,
+    ) -> Group:
         """Transfer group ownership to a new user."""
         group = self.get_active_group(group_id)
         if group.owner_id != current_owner_id:
@@ -186,9 +191,5 @@ class GroupService(BaseService):
 
         db.session.commit()
         return group
-
-    def list_for_user(self, user_id: uuid.UUID) -> Sequence[Group]:
-        return self.groups.list_for_user(user_id)
-
 
 group_service = GroupService()

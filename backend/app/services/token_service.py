@@ -65,7 +65,6 @@ class TokenService:
         # has been revoked previously — block everything for this user.
         if get_redis().exists(f"{BLOCKLIST_PREFIX}{jti}"):
             # Block ALL JTIs for this user to force full re-auth.
-            user_uuid = uuid.UUID(str(user_id))
             pattern = f"{BLOCKLIST_PREFIX}*"
             # Redis SCAN iteration to collect matching keys
             cursor = 0

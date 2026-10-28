@@ -1,22 +1,17 @@
-/** MessagePane — infinite scroll upward, date separators, bubbles, status ticks. */
+/** Message pane — message history, status, and reply composition. */
 
-import { useState, useEffect } from "react";
-import { v4 as uuidv4 } from "uuid";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { apiClient, fetchMessages } from "@services/apiClient";
 import { useSocketStore } from "@stores/useSocketStore";
-import { useAuthStore } from "@stores/useAuthStore";
-import { useQuery } from "@tanstack/react-query";
-import { fetchMessages } from "@services/apiClient";
-import { useToast } from "@hooks/useToast";
-import { Card, CardContent, CardFooter, CardTitle } from "@components/ui/index";
-import { cn } from "@utils/cn";
-import { useParams } from "react-router-dom";
-import { useParams as useSearchParams } from "react-router-dom";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, Skeleton } from "@components/ui/index";
 
 interface Message {
   id: string;
   content: string;
-  sender_id: string;
-  created_at: string;
+  sender_id: string | null;
+  created_at: string | null;
   user_role?: "student" | "teacher" | "admin";
 }
 
@@ -24,74 +19,68 @@ interface MessagePaneProps {
   conversationId: string;
 }
 
-/** MessagePane component — displays conversation history with infinite scroll. */
+/** Displays conversation history and sends replies. */
 export const MessagePane = ({ conversationId }: MessagePaneProps) => {
-  const { user, access_token } = useAuthStore();
   const { connected } = useSocketStore();
-  const { data, isLoading, isError, fetchNextPage, hasNextPage } = useQuery<
-    Message[],
-    Error
-  >(
-    ["messages", conversationId],
-    async () => {
-      const resp = await fetchMessages({
+  const queryClient = useQueryClient();
+  const [scrollPosition, setScrollPosition] = useState<"bottom" | "top">("bottom");
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["messages", conversationId],
+    enabled: Boolean(conversationId),
+    queryFn: async (): Promise<Message[]> => {
+      const response = await fetchMessages({
         conversation_id: conversationId,
         limit: 50,
       });
-      return resp.data.messages;
-    }
-  );
-
-  const [scrollPosition, setScrollPosition] = useState("bottom");
-  const [typing, setTyping] = useState("");
+      return response.data.messages as Message[];
+    },
+  });
 
   const sendMessage = async (content: string) => {
     if (!conversationId || !content.trim()) return;
 
-    const idempotencyKey = `msg-${uuidv4()}-${Date.now()}`;
-    const resp = await fetch("/api/v1/chat/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${access_token}`,
-      },
-      body: JSON.stringify({
-        conversationId,
+    const response = await apiClient.post<{ success?: boolean }>(
+      `/chat/conversations/${encodeURIComponent(conversationId)}/messages`,
+      {
+        conversation_id: conversationId,
         content: content.trim(),
-        idempotencyKey,
-      }),
-    });
+        reply_to_id: null,
+      },
+    );
 
-    const data = await resp.json();
-
-    if (data.success) {
-      // Optimistically add the message
-      queryClient.invalidateQueries(["messages", conversationId]);
+    const result = response.data;
+    if (result.success) {
+      await queryClient.invalidateQueries({
+        queryKey: ["messages", conversationId],
+      });
     }
   };
 
-  useEffect(() => {
-    if (!connected) return;
-    // Handle typing indicators etc.
-  }, [connected]);
-
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex items-center justify-between">
         <CardTitle>Conversation</CardTitle>
+        <span className="text-caption-xs text-ink-tertiary">
+          {connected ? "Connected" : "Disconnected"}
+        </span>
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <Skeleton className="h-64" />
         ) : (
-          <div className="h-96 overflow-y-auto space-y-2 p-2" onScroll={(e) => {
-            const bottom = e.target.scrollHeight - e.target.clientHeight;
-            const scrollTop = e.target.scrollTop + e.target.clientHeight;
-            setScrollPosition(scrollPosition === "bottom" && scrollTop >= bottom ? "bottom" : "top");
-          }}>
-            {data?.map((msg) => (
-              <div key={msg.id} className="flex items-start">
-                <span className="flex-1">{msg.content}</span>
+          <div
+            className="h-96 overflow-y-auto space-y-2 p-2"
+            onScroll={(event) => {
+              const element = event.currentTarget;
+              const atBottom = element.scrollHeight - element.clientHeight <= element.scrollTop + 1;
+              setScrollPosition(atBottom ? "bottom" : "top");
+            }}
+            data-scroll-position={scrollPosition}
+          >
+            {data?.map((message) => (
+              <div key={message.id} className="flex items-start">
+                <span className="flex-1">{message.content}</span>
               </div>
             ))}
           </div>
@@ -101,10 +90,19 @@ export const MessagePane = ({ conversationId }: MessagePaneProps) => {
         <input
           type="text"
           placeholder="Reply..."
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              sendMessage(e.target.value);
-              e.target.value = "";
+          aria-label="Reply"
+          className="w-full rounded-md border border-border bg-transparent px-3 py-2"
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              const input = event.currentTarget;
+              const content = input.value;
+              void sendMessage(content)
+                .then(() => {
+                  input.value = "";
+                })
+                .catch(() => {
+                  // Keep the draft in the input when sending fails.
+                });
             }
           }}
         />
