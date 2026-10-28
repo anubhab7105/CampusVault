@@ -1,4 +1,5 @@
-"""Admin blueprint — stats, users, roles, academic CRUD, groups, resources, moderation, allowlist, and audit."""
+"""Admin blueprint — stats, users, roles, academic CRUD, groups, resources,
+moderation, allowlist, and audit."""
 
 from __future__ import annotations
 
