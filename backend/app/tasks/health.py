@@ -10,12 +10,12 @@ from sqlalchemy import select
 from app.extensions import db
 from app.models import FileRecord
 from app.tasks.scan import scan_file_task
-from celery_app import celery_task
+from celery_app import celery_app
 
 logger = get_task_logger(__name__)
 
 
-@celery_task.task(bind=True, ignore_result=True)
+@celery_app.task(bind=True, ignore_result=True)
 def requeue_stuck_files(self):
     """Re‑queue files stuck in ``pending`` or ``scanning`` for > 30 minutes."""
     from datetime import datetime, timedelta
