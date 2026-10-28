@@ -10,8 +10,8 @@ The service never touches the Supabase client directly; it delegates to a
 from __future__ import annotations
 
 import base64
+import logging
 import os
-from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 from app.errors.exceptions import BadRequestError, ServiceUnavailableError
@@ -21,11 +21,13 @@ from app.services.scanner import ClamAVScanner, NoOpScanner, Scanner
 from app.services.storage import LocalFileStorage, StorageBackend, SupabaseStorage
 from app.utils.validators import allowed_extension, validate_mime_type
 
+logger = logging.getLogger(__name__)
+
 # --- Helpers ---
 
 def _storage_key() -> str:
     """Generate a random 32‑char base64 key (URL‑safe)."""
-    return base64.urlsafe_b64strip(uuid4().bytes[:24]).decode("ascii")
+    return base64.urlsafe_b64encode(uuid4().bytes[:24]).rstrip(b"=").decode("ascii")
 
 
 # ------------------------------------------------------------------- #
@@ -123,7 +125,6 @@ class UploadService:
         db.session.flush()  # get the generated file_id
 
         # ---- 6. Signed upload URL ------------------------------------------------
-        expires_at = datetime.now(UTC) + timedelta(minutes=5)
         upload_url = self.storage.upload(key=storage_key, fileobj=b"", mime_type=mime_type, size=declared_size)
         # The real file will be streamed by the frontend to the signed URL; we just
         # return the URL here.  In a real flow the frontend PUTs/POSTs the bytes to
@@ -195,8 +196,8 @@ class UploadService:
             # downloadable again.  Then notify + audit.
             try:
                 self.storage.delete(file_record.storage_key)
-            except Exception:
-                pass  # best‑effort; the important part is the DB state.
+            except Exception as exc:
+                logger.warning("Could not remove quarantined upload %s: %s", file_record.id, exc)
             file_record.scan_status = "infected"
             # TODO: emit notification (Phase 1 notification service) and audit entry.
             # e.g. notify_upload_infected.delay(uploader_id, file_id)
@@ -220,7 +221,7 @@ class UploadService:
             # we just stat the file.
             from app.services.storage import LocalFileStorage as _LF
             if isinstance(self.storage, _LF):
-                return (self._dir / key).stat().st_size  # type: ignore[attr-defined]
+                return (self.storage._dir / key).stat().st_size  # type: ignore[attr-defined]
             # For Supabase we cannot easily get size without a download; trust the
             # declared size for now.
             return 0  # type: ignore[return-value]
@@ -237,7 +238,7 @@ class UploadService:
         val = os.environ.get(key)
         if val:
             return int(val)
-        return int(os.environ.get("UPLOAD_MAX_SIZE_BYTES", "25") * 1024 * 1024)
+        return int(os.environ.get("UPLOAD_MAX_SIZE_BYTES", str(25 * 1024 * 1024)))
 
     def _resource_payload(self, file_record: FileRecord) -> dict:
         """Minimal payload for the caller (e.g. blueprint) to create a ``Resource``."""
