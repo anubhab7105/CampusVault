@@ -115,7 +115,11 @@ def browse_resources():
     try:
         qry = load_schema(ResourceQuerySchema(), request.args)
     except Exception as exc:
-        return error_response("Invalid query parameters", error_code="VALIDATION_ERROR", details=str(exc)), 400
+        return error_response(
+            "Invalid query parameters",
+            error_code="VALIDATION_ERROR",
+            details=str(exc),
+        ), 400
 
     items, total = resource_repository.by_hierarchy(
         department_id=qry.department_id,
