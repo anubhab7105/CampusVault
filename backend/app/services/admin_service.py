@@ -119,7 +119,11 @@ class AdminService(BaseService):
             # downloads would need a separate counter; use download_count sum per day if available
 
         # Scan outcomes (clean/infected/failed)
-        scan_stmt = db.select(FileRecord.scan_status, db.func.count(FileRecord.id)).select_from(FileRecord).group_by(FileRecord.scan_status)
+        scan_stmt = (
+            db.select(FileRecord.scan_status, db.func.count(FileRecord.id))
+            .select_from(FileRecord)
+            .group_by(FileRecord.scan_status)
+        )
         scan_rows = db.session.execute(scan_stmt).all()
         scan_outcomes = {}
         for r in scan_rows:
@@ -127,7 +131,10 @@ class AdminService(BaseService):
 
         # Chat activity: messages per day, active groups
         msg_stmt = (
-            db.select(db.func.date_trunc("day", Message.created_at).label("day"), db.func.count(Message.id).label("messages"))
+            db.select(
+                db.func.date_trunc("day", Message.created_at).label("day"),
+                db.func.count(Message.id).label("messages"),
+            )
             .select_from(Message)
             .where(Message.created_at >= now - timedelta(days=30))
             .group_by(db.func.date_trunc("day", Message.created_at))
@@ -146,12 +153,22 @@ class AdminService(BaseService):
         # Pending items needing attention
         # Stuck scans: pending/scanning > 30 min
         stale_threshold = now - timedelta(minutes=30)
-        stuck_stmt = db.select(db.func.count(FileRecord.id)).select_from(FileRecord).where(FileRecord.scan_status.in_(["pending", "scanning"])).where(FileRecord.created_at < stale_threshold)
+        stuck_stmt = (
+            db.select(db.func.count(FileRecord.id))
+            .select_from(FileRecord)
+            .where(FileRecord.scan_status.in_(["pending", "scanning"]))
+            .where(FileRecord.created_at < stale_threshold)
+        )
         stuck_count = int(db.session.scalar(stuck_stmt) or 0)
 
         # Failed email deliveries: notifications older than 24h still unread
         failed_threshold = now - timedelta(hours=24)
-        failed_stmt = db.select(db.func.count(Notification.id)).select_from(Notification).where(Notification.is_read.is_(False)).where(Notification.created_at < failed_threshold)
+        failed_stmt = (
+            db.select(db.func.count(Notification.id))
+            .select_from(Notification)
+            .where(Notification.is_read.is_(False))
+            .where(Notification.created_at < failed_threshold)
+        )
         failed_email_count = int(db.session.scalar(failed_stmt) or 0)
 
         return {
@@ -253,14 +270,29 @@ class AdminService(BaseService):
 
     # ---- Management: Academic Structure ----------------------------------- #
 
-    def department_create(self, *, name: str, code: str | None, description: str, acting_admin_id: uuid.UUID) -> Department:
+    def department_create(
+        self,
+        *,
+        name: str,
+        code: str | None,
+        description: str,
+        acting_admin_id: uuid.UUID,
+    ) -> Department:
         from app.models import Department
         dept = Department(name=name, code=code, description=description, is_active=True)
         db.session.add(dept)
         db.session.commit()
         return dept
 
-    def department_update(self, *, dept_id: uuid.UUID, name: str | None, code: str | None, description: str | None, acting_admin_id: uuid.UUID) -> Department:
+    def department_update(
+        self,
+        *,
+        dept_id: uuid.UUID,
+        name: str | None,
+        code: str | None,
+        description: str | None,
+        acting_admin_id: uuid.UUID,
+    ) -> Department:
         dept = self.departments.get_active_by_id(dept_id)
         if dept is None:
             raise NotFoundError("Department not found.")
@@ -278,24 +310,53 @@ class AdminService(BaseService):
         if dept is None:
             raise NotFoundError("Department not found.")
         # Check for existing programs
-        prog_count = db.session.query(db.func.count(Program.id)).filter(Program.department_id == dept_id, Program.is_active.is_(True)).scalar()
+        prog_count = (
+            db.session.query(db.func.count(Program.id))
+            .filter(Program.department_id == dept_id, Program.is_active.is_(True))
+            .scalar()
+        )
         if prog_count and prog_count > 0:
-            raise ValidationError("Cannot delete department with existing active programs. Reassign or archive programs first.")
+            raise ValidationError(
+                "Cannot delete department with existing active programs. "
+                "Reassign or archive programs first."
+            )
         dept.is_active = False
         dept.deleted_at = db.func.now()
         db.session.commit()
 
-    def program_create(self, *, name: str, department_id: uuid.UUID, code: str | None, description: str, acting_admin_id: uuid.UUID) -> Program:
+    def program_create(
+        self,
+        *,
+        name: str,
+        department_id: uuid.UUID,
+        code: str | None,
+        description: str,
+        acting_admin_id: uuid.UUID,
+    ) -> Program:
         from app.models import Program
         dep = self.departments.get_active_by_id(department_id)
         if dep is None:
             raise NotFoundError("Parent department not found.")
-        prog = Program(name=name, department_id=department_id, code=code, description=description, is_active=True)
+        prog = Program(
+            name=name,
+            department_id=department_id,
+            code=code,
+            description=description,
+            is_active=True,
+        )
         db.session.add(prog)
         db.session.commit()
         return prog
 
-    def program_update(self, *, prog_id: uuid.UUID, name: str | None, code: str | None, description: str | None, acting_admin_id: uuid.UUID) -> Program:
+    def program_update(
+        self,
+        *,
+        prog_id: uuid.UUID,
+        name: str | None,
+        code: str | None,
+        description: str | None,
+        acting_admin_id: uuid.UUID,
+    ) -> Program:
         prog = self.programs.get_active_by_id(prog_id)
         if prog is None:
             raise NotFoundError("Program not found.")
@@ -308,7 +369,14 @@ class AdminService(BaseService):
         db.session.commit()
         return prog
 
-    def section_create(self, *, name: str, program_id: uuid.UUID, capacity: int | None, acting_admin_id: uuid.UUID) -> Section:
+    def section_create(
+        self,
+        *,
+        name: str,
+        program_id: uuid.UUID,
+        capacity: int | None,
+        acting_admin_id: uuid.UUID,
+    ) -> Section:
         from app.models import Section
         prog = self.programs.get_active_by_id(program_id)
         if prog is None:
@@ -328,13 +396,21 @@ class AdminService(BaseService):
         # Check the active membership count via the group service.
         members = group_service.groups.list_group_members(group_id)
         if len(members) <= 1:
-            raise ValidationError("Cannot archive group with only owner. Transfer ownership or add members first.")
+            raise ValidationError(
+                "Cannot archive group with only owner. Transfer ownership or add members first."
+            )
         group.is_active = False
         group.deleted_at = db.func.now()
         db.session.commit()
         return group
 
-    def group_reassign_owner(self, *, group_id: uuid.UUID, new_owner_id: uuid.UUID, acting_admin_id: uuid.UUID) -> Group:
+    def group_reassign_owner(
+        self,
+        *,
+        group_id: uuid.UUID,
+        new_owner_id: uuid.UUID,
+        acting_admin_id: uuid.UUID,
+    ) -> Group:
         from app.services.group_service import group_service
         return group_service.transfer_ownership(group_id, new_owner_id, acting_admin_id)
 
@@ -407,7 +483,11 @@ class AdminService(BaseService):
 
     def moderation_quarantine_list(self) -> list[dict]:
         from app.models import Resource
-        stmt = db.select(FileRecord, Resource).select_from(FileRecord).outerjoin(Resource, Resource.file_id == FileRecord.id)
+        stmt = (
+            db.select(FileRecord, Resource)
+            .select_from(FileRecord)
+            .outerjoin(Resource, Resource.file_id == FileRecord.id)
+        )
         rows = db.session.execute(stmt).fetchall()
 
         result = []
@@ -425,7 +505,13 @@ class AdminService(BaseService):
                 })
         return result
 
-    def moderation_confirm_delete(self, *, file_id: uuid.UUID, justification: str, acting_admin_id: uuid.UUID) -> dict:
+    def moderation_confirm_delete(
+        self,
+        *,
+        file_id: uuid.UUID,
+        justification: str,
+        acting_admin_id: uuid.UUID,
+    ) -> dict:
         from app.models import Resource
         file_rec = db.session.get(FileRecord, file_id)
         if file_rec is None:
@@ -490,7 +576,10 @@ class AdminService(BaseService):
         if entity_id is not None:
             query = query.filter(AuditLog.entity_id == entity_id)
         if request_id is not None:
-            query = query.filter(AuditLog.request_context.has_key("request_id") & (db.cast(AuditLog.request_context, db.String).contains(request_id)))  # noqa: E501
+            query = query.filter(
+                AuditLog.request_context.has_key("request_id")
+                & db.cast(AuditLog.request_context, db.String).contains(request_id)
+            )
         if date_from is not None:
             query = query.filter(AuditLog.created_at >= date_from)
         if date_to is not None:
