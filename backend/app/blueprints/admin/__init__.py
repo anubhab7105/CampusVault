@@ -12,6 +12,7 @@ from marshmallow import Schema, fields, validate
 
 from app.errors.exceptions import ConflictError, NotFoundError, ValidationError
 from app.middleware.auth import ensure_authenticated
+from app.schemas.common import SearchSortQuerySchema
 from app.services.admin_service import admin_service
 from app.services.auth_service import AuthService
 from app.utils.pagination import PagingMeta
@@ -237,7 +238,7 @@ def resource_soft_delete(resource_id: uuid.UUID):
 
 @bp.get("/resources/<uuid:resource_id>/scan-status")
 def resource_scan_status(resource_id: uuid.UUID):
-    acting_admin = _admin_guard()
+    _admin_guard()
     status = admin_service.resource_scan_status(resource_id=resource_id)
     return success_response(data=status, message="Scan status retrieved.")
 
@@ -283,7 +284,7 @@ def allowlist_list():
 
 @bp.get("/moderation/quarantine")
 def moderation_quarantine_list():
-    acting_admin = _admin_guard()
+    _admin_guard()
     items = admin_service.moderation_quarantine_list()
     return success_response(data=items, message="Quarantine list retrieved.")
 
@@ -315,7 +316,7 @@ class AuditLogFilterSchema(Schema):
 
 @bp.get("/audit-logs")
 def audit_logs_list():
-    acting_admin = _admin_guard()
+    _admin_guard()
     filters = load_schema(AuditLogFilterSchema(), request.args.to_dict())
     page, page_size = filters["page"], filters["page_size"]
     rows, total = admin_service.audit_logs_filter(
