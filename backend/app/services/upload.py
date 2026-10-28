@@ -125,7 +125,12 @@ class UploadService:
         db.session.flush()  # get the generated file_id
 
         # ---- 6. Signed upload URL ------------------------------------------------
-        upload_url = self.storage.upload(key=storage_key, fileobj=b"", mime_type=mime_type, size=declared_size)
+        upload_url = self.storage.upload(
+            key=storage_key,
+            fileobj=b"",
+            mime_type=mime_type,
+            size=declared_size,
+        )
         # The real file will be streamed by the frontend to the signed URL; we just
         # return the URL here.  In a real flow the frontend PUTs/POSTs the bytes to
         # that URL; the backend does not see the bytes at this stage.
@@ -206,7 +211,10 @@ class UploadService:
 
         db.session.commit()
 
-        return {"scan_status": file_record.scan_status, "resource_payload": self._resource_payload(file_record)}
+        return {
+            "scan_status": file_record.scan_status,
+            "resource_payload": self._resource_payload(file_record),
+        }
 
     # ----------------------------------------------------------------- #
     # Helpers
