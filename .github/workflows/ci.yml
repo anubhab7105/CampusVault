@@ -100,7 +100,9 @@ jobs:
 
   security:
     name: security scan
-    if: github.event_name == 'pull_request'
+    # Dependency review requires the repository Dependency graph feature.
+    # Enable it under Settings > Security, then set this repository variable to "true".
+    if: github.event_name == 'pull_request' && vars.DEPENDENCY_GRAPH_ENABLED == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
