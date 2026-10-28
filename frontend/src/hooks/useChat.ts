@@ -100,8 +100,6 @@ export const useChatMessages = ({
 /** Send message mutation with an idempotency key. */
 export const useSendMessage = () => {
   const queryClient = useQueryClient();
-  const { access_token } = useAuthStore();
-
   const sendMutation = useMutation({
     mutationFn: async ({
       conversationId,
