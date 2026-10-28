@@ -39,7 +39,11 @@ def request_upload():
     try:
         body = load_schema(ResourceUploadSchema(), get_json_body())
     except Exception as exc:
-        return error_response("Invalid query parameters", error_code="VALIDATION_ERROR", details=str(exc)), 400
+        return error_response(
+            "Invalid query parameters",
+            error_code="VALIDATION_ERROR",
+            details=str(exc),
+        ), 400
 
     # Determine the extension from the eventual filename; for now the frontend
     # must supply it (or we infer from MIME).  We'll accept a bare extension
@@ -68,7 +72,10 @@ def request_upload():
     except Exception as exc:
         return error_response(str(exc), error_code="VALIDATION_ERROR")
 
-    return success_response(data=envelope, message="Upload request created. Use the signed URL to upload the file.")
+    return success_response(
+        data=envelope,
+        message="Upload request created. Use the signed URL to upload the file.",
+    )
 
 
 # ---- Phase B: Finalize upload ----------------------------------------- #
@@ -176,7 +183,10 @@ def download_resource(resource_id: str):
     rr.increment_download(rid)
 
     # Return a signed URL that expires in 60 seconds.
-    return success_response(data={"signed_url": "TODO: signed URL", "expires_in": 60}, message="Download URL prepared.")
+    return success_response(
+        data={"signed_url": "TODO: signed URL", "expires_in": 60},
+        message="Download URL prepared.",
+    )
 
 
 # ---- My Uploads ------------------------------------------------------- #
