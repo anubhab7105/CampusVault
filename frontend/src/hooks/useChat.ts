@@ -3,7 +3,7 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
-import { fetchMessages } from "@services/apiClient";
+import { apiClient, fetchMessages } from "@services/apiClient";
 import { socketService } from "@services/socketService";
 import { useAuthStore } from "@stores/useAuthStore";
 
@@ -108,20 +108,16 @@ export const useSendMessage = () => {
       content,
       idempotencyKey,
     }: SendMessageInput): Promise<SendMessageResponse> => {
-      const response = await fetch("/api/v1/chat/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${access_token}`,
+      const response = await apiClient.post<SendMessageResponse>(
+        `/chat/conversations/${encodeURIComponent(conversationId)}/messages`,
+        {
+          conversation_id: conversationId,
+          content,
+          reply_to_id: null,
         },
-        body: JSON.stringify({ conversationId, content, idempotencyKey }),
-      });
+      );
 
-      if (!response.ok) {
-        throw new Error("Message could not be sent.");
-      }
-
-      return (await response.json()) as SendMessageResponse;
+      return response.data;
     },
     onSuccess: async (result, variables) => {
       if (result.success) {
