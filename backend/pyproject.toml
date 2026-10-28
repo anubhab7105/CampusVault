@@ -60,6 +60,9 @@ ignore = [
     "E501",  # existing long lines are tolerated; functional lint rules remain enforced
 ]
 
+[tool.ruff.lint.isort]
+known-first-party = ["app", "celery_app"]
+
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S105", "S106", "PLR2004"]  # literal secrets in fixtures; literal status codes in assertions
 
