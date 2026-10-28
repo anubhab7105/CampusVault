@@ -37,6 +37,9 @@ from app.utils.datetime_utils import utcnow
 from app.utils.redis_utils import get_redis
 
 
+OTP_MAX_ATTEMPTS = 3
+
+
 class AuthService:
     def __init__(self) -> None:
         self.users = UserRepository()
@@ -111,7 +114,7 @@ class AuthService:
         # Rate limit per email: 3 attempts per 5 minutes stored in Redis.
         attempt_key = f"otp_attempts:{email.strip().lower()}"
         current_attempts = get_redis().get(attempt_key)
-        if current_attempts is not None and int(current_attempts) >= 3:
+        if current_attempts is not None and int(current_attempts) >= OTP_MAX_ATTEMPTS:
             lockout_until = int(get_redis().get(f"otp_lockout_until:{email.strip().lower()}") or "0")
             now = int(utcnow().timestamp())
             if now < lockout_until:
