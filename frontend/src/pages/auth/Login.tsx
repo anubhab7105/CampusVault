@@ -160,9 +160,6 @@ function LoginPage() {
 
 /** Render the login page when coming from the Google callback. */
 function LoginCallback() {
-  const { setTokens, setUser } = useAuthStore();
-  const navigate = useNavigate();
-
   // The google_authorize_url will be in the query string; we render the Google
   // button immediately.
   const hasGoogleCallback = !!window.location.search.match(/\bgoogle_authorize_url\b/);
