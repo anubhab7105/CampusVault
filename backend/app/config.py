@@ -180,6 +180,7 @@ class TestingConfig(BaseConfig):
     DEBUG: bool = True
     ENV: str = TESTING
     TESTING: bool = True
+    RATELIMIT_STORAGE_URI: str = os.environ.get("RATELIMIT_STORAGE_URI", "memory://")
 
     SQLALCHEMY_DATABASE_URI: str = os.environ.get("TEST_DATABASE_URL", "sqlite:///:memory:")
 
