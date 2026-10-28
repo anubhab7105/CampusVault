@@ -43,7 +43,7 @@ jobs:
           ruff check app tests
 
       # Keep the existing project-wide typing backlog visible without blocking tests.
-      # Baseline currently reports 186 errors across 34 files; reduce this as modules are typed.
+      # Current full-repo run reports 186 errors across 34 files; reduce this as modules are typed.
       - name: Type check (mypy, advisory)
         continue-on-error: true
         run: |
