@@ -1,4 +1,4 @@
-"""Admin blueprint — stats, users, role administration, academic CRUD, groups, resources, moderation, allowlist, audit."""
+"""Admin blueprint — stats, users, roles, academic CRUD, groups, resources, moderation, allowlist, and audit."""
 
 from __future__ import annotations
 
@@ -81,14 +81,22 @@ def reactivate_user(user_id: uuid.UUID):
 @bp.post("/users/<uuid:user_id>/assign-role")
 def assign_user_role(user_id: uuid.UUID):
     acting_admin = _admin_guard()
-    body = load_schema(Schema({"role": fields.Str(validate=validate.OneOf(["Student", "Teacher", "Admin"]))}), get_json_body())
+    body = load_schema(
+        Schema({"role": fields.Str(validate=validate.OneOf(["Student", "Teacher", "Admin"]))}),
+        get_json_body(),
+    )
     role = body["role"]
     try:
         user = admin_service.assign_role(target_user_id=user_id, new_role=role, acting_admin_id=acting_admin)
     except Exception as e:
         return error_response(str(e), error_code="VALIDATION_ERROR"), 400
     from app.services.audit_service import audit_service
-    audit_service.record(action="admin.user.role.assign", entity_type="user", entity_id=user.id, changes={"new_role": role})
+    audit_service.record(
+        action="admin.user.role.assign",
+        entity_type="user",
+        entity_id=user.id,
+        changes={"new_role": role},
+    )
     return success_response(data={"role": user.role}, message="Role assigned.")
 
 
@@ -117,9 +125,15 @@ def department_create():
         "description": fields.Str(validate=validate.Length(max=1000)) | fields.Str(allow_none=True),
     }), get_json_body())
     dept = admin_service.department_create(
-        name=body["name"], code=body.get("code"), description=body.get("description"), acting_admin_id=acting_admin
+        name=body["name"],
+        code=body.get("code"),
+        description=body.get("description"),
+        acting_admin_id=acting_admin,
     )
-    return success_response(data={"id": str(dept.id), "name": dept.name, "code": dept.code}, message="Department created.")
+    return success_response(
+        data={"id": str(dept.id), "name": dept.name, "code": dept.code},
+        message="Department created.",
+    )
 
 
 @bp.put("/academic/departments/<uuid:dept_id>")
@@ -131,7 +145,11 @@ def department_update(dept_id: uuid.UUID):
         "description": fields.Str(validate=validate.Length(max=1000)) | fields.Str(allow_none=True),
     }), get_json_body())
     dept = admin_service.department_update(
-        dept_id=dept_id, name=body.get("name"), code=body.get("code"), description=body.get("description"), acting_admin_id=acting_admin
+        dept_id=dept_id,
+        name=body.get("name"),
+        code=body.get("code"),
+        description=body.get("description"),
+        acting_admin_id=acting_admin,
     )
     return success_response(data={"id": str(dept.id), "name": dept.name}, message="Department updated.")
 
@@ -158,7 +176,11 @@ def program_create():
         "description": fields.Str(validate=validate.Length(max=1000)) | fields.Str(allow_none=True),
     }), get_json_body())
     prog = admin_service.program_create(
-        name=body["name"], department_id=body["department_id"], code=body.get("code"), description=body.get("description"), acting_admin_id=acting_admin
+        name=body["name"],
+        department_id=body["department_id"],
+        code=body.get("code"),
+        description=body.get("description"),
+        acting_admin_id=acting_admin,
     )
     return success_response(data={"id": str(prog.id), "name": prog.name}, message="Program created.")
 
@@ -172,7 +194,11 @@ def program_update(prog_id: uuid.UUID):
         "description": fields.Str(validate=validate.Length(max=1000)) | fields.Str(allow_none=True),
     }), get_json_body())
     prog = admin_service.program_update(
-        prog_id=prog_id, name=body.get("name"), code=body.get("code"), description=body.get("description"), acting_admin_id=acting_admin
+        prog_id=prog_id,
+        name=body.get("name"),
+        code=body.get("code"),
+        description=body.get("description"),
+        acting_admin_id=acting_admin,
     )
     return success_response(data={"id": str(prog.id), "name": prog.name}, message="Program updated.")
 
@@ -188,9 +214,15 @@ def section_create():
         "capacity": fields.Int(validate=validate.Range(min=1)) | fields.Int(allow_none=True),
     }), get_json_body())
     sec = admin_service.section_create(
-        name=body["name"], program_id=body["program_id"], capacity=body.get("capacity"), acting_admin_id=acting_admin
+        name=body["name"],
+        program_id=body["program_id"],
+        capacity=body.get("capacity"),
+        acting_admin_id=acting_admin,
     )
-    return success_response(data={"id": str(sec.id), "name": sec.name, "capacity": sec.capacity}, message="Section created.")
+    return success_response(
+        data={"id": str(sec.id), "name": sec.name, "capacity": sec.capacity},
+        message="Section created.",
+    )
 
 
 # ---- Groups ----------------------------------------------------------- #
@@ -211,10 +243,17 @@ def group_reassign_owner(group_id: uuid.UUID):
     body = load_schema(Schema({"new_owner_id": fields.UUID(validate=validate.UUID)}), get_json_body())
     new_owner_id = body["new_owner_id"]
     try:
-        group = admin_service.group_reassign_owner(group_id=group_id, new_owner_id=new_owner_id, acting_admin_id=acting_admin)
+        group = admin_service.group_reassign_owner(
+            group_id=group_id,
+            new_owner_id=new_owner_id,
+            acting_admin_id=acting_admin,
+        )
     except Exception as e:
         return error_response(str(e), error_code="VALIDATION_ERROR"), 400
-    return success_response(data={"id": str(group.id), "name": group.name, "owner_id": str(group.owner_id)}, message="Owner reassigned.")
+    return success_response(
+        data={"id": str(group.id), "name": group.name, "owner_id": str(group.owner_id)},
+        message="Owner reassigned.",
+    )
 
 
 # ---- Resources -------------------------------------------------------- #
@@ -223,7 +262,10 @@ def group_reassign_owner(group_id: uuid.UUID):
 def resource_unpublish(resource_id: uuid.UUID):
     acting_admin = _admin_guard()
     res = admin_service.resource_unpublish(resource_id=resource_id, acting_admin_id=acting_admin)
-    return success_response(data={"id": str(res.id), "title": res.title, "is_published": res.is_published}, message="Resource unpublished.")
+    return success_response(
+        data={"id": str(res.id), "title": res.title, "is_published": res.is_published},
+        message="Resource unpublished.",
+    )
 
 
 @bp.put("/resources/<uuid:resource_id>/soft-delete")
@@ -233,7 +275,10 @@ def resource_soft_delete(resource_id: uuid.UUID):
         res = admin_service.resource_soft_delete(resource_id=resource_id, acting_admin_id=acting_admin)
     except Exception as e:
         return error_response(str(e), error_code="SERVICE_ERROR"), 500
-    return success_response(data={"id": str(res.id), "title": res.title, "is_active": res.is_active}, message="Resource soft-deleted.")
+    return success_response(
+        data={"id": str(res.id), "title": res.title, "is_active": res.is_active},
+        message="Resource soft-deleted.",
+    )
 
 
 @bp.get("/resources/<uuid:resource_id>/scan-status")
@@ -250,7 +295,14 @@ def allowlist_add():
     acting_admin = _admin_guard()
     body = load_schema(Schema({"email": fields.Str(validate=validate.Email())}), get_json_body())
     entry = admin_service.allowlist_add(email=body["email"], acting_admin_id=acting_admin)
-    return success_response(data={"email": entry.email, "is_approved": entry.is_approved, "added_at": entry.added_at}, message="Allowlist entry added.")
+    return success_response(
+        data={
+            "email": entry.email,
+            "is_approved": entry.is_approved,
+            "added_at": entry.added_at,
+        },
+        message="Allowlist entry added.",
+    )
 
 
 @bp.delete("/allowlist/<email>")
@@ -270,14 +322,27 @@ def allowlist_approve(email: str):
         entry = admin_service.allowlist_approve(email=email, acting_admin_id=acting_admin)
     except NotFoundError as e:
         return error_response(str(e), error_code="NOT_FOUND"), 404
-    return success_response(data={"email": entry.email, "is_approved": entry.is_approved, "approved_at": entry.approved_at}, message="Allowlist entry approved.")
+    return success_response(
+        data={
+            "email": entry.email,
+            "is_approved": entry.is_approved,
+            "approved_at": entry.approved_at,
+        },
+        message="Allowlist entry approved.",
+    )
 
 
 @bp.get("/allowlist")
 def allowlist_list():
     acting_admin = _admin_guard()
     entries = admin_service.allowlist_list(acting_admin_id=acting_admin)
-    return success_response(data=[{"email": e.email, "is_approved": e.is_approved, "added_at": str(e.added_at)} for e in entries], message="Allowlist listed.")
+    return success_response(
+        data=[
+            {"email": entry.email, "is_approved": entry.is_approved, "added_at": str(entry.added_at)}
+            for entry in entries
+        ],
+        message="Allowlist listed.",
+    )
 
 
 # ---- Moderation Queue ------------------------------------------------- #
@@ -292,9 +357,21 @@ def moderation_quarantine_list():
 @bp.post("/moderation/confirm-delete")
 def moderation_confirm_delete():
     acting_admin = _admin_guard()
-    body = load_schema(Schema({"file_id": fields.UUID(validate=validate.UUID), "justification": fields.Str(validate=validate.Length(min=1, max=500))}), get_json_body())
+    body = load_schema(
+        Schema(
+            {
+                "file_id": fields.UUID(validate=validate.UUID),
+                "justification": fields.Str(validate=validate.Length(min=1, max=500)),
+            }
+        ),
+        get_json_body(),
+    )
     try:
-        result = admin_service.moderation_confirm_delete(file_id=body["file_id"], justification=body["justification"], acting_admin_id=acting_admin)
+        result = admin_service.moderation_confirm_delete(
+            file_id=body["file_id"],
+            justification=body["justification"],
+            acting_admin_id=acting_admin,
+        )
     except NotFoundError as e:
         return error_response(str(e), error_code="NOT_FOUND"), 404
     return success_response(data=result, message="Confirmed deletion processed.")
@@ -335,7 +412,9 @@ def audit_logs_list():
     csv_data = io.StringIO()
     writer = csv.writer(csv_data)
     # Header
-    writer.writerow(["id", "actor_id", "action", "entity_type", "entity_id", "request_id", "created_at", "changes"])
+    writer.writerow(
+        ["id", "actor_id", "action", "entity_type", "entity_id", "request_id", "created_at", "changes"]
+    )
     for row in rows:
         writer.writerow([
             row.id,
@@ -349,12 +428,23 @@ def audit_logs_list():
         ])
     csv_string = csv_data.getvalue()
 
+    audit_items = [
+        {
+            "id": str(row.id),
+            "action": row.action,
+            "entity_type": row.entity_type,
+            "entity_id": str(row.entity_id) if row.entity_id else None,
+            "created_at": row.created_at.isoformat() if row.created_at else None,
+        }
+        for row in rows
+    ]
     return success_response(
-        data={"items": [{"id": str(r.id), "action": r.action, "entity_type": r.entity_type, "entity_id": str(r.entity_id) if r.entity_id else None, "created_at": r.created_at.isoformat() if r.created_at else None} for r in rows]},
+        data={"items": audit_items},
         paging=meta.as_dict(),
         message="Audit logs listed.",
-        # Include CSV as a downloadable field; the export itself is audited separately
-        csv_export=csv_string[:10000] if csv_string else "",  # truncate preview, full export via dedicated endpoint if needed
+        # Include a truncated CSV preview; the export itself is audited separately.
+        # Full exports should use a dedicated endpoint.
+        csv_export=csv_string[:10000] if csv_string else "",
     )
 
 
