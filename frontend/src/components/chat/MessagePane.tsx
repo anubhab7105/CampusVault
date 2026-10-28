@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { apiClient, fetchMessages } from "@services/apiClient";
-import { useAuthStore } from "@stores/useAuthStore";
 import { useSocketStore } from "@stores/useSocketStore";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, Skeleton } from "@components/ui/index";
 
