@@ -1,41 +1,35 @@
 /** Conversation list — groups and DMs with unread badges and presence dots. */
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+
+import { Card, CardContent, CardHeader, Avatar, Badge, Skeleton, Button } from "@components/ui/index";
+import { cn } from "@utils/cn";
+import { useChatMessages } from "@hooks/useChat";
+import { socketService } from "@services/socketService";
 import { useAuthStore } from "@stores/useAuthStore";
 import { useSocketStore } from "@stores/useSocketStore";
-import { socketService } from "@services/socketService";
-import { useChatMessages } from "@hooks/useChat";
-import { Card, Avatar, Badge, Skeleton, Button } from "@components/ui/index";
-import { cn } from "@utils/cn";
-import { formatRelative } from "@utils/datetime";
-import { useDispatch } from "react-redux";
-import { selectGroups, selectDMs } from "@store/slices/chatSlice";
-import { loadGroups, loadDMs } from "@store/slices/chatSlice";
 
 export default function ConversationList() {
   const { user } = useAuthStore();
   const { connected } = useSocketStore();
-
-  // Load groups and DMs from Redux (populated by API calls on mount)
-  useDispatch(loadGroups());
-  useDispatch(loadDMs());
-
-  const [groups, setGroups] = useState<any[]>([]);
-  const [dmConversations, setDMConversations] = useState<any[]>([]);
+  const groups: any[] = [];
+  const dmConversations: any[] = [];
 
   useEffect(() => {
-    if (user) {
-      // Groups and DMs are loaded via Redux; here we just subscribe to socket updates
-      socketService.on("notification", (payload: any) => {
-        // Handle notification badge updates
-        // TODO: update unread counts
-      });
-    }
+    if (!user) return;
+
+    const handleNotification = () => {
+      // TODO: update unread counts when notification state is wired into Redux.
+    };
+    socketService.on("notification", handleNotification);
+
+    return () => {
+      socketService.off("notification", handleNotification);
+    };
   }, [user]);
 
-  const { messages, isLoading, fetchNextPage, hasNextPage } = useChatMessages({
+  const { isLoading } = useChatMessages({
     conversationId: "",
-    initialCursor: undefined,
   });
 
   return (
@@ -45,41 +39,32 @@ export default function ConversationList() {
           {user?.full_name ?? "Chat"}
         </span>
         {connected ? (
-          <span className="text-caption-xs text-green-600 font-medium">
-            ● Connected
-          </span>
+          <span className="text-caption-xs text-green-600 font-medium">● Connected</span>
         ) : (
-          <span className="text-caption-xs text-red-600 font-medium">
-            ○ Disconnected
-          </span>
+          <span className="text-caption-xs text-red-600 font-medium">○ Disconnected</span>
         )}
       </CardHeader>
 
       <CardContent className="h-96 overflow-y-auto p-4">
-        {isLoading && (
-          <Skeleton className="h-6 w-20 rounded-b mb-2" />
-        )}
+        {isLoading && <Skeleton className="h-6 w-20 rounded-b mb-2" />}
 
-        {/* Groups section */}
         {groups.length > 0 && (
           <div className="space-y-2 mb-6">
             <span className="text-caption-sm text-ink-tertiary uppercase tracking-wider">Groups</span>
             <div className="space-y-1">
-              {groups.map((g) => (
+              {groups.map((group) => (
                 <Button
-                  key={g.id}
+                  key={group.id}
                   variant="outline"
                   size="sm"
                   className={cn("w-full flex items-center justify-between", "px-3")}
-                  onClick={() => {/* Navigate to group chat */}
-                  }
+                  onClick={() => {
+                    // TODO: navigate to the selected group conversation.
+                  }}
                 >
-                  <span className="font-medium text-ink-default">{g.name}</span>
-                  <Badge
-                    variant="secondary"
-                    className="text-caption-xs"
-                  >
-                    {g.unread_count ?? 0}
+                  <span className="font-medium text-ink-default">{group.name}</span>
+                  <Badge variant="secondary" className="text-caption-xs">
+                    {group.unread_count ?? 0}
                   </Badge>
                 </Button>
               ))}
@@ -87,7 +72,6 @@ export default function ConversationList() {
           </div>
         )}
 
-        {/* DMs section */}
         {dmConversations.length > 0 && (
           <div className="space-y-2 mb-6">
             <span className="text-caption-sm text-ink-tertiary uppercase tracking-wider">Direct Messages</span>
@@ -99,16 +83,14 @@ export default function ConversationList() {
                   size="sm"
                   className={cn("w-full flex items-center justify-between", "px-3")}
                   onClick={() => {
-                    // Navigate to DM conversation
-                    // TODO: set active conversation and load messages
+                    // TODO: set the active conversation and load its messages.
                   }}
                 >
                   <Avatar className="w-6 h-6">{dm.last_sender_initial ?? "A"}</Avatar>
-                  <span className="font-medium text-ink-default ml-2 line-clamp-1">{dm.last_sender_name ?? "Unknown"}</span>
-                  <Badge
-                    variant="secondary"
-                    className="text-caption-xs ml-auto"
-                  >
+                  <span className="font-medium text-ink-default ml-2 line-clamp-1">
+                    {dm.last_sender_name ?? "Unknown"}
+                  </span>
+                  <Badge variant="secondary" className="text-caption-xs ml-auto">
                     {dm.unread_count ?? 0}
                   </Badge>
                 </Button>
@@ -117,7 +99,6 @@ export default function ConversationList() {
           </div>
         )}
 
-        {/* Recent messages placeholder */}
         {(!groups.length || !dmConversations.length) && (
           <p className="text-caption-xs text-ink-secondary italic mt-4">
             Select a group or direct message to start chatting
