@@ -325,9 +325,7 @@ class AdminService(BaseService):
         group = group_service.get_active_group(group_id)
         if group is None:
             raise NotFoundError("Group not found.")
-        # Check participant count
-        member_count = db.session.query(db.func.count()).select_from(group.__class__.__table__ if hasattr(group, '__class__') else "user_groups").filter(group.__class__.__table__.c.group_id == group_id, group.__class__.__table__.c.left_at.is_(None)) if hasattr(group, '__table__') else 0
-        # Simpler check via group service
+        # Check the active membership count via the group service.
         members = group_service.groups.list_group_members(group_id)
         if len(members) <= 1:
             raise ValidationError("Cannot archive group with only owner. Transfer ownership or add members first.")
