@@ -56,7 +56,7 @@ jobs:
           APP_SECRET_KEY: ci-test-secret-key
           JWT_SECRET_KEY: ci-test-jwt-key
         run: |
-          pytest --cov=app --cov-report=term --cov-report=xml --cov-fail-under=40
+          PYTHONPATH=. python -m pytest --cov=app --cov-report=term --cov-report=xml --cov-fail-under=40
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4
