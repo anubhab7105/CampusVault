@@ -36,7 +36,6 @@ from app.services.token_service import TokenService
 from app.utils.datetime_utils import utcnow
 from app.utils.redis_utils import get_redis
 
-
 OTP_MAX_ATTEMPTS = 3
 
 
