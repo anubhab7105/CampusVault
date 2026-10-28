@@ -11,8 +11,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle, Skeleton } from "
 interface Message {
   id: string;
   content: string;
-  sender_id: string;
-  created_at: string;
+  sender_id: string | null;
+  created_at: string | null;
   user_role?: "student" | "teacher" | "admin";
 }
 
