@@ -4,13 +4,12 @@ from __future__ import annotations
 
 from uuid import UUID
 
-import celery_task  # Celery app instance
-
 from app.extensions import db
 from app.services.scanner import ClamAVScanner, NoOpScanner
 from app.services.storage import LocalFileStorage, SupabaseStorage
+from celery_app import celery_app
 
-@celery_task.task(bind=True, max_retries=3, default_retry_delay=2)
+@celery_app.task(bind=True, max_retries=3, default_retry_delay=2)
 def scan_file_task(self, file_id: str, storage_type: str = "supabase", scanner_type: str = "auto"):
     """Scan a file and update its ``scan_status`` in the database.
 
