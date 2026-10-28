@@ -27,7 +27,7 @@ export function GroupManagementDialog({ groupId }: { groupId: string }) {
       { id: user.id, name: user.full_name, role: "owner" },
       { id: "user2", name: "Jane Student", role: "member" },
     ]);
-  }, [groupId, user?.id, user?.full_name]);
+  }, [groupId, user]);
 
   const canManage = Boolean(
     user && members.some(
