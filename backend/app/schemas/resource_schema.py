@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from marshmallow import Schema, fields, validate
 
-
 MAX_RESOURCE_PAGE = 1000
 MAX_RESOURCE_PAGE_SIZE = 100
 
