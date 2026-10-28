@@ -33,8 +33,8 @@ from app.models import TeacherAllowlist, User, UserRole
 from app.repositories import UserRepository
 from app.services.otp_service import OTP_TTL_SECONDS, otp_service
 from app.services.token_service import TokenService
-from app.utils.redis_utils import get_redis
 from app.utils.datetime_utils import utcnow
+from app.utils.redis_utils import get_redis
 
 
 class AuthService:
@@ -106,7 +106,7 @@ class AuthService:
         complete the OTP flow.  Rate limits are enforced per-email in Redis.
         """
         # Check allowlist — same shape response whether approved or not.
-        allowlisted = self.is_teacher_allowlisted(email)
+        self.is_teacher_allowlisted(email)
 
         # Rate limit per email: 3 attempts per 5 minutes stored in Redis.
         attempt_key = f"otp_attempts:{email.strip().lower()}"
@@ -140,7 +140,7 @@ class AuthService:
         stmt = (
             db.select(TeacherAllowlist)
             .where(TeacherAllowlist.email == email.strip().lower())
-            .where(TeacherAllowlist.is_approved == True)
+            .where(TeacherAllowlist.is_approved.is_(True))
         )
         allowlist_entry = db.session.scalar(stmt)
         return allowlist_entry is not None
