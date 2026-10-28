@@ -113,6 +113,9 @@ export const useSendMessage = () => {
           content,
           reply_to_id: null,
         },
+        {
+          headers: { "Idempotency-Key": idempotencyKey },
+        },
       );
 
       return response.data;
