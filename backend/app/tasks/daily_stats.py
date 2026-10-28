@@ -89,7 +89,8 @@ def refresh_daily_stats(self) -> None:
     downloads_total = int(db.session.scalar(downloads_stmt) or 0)
 
     # Uploads: count of resources created yesterday
-    uploads_total = int(db.session.scalar(published_stmt) or 0)  # reuse published count as proxy, or count resources
+    # Reuse the published count as a proxy until upload events are tracked separately.
+    uploads_total = int(db.session.scalar(published_stmt) or 0)
 
     # Upsert into daily_stats
     upsert = (
