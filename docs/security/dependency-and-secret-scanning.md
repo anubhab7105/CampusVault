@@ -1,15 +1,18 @@
 # Dependency and secret scanning
 
-CampusVault runs automated dependency and secret scans on pull requests and branch pushes through GitHub Actions.
+CampusVault runs required dependency and secret scans on pull requests and branch pushes through GitHub Actions.
 
 ## Required checks
 
-- **Python:** `pip-audit --strict` checks the backend runtime, test, and development requirements. Any reported vulnerable installed dependency fails the job.
+- **Python:** `pip-audit --strict` checks the backend runtime, test, and development dependencies. Any reported vulnerable installed dependency fails the job.
 - **Frontend:** `npm audit --audit-level=high` fails for high or critical npm advisories. The job also uploads the full npm audit JSON report so moderate and low findings remain visible for review.
 - **Secrets:** Gitleaks scans the checked-out repository history. Treat any detected credential as potentially exposed.
-- **Pull request dependency changes:** GitHub's dependency review action evaluates dependency changes on pull requests and is not controlled by a repository variable.
 
-The checks are not conditional on optional repository variables. A scanner setup or execution failure should be investigated and fixed rather than bypassed.
+These required scanners do not depend on optional repository variables. A scanner setup or execution failure should be investigated and fixed rather than bypassed.
+
+## Optional dependency review
+
+GitHub's dependency review action is a supplementary pull-request check. To enable it, turn on **Dependency graph** under [repository Security settings](https://github.com/anubhab7105/CampusVault/settings/security_analysis) and set the repository Actions variable `DEPENDENCY_GRAPH_ENABLED` to `true`. If it is not enabled, this supplementary job is skipped; the required Python, npm, and secret-scanning jobs still run.
 
 ## Triage and suppressions
 
