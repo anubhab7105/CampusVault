@@ -169,9 +169,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  # Supplementary check only: the dependency graph feature must be enabled in
+  # repository settings and DEPENDENCY_GRAPH_ENABLED must be set to "true".
+  # The required pip-audit, npm audit, and Gitleaks jobs above always run.
   dependency-review:
     name: dependency review
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && vars.DEPENDENCY_GRAPH_ENABLED == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
