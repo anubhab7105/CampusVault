@@ -6,8 +6,8 @@ CampusVault — an online academic library platform for a college.
 
 | Path | Purpose |
 | ---- | ------- |
-| `backend/` | Flask application: app factory, config, blueprints, models, services, repositories, schemas, middleware, sockets, tasks, Alembic migrations, tests |
-| `frontend/` | React + Vite SPA: pages, components, layouts, routes, stores, services, hooks, types, tests |
+| `backend/` | Flask application: app factory, database models, services, middleware, tasks, Alembic migrations, tests |
+| `frontend/` | React + Vite SPA: pages, components, routes, stores, services, hooks, types, tests |
 | `docker/` | docker-compose + Nginx config for local development |
 | `tests/` | Playwright E2E tests (repo root) |
 | `docs/` | Engineering documentation (guides + API + feature docs) |
@@ -56,6 +56,10 @@ cd ..      && npx playwright test           # E2E (under tests/)
 
 Coverage minimum 80% (Definition of Done); the backend ratchet starts at 40%
 for scaffolding and rises per feature.
+
+## Security checks
+
+Pull requests and branch pushes run Python dependency auditing, frontend dependency auditing, and Gitleaks secret scanning. The supplementary dependency-review job can be enabled after turning on GitHub's Dependency graph feature and setting `DEPENDENCY_GRAPH_ENABLED=true`. See [the scanning and triage guide](docs/security/dependency-and-secret-scanning.md) for thresholds, false-positive handling, and credential rotation steps.
 
 See `docs/00_PROJECT_MEMORY.md` for phase status and `docs/api/` for the API
 contract.
