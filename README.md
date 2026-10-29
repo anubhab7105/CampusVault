@@ -59,7 +59,7 @@ for scaffolding and rises per feature.
 
 ## Security checks
 
-Pull requests and branch pushes run Python dependency auditing, frontend dependency auditing, and Gitleaks secret scanning. Pull requests also run dependency review. See [the scanning and triage guide](docs/security/dependency-and-secret-scanning.md) for thresholds, false-positive handling, and credential rotation steps.
+Pull requests and branch pushes run Python dependency auditing, frontend dependency auditing, and Gitleaks secret scanning. The supplementary dependency-review job can be enabled after turning on GitHub's Dependency graph feature and setting `DEPENDENCY_GRAPH_ENABLED=true`. See [the scanning and triage guide](docs/security/dependency-and-secret-scanning.md) for thresholds, false-positive handling, and credential rotation steps.
 
 See `docs/00_PROJECT_MEMORY.md` for phase status and `docs/api/` for the API
 contract.
