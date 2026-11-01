@@ -9,6 +9,7 @@ from flask import Blueprint, request
 from app.middleware.auth import ensure_authenticated
 from app.services.notification_service import notification_service
 from app.utils.pagination import PagingMeta, parse_pagination_args
+from app.utils.rate_limit import RATELIMIT_AUTH, cv_rate_limit
 from app.utils.responses import success_response
 
 bp = Blueprint("notifications", __name__, url_prefix="/api/v1/notifications")
@@ -27,6 +28,7 @@ def _serialize(n) -> dict:
 
 
 @bp.get("")
+@cv_rate_limit(RATELIMIT_AUTH)
 def list_notifications():
     user_id = uuid.UUID(ensure_authenticated())
     page, page_size, _ = parse_pagination_args(request.args.get("page"), request.args.get("page_size"))
@@ -45,6 +47,7 @@ def list_notifications():
 
 
 @bp.get("/unread-count")
+@cv_rate_limit(RATELIMIT_AUTH)
 def unread_count():
     user_id = uuid.UUID(ensure_authenticated())
     return success_response(
@@ -54,6 +57,7 @@ def unread_count():
 
 
 @bp.post("/<uuid:notification_id>/read")
+@cv_rate_limit(RATELIMIT_AUTH)
 def mark_read(notification_id: uuid.UUID):
     user_id = uuid.UUID(ensure_authenticated())
     updated = notification_service.mark_read(notification_id, user_id)
@@ -65,6 +69,7 @@ def mark_read(notification_id: uuid.UUID):
 
 
 @bp.post("/read-all")
+@cv_rate_limit(RATELIMIT_AUTH)
 def mark_all_read():
     user_id = uuid.UUID(ensure_authenticated())
     count = notification_service.mark_all_read(user_id)
