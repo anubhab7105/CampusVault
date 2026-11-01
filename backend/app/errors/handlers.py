@@ -24,11 +24,19 @@ def _register_framework_handlers(app: Flask) -> None:
 
     @app.errorhandler(RateLimitExceeded)
     def handle_rate_limited(err: RateLimitExceeded) -> tuple:
-        return error_response(
+        response = error_response(
             "RATE_LIMITED",
             "Too many requests. Please slow down.",
             status_code=429,
         )
+        # flask-limiter sets retry_after (seconds until the window resets).
+        retry_after = getattr(err, "retry_after", None)
+        if retry_after is not None:
+            try:
+                response.headers["Retry-After"] = str(int(retry_after))
+            except (TypeError, ValueError):
+                pass
+        return response
 
     @app.errorhandler(AppError)
     def handle_app_error(err: AppError) -> tuple:
