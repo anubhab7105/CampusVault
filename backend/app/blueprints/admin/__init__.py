@@ -17,6 +17,11 @@ from app.schemas.common import SearchSortQuerySchema
 from app.services.admin_service import admin_service
 from app.services.auth_service import AuthService
 from app.utils.pagination import PagingMeta
+from app.utils.rate_limit import (
+    RATELIMIT_ADMIN_READ,
+    RATELIMIT_ADMIN_WRITE,
+    cv_rate_limit,
+)
 from app.utils.responses import error_response, success_response
 from app.utils.validation import get_json_body, load_schema
 
@@ -34,6 +39,7 @@ def _admin_guard() -> uuid.UUID:
 # ---- Stats ------------------------------------------------------------ #
 
 @bp.get("/stats")
+@cv_rate_limit(RATELIMIT_ADMIN_READ)
 def stats():
     _admin_guard()
     return success_response(data=admin_service.platform_stats(), message="Stats loaded.")
@@ -42,6 +48,7 @@ def stats():
 # ---- Users ------------------------------------------------------------ #
 
 @bp.get("/users")
+@cv_rate_limit(RATELIMIT_ADMIN_READ)
 def list_users():
     _admin_guard()
     filters = load_schema(SearchSortQuerySchema(), request.args.to_dict())
@@ -56,6 +63,7 @@ def list_users():
 
 
 @bp.post("/users/<uuid:user_id>/deactivate")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def deactivate_user(user_id: uuid.UUID):
     acting_admin = _admin_guard()
     try:
@@ -68,6 +76,7 @@ def deactivate_user(user_id: uuid.UUID):
 
 
 @bp.post("/users/<uuid:user_id>/reactivate")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def reactivate_user(user_id: uuid.UUID):
     acting_admin = _admin_guard()
     try:
@@ -80,6 +89,7 @@ def reactivate_user(user_id: uuid.UUID):
 
 
 @bp.post("/users/<uuid:user_id>/assign-role")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def assign_user_role(user_id: uuid.UUID):
     acting_admin = _admin_guard()
     body = load_schema(
@@ -102,6 +112,7 @@ def assign_user_role(user_id: uuid.UUID):
 
 
 @bp.post("/users/<uuid:user_id>/remove-role")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def remove_user_role(user_id: uuid.UUID):
     acting_admin = _admin_guard()
     try:
@@ -118,6 +129,7 @@ def remove_user_role(user_id: uuid.UUID):
 # Departments
 
 @bp.post("/academic/departments")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def department_create():
     acting_admin = _admin_guard()
     body = load_schema(Schema({
@@ -138,6 +150,7 @@ def department_create():
 
 
 @bp.put("/academic/departments/<uuid:dept_id>")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def department_update(dept_id: uuid.UUID):
     acting_admin = _admin_guard()
     body = load_schema(Schema({
@@ -156,6 +169,7 @@ def department_update(dept_id: uuid.UUID):
 
 
 @bp.delete("/academic/departments/<uuid:dept_id>")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def department_delete(dept_id: uuid.UUID):
     acting_admin = _admin_guard()
     try:
@@ -168,6 +182,7 @@ def department_delete(dept_id: uuid.UUID):
 # Programs
 
 @bp.post("/academic/programs")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def program_create():
     acting_admin = _admin_guard()
     body = load_schema(Schema({
@@ -187,6 +202,7 @@ def program_create():
 
 
 @bp.put("/academic/programs/<uuid:prog_id>")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def program_update(prog_id: uuid.UUID):
     acting_admin = _admin_guard()
     body = load_schema(Schema({
@@ -207,6 +223,7 @@ def program_update(prog_id: uuid.UUID):
 # Sections
 
 @bp.post("/academic/sections")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def section_create():
     acting_admin = _admin_guard()
     body = load_schema(Schema({
@@ -229,6 +246,7 @@ def section_create():
 # ---- Groups ----------------------------------------------------------- #
 
 @bp.post("/groups/<uuid:group_id>/archive")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def group_archive(group_id: uuid.UUID):
     acting_admin = _admin_guard()
     try:
@@ -239,6 +257,7 @@ def group_archive(group_id: uuid.UUID):
 
 
 @bp.post("/groups/<uuid:group_id>/reassign-owner")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def group_reassign_owner(group_id: uuid.UUID):
     acting_admin = _admin_guard()
     body = load_schema(Schema({"new_owner_id": fields.UUID(validate=validate.UUID)}), get_json_body())
@@ -260,6 +279,7 @@ def group_reassign_owner(group_id: uuid.UUID):
 # ---- Resources -------------------------------------------------------- #
 
 @bp.put("/resources/<uuid:resource_id>/unpublish")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def resource_unpublish(resource_id: uuid.UUID):
     acting_admin = _admin_guard()
     res = admin_service.resource_unpublish(resource_id=resource_id, acting_admin_id=acting_admin)
@@ -270,6 +290,7 @@ def resource_unpublish(resource_id: uuid.UUID):
 
 
 @bp.put("/resources/<uuid:resource_id>/soft-delete")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def resource_soft_delete(resource_id: uuid.UUID):
     acting_admin = _admin_guard()
     try:
@@ -283,6 +304,7 @@ def resource_soft_delete(resource_id: uuid.UUID):
 
 
 @bp.get("/resources/<uuid:resource_id>/scan-status")
+@cv_rate_limit(RATELIMIT_ADMIN_READ)
 def resource_scan_status(resource_id: uuid.UUID):
     _admin_guard()
     status = admin_service.resource_scan_status(resource_id=resource_id)
@@ -292,6 +314,7 @@ def resource_scan_status(resource_id: uuid.UUID):
 # ---- Teacher Allowlist ------------------------------------------------ #
 
 @bp.post("/allowlist")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def allowlist_add():
     acting_admin = _admin_guard()
     body = load_schema(Schema({"email": fields.Str(validate=validate.Email())}), get_json_body())
@@ -307,6 +330,7 @@ def allowlist_add():
 
 
 @bp.delete("/allowlist/<email>")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def allowlist_remove(email: str):
     acting_admin = _admin_guard()
     try:
@@ -317,6 +341,7 @@ def allowlist_remove(email: str):
 
 
 @bp.post("/allowlist/<email>/approve")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def allowlist_approve(email: str):
     acting_admin = _admin_guard()
     try:
@@ -334,6 +359,7 @@ def allowlist_approve(email: str):
 
 
 @bp.get("/allowlist")
+@cv_rate_limit(RATELIMIT_ADMIN_READ)
 def allowlist_list():
     acting_admin = _admin_guard()
     entries = admin_service.allowlist_list(acting_admin_id=acting_admin)
@@ -349,6 +375,7 @@ def allowlist_list():
 # ---- Moderation Queue ------------------------------------------------- #
 
 @bp.get("/moderation/quarantine")
+@cv_rate_limit(RATELIMIT_ADMIN_READ)
 def moderation_quarantine_list():
     _admin_guard()
     items = admin_service.moderation_quarantine_list()
@@ -356,6 +383,7 @@ def moderation_quarantine_list():
 
 
 @bp.post("/moderation/confirm-delete")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def moderation_confirm_delete():
     acting_admin = _admin_guard()
     body = load_schema(
@@ -393,6 +421,7 @@ class AuditLogFilterSchema(Schema):
 
 
 @bp.get("/audit-logs")
+@cv_rate_limit(RATELIMIT_ADMIN_READ)
 def audit_logs_list():
     _admin_guard()
     filters = load_schema(AuditLogFilterSchema(), request.args.to_dict())
@@ -452,6 +481,7 @@ def audit_logs_list():
 # ---- System Settings (read-only env overview) ----------------------- #
 
 @bp.get("/settings")
+@cv_rate_limit(RATELIMIT_ADMIN_READ)
 def settings_overview():
     """Read-only overview of configured system settings (no writes)."""
     from app.config import DevelopmentConfig

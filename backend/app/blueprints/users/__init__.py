@@ -11,6 +11,7 @@ from app.middleware.rbac import permission_required
 from app.repositories import UserRepository
 from app.services.auth_service import AuthService
 from app.utils.pagination import parse_pagination_args
+from app.utils.rate_limit import RATELIMIT_ADMIN_READ, RATELIMIT_AUTH, cv_rate_limit
 from app.utils.responses import success_response
 from app.utils.validation import ValidationError
 
@@ -20,6 +21,7 @@ users_repo = UserRepository()
 
 
 @bp.get("/me")
+@cv_rate_limit(RATELIMIT_AUTH)
 def get_me():
     user_id = uuid.UUID(ensure_authenticated())
     user = users_repo.get_active_by_id(user_id)
@@ -30,6 +32,7 @@ def get_me():
 
 @bp.get("")
 @permission_required("admin:users:manage")
+@cv_rate_limit(RATELIMIT_ADMIN_READ)
 def list_users():
     page, page_size, _ = parse_pagination_args(request.args.get("page"), request.args.get("page_size"))
     rows, total = users_repo.search(request.args.get("q"), page, page_size)
