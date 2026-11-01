@@ -11,6 +11,7 @@ from app.extensions import db
 from app.middleware.auth import ensure_authenticated
 from app.schemas.group_schema import AddMemberSchema, CreateGroupSchema
 from app.services.group_service import group_service
+from app.utils.rate_limit import RATELIMIT_AUTH, cv_rate_limit
 from app.utils.responses import success_response
 from app.utils.validation import get_json_body, load_schema
 
@@ -18,6 +19,7 @@ bp = Blueprint("groups", __name__, url_prefix="/api/v1/groups")
 
 
 @bp.post("")
+@cv_rate_limit(RATELIMIT_AUTH)
 def create_group():
     """Create a group; creator becomes owner + room participant."""
     user_id = uuid.UUID(ensure_authenticated())
@@ -31,6 +33,7 @@ def create_group():
 
 
 @bp.get("")
+@cv_rate_limit(RATELIMIT_AUTH)
 def my_groups():
     user_id = uuid.UUID(ensure_authenticated())
     groups = group_service.list_for_user(user_id)
@@ -41,6 +44,7 @@ def my_groups():
 
 
 @bp.get("/<uuid:group_id>")
+@cv_rate_limit(RATELIMIT_AUTH)
 def get_group(group_id: uuid.UUID):
     user_id = uuid.UUID(ensure_authenticated())
     group = group_service.get_active_group(group_id)
@@ -58,6 +62,7 @@ def get_group(group_id: uuid.UUID):
 
 
 @bp.post("/<uuid:group_id>/members")
+@cv_rate_limit(RATELIMIT_AUTH)
 def add_member(group_id: uuid.UUID):
     """Invite a user (owner-only; both group + room membership updated)."""
     actor_id = uuid.UUID(ensure_authenticated())
@@ -76,6 +81,7 @@ def add_member(group_id: uuid.UUID):
 
 
 @bp.post("/<uuid:group_id>/leave")
+@cv_rate_limit(RATELIMIT_AUTH)
 def leave_group(group_id: uuid.UUID):
     """Remove the current user from the group.
 
@@ -101,6 +107,7 @@ def leave_group(group_id: uuid.UUID):
 
 
 @bp.post("/<uuid:group_id>/transfer-ownership")
+@cv_rate_limit(RATELIMIT_AUTH)
 def transfer_ownership(group_id: uuid.UUID):
     """Transfer group ownership to another user.
 
@@ -129,6 +136,7 @@ def transfer_ownership(group_id: uuid.UUID):
 
 
 @bp.post("/<uuid:group_id>/members/<uuid:member_id>/role")
+@cv_rate_limit(RATELIMIT_AUTH)
 def change_member_role(group_id: uuid.UUID, member_id: uuid.UUID):
     """Change a member's role (owner ↔ moderator, moderator ↔ member).
 
@@ -171,6 +179,7 @@ def change_member_role(group_id: uuid.UUID, member_id: uuid.UUID):
 
 
 @bp.get("/<uuid:group_id>/members")
+@cv_rate_limit(RATELIMIT_AUTH)
 def list_members(group_id: uuid.UUID):
     """List all members of the group with their roles."""
     user_id = uuid.UUID(ensure_authenticated())
