@@ -13,6 +13,7 @@ from flask import Blueprint, request
 from app.middleware.auth import ensure_authenticated
 from app.schemas.message_schema import MessageListQuerySchema, SendGroupMessageSchema
 from app.services.chat_service import chat_service
+from app.utils.rate_limit import RATELIMIT_CHAT_MESSAGE, cv_rate_limit
 from app.utils.responses import success_response
 from app.utils.validation import ValidationError, get_json_body, load_schema
 
@@ -41,6 +42,7 @@ def _serialize(message) -> dict:
 
 
 @bp.get("/conversations/<uuid:conversation_id>/messages")
+@cv_rate_limit(RATELIMIT_CHAT_MESSAGE)
 def history(conversation_id: uuid.UUID):
     user_id = uuid.UUID(ensure_authenticated())
     query = load_schema(
@@ -57,6 +59,7 @@ def history(conversation_id: uuid.UUID):
 
 
 @bp.post("/conversations/<uuid:conversation_id>/messages")
+@cv_rate_limit(RATELIMIT_CHAT_MESSAGE)
 def send_group_message(conversation_id: uuid.UUID):
     user_id = uuid.UUID(ensure_authenticated())
     body = load_schema(SendGroupMessageSchema(), get_json_body())
@@ -72,6 +75,7 @@ def send_group_message(conversation_id: uuid.UUID):
 
 
 @bp.post("/conversations/dm/<uuid:peer_id>")
+@cv_rate_limit(RATELIMIT_CHAT_MESSAGE)
 def open_dm(peer_id: uuid.UUID):
     user_id = uuid.UUID(ensure_authenticated())
     conversation = chat_service.get_dm_for(user_a=user_id, user_b=peer_id)
@@ -79,6 +83,7 @@ def open_dm(peer_id: uuid.UUID):
 
 
 @bp.post("/conversations/<uuid:conversation_id>/read")
+@cv_rate_limit(RATELIMIT_CHAT_MESSAGE)
 def mark_read(conversation_id: uuid.UUID):
     user_id = uuid.UUID(ensure_authenticated())
     chat_service.mark_read(conversation_id, user_id)

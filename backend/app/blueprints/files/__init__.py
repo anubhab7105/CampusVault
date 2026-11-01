@@ -9,6 +9,7 @@ from flask import Blueprint, request
 
 from app.middleware.auth import ensure_authenticated
 from app.services.file_service import file_service
+from app.utils.rate_limit import RATELIMIT_UPLOAD, cv_rate_limit
 from app.utils.responses import success_response
 from app.utils.validation import ValidationError
 
@@ -16,6 +17,7 @@ bp = Blueprint("files", __name__, url_prefix="/api/v1/files")
 
 
 @bp.post("")
+@cv_rate_limit(RATELIMIT_UPLOAD)
 def register_upload():
     """Register file metadata; the bytes go to Supabase Storage with the
     returned storage_key. The malware pipeline then flips scan_status."""
@@ -54,6 +56,7 @@ def register_upload():
 
 
 @bp.get("/<uuid:file_id>")
+@cv_rate_limit(RATELIMIT_UPLOAD)
 def get_file(file_id: uuid.UUID):
     ensure_authenticated()
     row = file_service.files.get_active_by_id(file_id)
