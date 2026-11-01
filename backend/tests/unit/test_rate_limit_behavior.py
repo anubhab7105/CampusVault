@@ -18,7 +18,9 @@ class TestRateLimitAuthenticatedRoutes:
     """User-ID keyed routes (authenticated)."""
 
     def test_normal_traffic_succeeds(self, auth_client, make_jwt_token):
-        token = make_jwt_token(user_id="rl-user-1", role="Student")
+        token = make_jwt_token(
+            user_id="11111111-1111-1111-1111-111111111111", role="Student"
+        )
         headers = {"Authorization": f"Bearer {token}"}
         # /api/v1/auth/me is limited to RATELIMIT_AUTH = 5/min
         for _ in range(5):
@@ -26,7 +28,9 @@ class TestRateLimitAuthenticatedRoutes:
             assert resp.status_code == 200, resp.get_json()
 
     def test_burst_returns_429(self, auth_client, make_jwt_token):
-        token = make_jwt_token(user_id="rl-user-2", role="Student")
+        token = make_jwt_token(
+            user_id="22222222-2222-2222-2222-222222222222", role="Student"
+        )
         headers = {"Authorization": f"Bearer {token}"}
         for _ in range(5):
             resp = auth_client.get("/api/v1/auth/me", headers=headers)
@@ -41,7 +45,9 @@ class TestRateLimitAuthenticatedRoutes:
         assert resp.headers["Retry-After"].isdigit()
 
     def test_429_does_not_leak_sensitive_data(self, auth_client, make_jwt_token):
-        token = make_jwt_token(user_id="rl-user-3", role="Student")
+        token = make_jwt_token(
+            user_id="33333333-3333-3333-3333-333333333333", role="Student"
+        )
         headers = {"Authorization": f"Bearer {token}"}
         for _ in range(5):
             auth_client.get("/api/v1/auth/me", headers=headers)
@@ -55,7 +61,9 @@ class TestRateLimitAuthenticatedRoutes:
 
     @freeze_time("2026-11-01 12:00:00")
     def test_limit_resets_after_window(self, auth_client, make_jwt_token):
-        token = make_jwt_token(user_id="rl-user-4", role="Student")
+        token = make_jwt_token(
+            user_id="44444444-4444-4444-4444-444444444444", role="Student"
+        )
         headers = {"Authorization": f"Bearer {token}"}
         for _ in range(5):
             auth_client.get("/api/v1/auth/me", headers=headers)
@@ -68,8 +76,12 @@ class TestRateLimitAuthenticatedRoutes:
         assert resp.status_code == 200, resp.get_json()
 
     def test_two_users_are_independent(self, auth_client, make_jwt_token):
-        token_a = make_jwt_token(user_id="rl-user-a", role="Student")
-        token_b = make_jwt_token(user_id="rl-user-b", role="Student")
+        token_a = make_jwt_token(
+            user_id="aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", role="Student"
+        )
+        token_b = make_jwt_token(
+            user_id="bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", role="Student"
+        )
         headers_a = {"Authorization": f"Bearer {token_a}"}
         headers_b = {"Authorization": f"Bearer {token_b}"}
         # User A exhausts their limit.
@@ -82,7 +94,9 @@ class TestRateLimitAuthenticatedRoutes:
         assert resp_b.status_code == 200
 
     def test_same_user_is_limited_regardless_of_ip(self, auth_client, make_jwt_token):
-        token = make_jwt_token(user_id="rl-user-same", role="Student")
+        token = make_jwt_token(
+            user_id="cccccccc-cccc-cccc-cccc-cccccccccccc", role="Student"
+        )
         headers = {"Authorization": f"Bearer {token}"}
         # Exhaust the limit; key is on user ID so IP is irrelevant.
         for _ in range(5):
