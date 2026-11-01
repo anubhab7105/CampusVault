@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import marshmallow
 import sqlalchemy.exc
+import time
 import werkzeug.exceptions
 from flask import Flask
 from flask_limiter.errors import RateLimitExceeded
@@ -29,8 +30,16 @@ def _register_framework_handlers(app: Flask) -> None:
             "Too many requests. Please slow down.",
             status_code=429,
         )
-        # flask-limiter sets retry_after (seconds until the window resets).
-        retry_after = getattr(err, "retry_after", None)
+        # Compute Retry-After from the limit's reset time, falling back to
+        # the exception's retry_after attribute if present.
+        retry_after = None
+        limit = getattr(err, "limit", None)
+        if limit is not None:
+            reset_at = getattr(limit, "reset_at", None)
+            if reset_at is not None:
+                retry_after = max(0, int(reset_at - time.time()))
+        if retry_after is None:
+            retry_after = getattr(err, "retry_after", None)
         if retry_after is not None:
             try:
                 response.headers["Retry-After"] = str(int(retry_after))
