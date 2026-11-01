@@ -149,22 +149,26 @@ def _parse_limit(limit_string: str) -> tuple[int, int]:
     """Parse a ``max/window`` rate-limit string into ``(max_count, seconds)``.
 
     Supported windows: ``second(s)``, ``minute(s)``, ``hour(s)``.
+    A bare unit (e.g. ``minute``) means 1 of that unit.
     """
     max_str, window_str = limit_string.split("/", 1)
     max_count = int(max_str)
     window_str = window_str.strip().lower()
 
-    multipliers = {
-        "second": 1,
-        "seconds": 1,
-        "minute": 60,
-        "minutes": 60,
-        "hour": 3600,
-        "hours": 3600,
-    }
-    for suffix, mult in multipliers.items():
+    # Match longest suffix first so "seconds" wins over "second".
+    multipliers = [
+        ("seconds", 1),
+        ("second", 1),
+        ("minutes", 60),
+        ("minute", 60),
+        ("hours", 3600),
+        ("hour", 3600),
+    ]
+    for suffix, mult in multipliers:
         if window_str.endswith(suffix):
             number = window_str[: -len(suffix)].strip()
+            if not number:
+                number = "1"
             return max_count, int(number) * mult
     # Fallback: treat as seconds.
     return max_count, int(window_str)
