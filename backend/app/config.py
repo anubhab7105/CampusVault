@@ -42,6 +42,8 @@ class BaseConfig:
     # --- Security keys (fail fast when unset; see environ_required below) -- #
     SECRET_KEY: str = os.environ.get("APP_SECRET_KEY", "")
     JWT_SECRET_KEY: str = os.environ.get("JWT_SECRET_KEY", "")
+    # Keep JWT revocation checks enabled by default in every deployed environment.
+    JWT_BLOCKLIST_ENABLED: bool = True
 
     # --- Database (Supabase PostgreSQL) ----------------------------------- #
     SUPABASE_DB_URL: str = os.environ.get("SUPABASE_DB_URL", "")
@@ -180,6 +182,8 @@ class TestingConfig(BaseConfig):
     DEBUG: bool = True
     ENV: str = TESTING
     TESTING: bool = True
+    # Unit tests run without Redis; dedicated revocation tests mock the Redis client.
+    JWT_BLOCKLIST_ENABLED: bool = False
     RATELIMIT_STORAGE_URI: str = os.environ.get("RATELIMIT_STORAGE_URI", "memory://")
 
     SQLALCHEMY_DATABASE_URI: str = os.environ.get("TEST_DATABASE_URL", "sqlite:///:memory:")
