@@ -142,6 +142,82 @@ def limit_string_for(view_func: Callable) -> str | None:
 
 
 # --------------------------------------------------------------------------- #
+# Socket.IO throttling (Redis token bucket, per user)
+# --------------------------------------------------------------------------- #
+
+def _parse_limit(limit_string: str) -> tuple[int, int]:
+    """Parse a ``max/window`` rate-limit string into ``(max_count, seconds)``.
+
+    Supported windows: ``second(s)``, ``minute(s)``, ``hour(s)``.
+    """
+    max_str, window_str = limit_string.split("/", 1)
+    max_count = int(max_str)
+    window_str = window_str.strip().lower()
+
+    multipliers = {
+        "second": 1,
+        "seconds": 1,
+        "minute": 60,
+        "minutes": 60,
+        "hour": 3600,
+        "hours": 3600,
+    }
+    for suffix, mult in multipliers.items():
+        if window_str.endswith(suffix):
+            number = window_str[: -len(suffix)].strip()
+            return max_count, int(number) * mult
+    # Fallback: treat as seconds.
+    return max_count, int(window_str)
+
+
+def socket_throttle(limit_string: str) -> Callable:
+    """Throttle a Socket.IO event handler using a Redis token bucket.
+
+    Keys on the authenticated ``user_id`` from the socket session (established
+    at JWT handshake).  Raises :class:`app.errors.exceptions.ForbiddenError`
+    when the limit is exceeded — this is caught by ``@socket_errors`` and
+    emitted as a ``socket_error`` event.
+
+    Use this *inside* ``@socket_errors`` so the error is surfaced consistently:
+
+        @socketio.on("send_group_message")
+        @socket_errors
+        @socket_throttle(RATELIMIT_SOCKET_MESSAGE)
+        def on_send_group_message(payload=None): ...
+    """
+
+    max_count, window_seconds = _parse_limit(limit_string)
+
+    def decorator(f: Callable) -> Callable:
+        @wraps(f)
+        def wrapper(payload=None, *args, **kwargs):
+            from flask import request
+
+            from app.errors.exceptions import ForbiddenError
+            from app.services.connections import user_id_for_session
+            from app.utils.redis_utils import get_redis
+
+            user_id = user_id_for_session(request.sid)
+            if not user_id:
+                # Not authenticated — let the handler/auth layer deal with it.
+                return f(payload, *args, **kwargs)
+
+            key = f"socket:rate:{user_id}:{f.__name__}"
+            redis = get_redis()
+            count = redis.incr(key)
+            if count == 1:
+                redis.expire(key, window_seconds)
+            if count > max_count:
+                raise ForbiddenError("Sending too fast. Please slow down.")
+
+            return f(payload, *args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+# --------------------------------------------------------------------------- #
 # Route sets for the automated route-coverage test
 # --------------------------------------------------------------------------- #
 
@@ -257,4 +333,5 @@ __all__ = [
     "limit_string_for",
     "EXEMPT_ROUTES",
     "REQUIRED_RATE_LIMITED_ROUTES",
+    "socket_throttle",
 ]
