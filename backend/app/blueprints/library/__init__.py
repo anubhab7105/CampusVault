@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
 from uuid import UUID
 
 from flask import Blueprint, current_app, request
@@ -93,7 +94,7 @@ def finalize_upload():
     try:
         body = load_schema(FinalizeUploadSchema(), get_json_body())
     except Exception as exc:
-        return error_response("Invalid payload", error_code="VALIDATION_ERROR", details=str(exc)), 400
+        return error_response("VALIDATION_ERROR", "Invalid payload", details=str(exc)), 400
 
     ensure_authenticated()
     file_id = body["file_id"]
@@ -109,7 +110,7 @@ def finalize_upload():
     try:
         envelope = svc.finalize_upload(file_id, declared_size, declared_mime)
     except Exception as exc:
-        return error_response(str(exc), error_code="SERVICE_ERROR")
+        return error_response("SERVICE_ERROR", str(exc))
 
     return success_response(data=envelope, message="Upload finalized.")
 
@@ -121,11 +122,24 @@ def finalize_upload():
 def browse_resources():
     """Browse resources with hierarchy filters, search, sort, pagination."""
     try:
-        qry = load_schema(ResourceQuerySchema(), request.args)
+        _data = load_schema(ResourceQuerySchema(), request.args)
+
+        class _Q(SimpleNamespace):
+            def __init__(self, **kwargs):
+                kwargs.setdefault("sort", "created_at")
+                kwargs.setdefault("order", "desc")
+                kwargs.setdefault("page", 1)
+                kwargs.setdefault("page_size", 20)
+                super().__init__(**kwargs)
+
+            def __getattr__(self, name):
+                return None
+
+        qry = _Q(**_data)
     except Exception as exc:
         return error_response(
+            "VALIDATION_ERROR",
             "Invalid query parameters",
-            error_code="VALIDATION_ERROR",
             details=str(exc),
         ), 400
 

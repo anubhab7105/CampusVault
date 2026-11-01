@@ -75,8 +75,8 @@ class ResourceRepository(BaseRepository[Resource]):
         # --- Pagination & sorting ------------------------------------------------
         stmt = (
             sa.select(Resource)
-            .where(conditions)  # type: ignore[arg-type]
-            .where(Resource.is_active == True)  # noqa: E712
+            .where(*conditions)
+            .where(Resource.deleted_at.is_(None))
         )
         stmt = stmt.order_by(
             sa.asc(getattr(Resource, sort)) if order == "asc" else sa.desc(getattr(Resource, sort))
@@ -90,8 +90,8 @@ class ResourceRepository(BaseRepository[Resource]):
         count_stmt = (
             sa.select(sa.func.count())
             .select_from(Resource)
-            .where(conditions)  # type: ignore[arg-type]
-            .where(Resource.is_active == True)  # noqa: E712
+            .where(*conditions)
+            .where(Resource.deleted_at.is_(None))
         )
         total = db.session.scalar(count_stmt) or 0
 

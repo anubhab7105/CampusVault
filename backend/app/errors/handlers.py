@@ -9,12 +9,48 @@ masked as INTERNAL_ERROR on the wire.
 from __future__ import annotations
 
 import marshmallow
+import re
 import sqlalchemy.exc
 import time
 import werkzeug.exceptions
 from flask import Flask
 from flask_limiter.errors import RateLimitExceeded
 from jwt import PyJWTError  # type: ignore[import-not-found]
+
+
+def _retry_after_from_limit(err: RateLimitExceeded) -> int | None:
+    """Best-effort Retry-After seconds from a RateLimitExceeded exception.
+
+    flask-limiter's ``err.limit`` is the limit *configuration* (no
+    ``reset_at``), so we parse the human-readable limit string
+    (e.g. ``"5 per 1 minute"``) to derive the window size.
+    """
+    limit = getattr(err, "limit", None)
+    if limit is None:
+        return None
+    limit_str = str(getattr(limit, "limit", ""))
+    if not limit_str:
+        return None
+    # Formats: "5 per 1 minute", "30 per 30 seconds", "5/minute"
+    match = re.search(
+        r"per\s+(\d+)\s*(second|seconds|minute|minutes|hour|hours)",
+        limit_str,
+    )
+    if match:
+        count = int(match.group(1))
+        unit = match.group(2).rstrip("s")
+        multipliers = {"second": 1, "minute": 60, "hour": 3600}
+        return count * multipliers[unit]
+    match = re.search(
+        r"/(\d+)\s*(second|seconds|minute|minutes|hour|hours)",
+        limit_str,
+    )
+    if match:
+        count = int(match.group(1))
+        unit = match.group(2).rstrip("s")
+        multipliers = {"second": 1, "minute": 60, "hour": 3600}
+        return count * multipliers[unit]
+    return None
 
 from app.errors.exceptions import AppError
 from app.utils.responses import error_response
@@ -30,14 +66,9 @@ def _register_framework_handlers(app: Flask) -> None:
             "Too many requests. Please slow down.",
             status_code=429,
         )
-        # Compute Retry-After from the limit's reset time, falling back to
-        # the exception's retry_after attribute if present.
-        retry_after = None
-        limit = getattr(err, "limit", None)
-        if limit is not None:
-            reset_at = getattr(limit, "reset_at", None)
-            if reset_at is not None:
-                retry_after = max(0, int(reset_at - time.time()))
+        # Compute Retry-After. flask-limiter's err.limit is the limit
+        # configuration (no reset_at), so parse the limit string.
+        retry_after = _retry_after_from_limit(err)
         if retry_after is None:
             retry_after = getattr(err, "retry_after", None)
         if retry_after is not None:

@@ -52,8 +52,8 @@ class ChatService(BaseService):
         # Role-based DM rule check
         from app.services.role_service import role_service
 
-        role_a, _ = role_service.load_user_role_bundle(str(user_a))
-        role_b, _ = role_service.load_user_role_bundle(str(user_b))
+        role_a, _ = role_service.load_user_role_bundle(user_a)
+        role_b, _ = role_service.load_user_role_bundle(user_b)
 
         # Admins can DM anyone
         if role_a == "Admin" or role_b == "Admin":
