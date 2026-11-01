@@ -137,7 +137,7 @@ jobs:
 
       - name: Regenerate dependency lockfile for patched ranges
         working-directory: frontend
-        run: npm install --package-lock-only --ignore-scripts
+        run: rm -f package-lock.json && npm install --package-lock-only --ignore-scripts
 
       - name: Install locked dependencies
         working-directory: frontend
