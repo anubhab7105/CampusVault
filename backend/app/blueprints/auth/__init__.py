@@ -7,8 +7,6 @@ import uuid
 
 from flask import Blueprint
 from flask_jwt_extended import jwt_required
-
-from app.extensions import limiter  # noqa: F401  (re-exported for blueprint decorators)
 from app.middleware.auth import ensure_authenticated, require_csrf_token
 from app.schemas.auth_schema import (
     OAuthExchangeSchema,
