@@ -14,6 +14,7 @@ from marshmallow import Schema, fields, validate
 from app.middleware.rbac import permission_required
 from app.services.academic_service import academic_service
 from app.utils.pagination import PagingMeta, parse_pagination_args
+from app.utils.rate_limit import RATELIMIT_ADMIN_READ, RATELIMIT_ADMIN_WRITE, cv_rate_limit
 from app.utils.responses import success_response
 from app.utils.validation import get_json_body, load_schema
 
@@ -57,9 +58,9 @@ def _page_args():
 
 # --- Departments ------------------------------------------------------------ #
 
-
 @bp.post("/departments")
 @permission_required("admin:academic:manage")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def create_department():
     body = load_schema(DepartmentSchema(), get_json_body())
     dept = academic_service.create_department(
@@ -69,6 +70,7 @@ def create_department():
 
 
 @bp.get("/departments")
+@cv_rate_limit(RATELIMIT_ADMIN_READ)
 def list_departments():
     page, page_size, _ = _page_args()
     rows, total = academic_service.list_departments(page, page_size)
@@ -82,9 +84,9 @@ def list_departments():
 
 # --- Programs ----------------------------------------------------------------- #
 
-
 @bp.post("/programs")
 @permission_required("admin:academic:manage")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def create_program():
     body = load_schema(ProgramSchema(), get_json_body())
     program = academic_service.create_program(
@@ -97,6 +99,7 @@ def create_program():
 
 
 @bp.get("/programs/<uuid:department_id>")
+@cv_rate_limit(RATELIMIT_ADMIN_READ)
 def list_programs(department_id: uuid.UUID):
     page, page_size, _ = _page_args()
     rows, total = academic_service.programs.list_for_department(department_id, page, page_size)
@@ -110,9 +113,9 @@ def list_programs(department_id: uuid.UUID):
 
 # --- Semesters -------------------------------------------------------------------- #
 
-
 @bp.post("/semesters")
 @permission_required("admin:academic:manage")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def create_semester():
     body = load_schema(SemesterSchema(), get_json_body())
     semester = academic_service.create_semester(program_id=body["program_id"], number=body["number"])
@@ -120,6 +123,7 @@ def create_semester():
 
 
 @bp.get("/semesters/<uuid:program_id>")
+@cv_rate_limit(RATELIMIT_ADMIN_READ)
 def list_semesters(program_id: uuid.UUID):
     rows = academic_service.semesters.list_for_program(program_id, page=1, page_size=50)[0]
     return success_response(
@@ -130,9 +134,9 @@ def list_semesters(program_id: uuid.UUID):
 
 # --- Sections ------------------------------------------------------------------------- #
 
-
 @bp.post("/sections")
 @permission_required("admin:academic:manage")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def create_section():
     body = load_schema(SectionSchema(), get_json_body())
     section = academic_service.create_section(
@@ -142,6 +146,7 @@ def create_section():
 
 
 @bp.get("/sections/<uuid:semester_id>")
+@cv_rate_limit(RATELIMIT_ADMIN_READ)
 def list_sections(semester_id: uuid.UUID):
     rows = academic_service.sections.list_for_semester(semester_id, page=1, page_size=50)[0]
     return success_response(
@@ -153,6 +158,7 @@ def list_sections(semester_id: uuid.UUID):
 # --- Subjects ---------------------------------------------------------------------------- #
 @bp.post("/subjects")
 @permission_required("admin:academic:manage")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def create_subject():
     body = load_schema(SubjectSchema(), get_json_body())
     subject = academic_service.create_subject(
@@ -165,6 +171,7 @@ def create_subject():
 
 
 @bp.get("/subjects/<uuid:semester_id>")
+@cv_rate_limit(RATELIMIT_ADMIN_READ)
 def list_subjects(semester_id: uuid.UUID):
     rows = academic_service.subjects.list_for_semester(semester_id, page=1, page_size=100)[0]
     return success_response(

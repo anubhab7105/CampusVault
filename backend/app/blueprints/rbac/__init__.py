@@ -11,6 +11,7 @@ from app.extensions import db
 from app.middleware.rbac import permission_required
 from app.repositories import RoleRepository
 from app.services.role_service import RoleService
+from app.utils.rate_limit import RATELIMIT_ADMIN_READ, RATELIMIT_ADMIN_WRITE, cv_rate_limit
 from app.utils.responses import success_response
 from app.utils.validation import get_json_body, load_schema
 
@@ -30,6 +31,7 @@ class GrantPermissionSchema(Schema):
 
 @bp.get("/roles")
 @permission_required("admin:roles:manage")
+@cv_rate_limit(RATELIMIT_ADMIN_READ)
 def list_roles():
     roles = roles_repo.list_all()
     return success_response(
@@ -51,6 +53,7 @@ def list_roles():
 
 @bp.get("/permissions")
 @permission_required("admin:roles:manage")
+@cv_rate_limit(RATELIMIT_ADMIN_READ)
 def list_permissions():
     permissions = service.permissions.list_all()
     return success_response(
@@ -61,6 +64,7 @@ def list_permissions():
 
 @bp.post("/roles/<uuid:role_id>/permissions")
 @permission_required("admin:roles:manage")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def grant_permissions(role_id: uuid.UUID):
     """Grant (idempotent) permission codes to a role."""
     body = load_schema(GrantPermissionSchema(), get_json_body())
@@ -82,6 +86,7 @@ def grant_permissions(role_id: uuid.UUID):
 
 @bp.delete("/roles/<uuid:role_id>/permissions/<code>")
 @permission_required("admin:roles:manage")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def revoke_permission(role_id: uuid.UUID, code: str):
     permission = service.permissions.get_by_code(code)
     if permission is None:
@@ -95,6 +100,7 @@ def revoke_permission(role_id: uuid.UUID, code: str):
 
 @bp.post("/users/<uuid:user_id>/roles")
 @permission_required("admin:users:manage")
+@cv_rate_limit(RATELIMIT_ADMIN_WRITE)
 def assign_role(user_id: uuid.UUID):
     """Assign a role to a user (single primary role model)."""
 
