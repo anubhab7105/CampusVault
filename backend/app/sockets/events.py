@@ -27,6 +27,16 @@ from app.services.chat_service import chat_service
 from app.services.connections import user_id_for_session
 from app.services.group_service import group_service
 from app.sockets.rooms import dm_room, group_room, join_group_room, leave_group_room
+from app.utils.rate_limit import (
+    RATELIMIT_SOCKET_DELETE,
+    RATELIMIT_SOCKET_EDIT,
+    RATELIMIT_SOCKET_JOIN,
+    RATELIMIT_SOCKET_LEAVE,
+    RATELIMIT_SOCKET_MESSAGE,
+    RATELIMIT_SOCKET_READ,
+    RATELIMIT_SOCKET_TYPING,
+    socket_throttle,
+)
 from app.utils.validation import build_validation_error
 
 
@@ -60,6 +70,7 @@ def _payload_dict(payload) -> dict:  # type: ignore[no-untyped-def]
 
 @socketio.on("join_group")
 @socket_errors
+@socket_throttle(RATELIMIT_SOCKET_JOIN)
 def on_join_group(payload=None) -> None:  # type: ignore[no-untyped-def]
     user_id = _require_user()
     data = _payload_dict(payload)
@@ -74,6 +85,7 @@ def on_join_group(payload=None) -> None:  # type: ignore[no-untyped-def]
 
 @socketio.on("leave_group")
 @socket_errors
+@socket_throttle(RATELIMIT_SOCKET_LEAVE)
 def on_leave_group(payload=None) -> None:  # type: ignore[no-untyped-def]
     _require_user()
     data = _payload_dict(payload)
@@ -83,10 +95,10 @@ def on_leave_group(payload=None) -> None:  # type: ignore[no-untyped-def]
 
 @socketio.on("send_group_message")
 @socket_errors
+@socket_throttle(RATELIMIT_SOCKET_MESSAGE)
 def on_send_group_message(payload=None) -> None:  # type: ignore[no-untyped-def]
     user_id = _require_user()
     data = _payload_dict(payload)
-    _check_spam(user_id)
 
     from marshmallow import ValidationError as MarshmallowValidationError
 
@@ -138,6 +150,7 @@ def on_send_group_message(payload=None) -> None:  # type: ignore[no-untyped-def]
 
 @socketio.on("edit_group_message")
 @socket_errors
+@socket_throttle(RATELIMIT_SOCKET_EDIT)
 def on_edit_group_message(payload=None) -> None:  # type: ignore[no-untyped-def]
     user_id = _require_user()
     data = _payload_dict(payload)
@@ -157,6 +170,7 @@ def on_edit_group_message(payload=None) -> None:  # type: ignore[no-untyped-def]
 
 @socketio.on("delete_group_message")
 @socket_errors
+@socket_throttle(RATELIMIT_SOCKET_DELETE)
 def on_delete_group_message(payload=None) -> None:  # type: ignore[no-untyped-def]
     user_id = _require_user()
     data = _payload_dict(payload)
@@ -178,6 +192,7 @@ def on_delete_group_message(payload=None) -> None:  # type: ignore[no-untyped-de
 
 @socketio.on("typing")
 @socket_errors
+@socket_throttle(RATELIMIT_SOCKET_TYPING)
 def on_typing(payload=None) -> None:  # type: ignore[no-untyped-def]
     user_id = _require_user()
     data = _payload_dict(payload)
@@ -198,6 +213,7 @@ def on_typing(payload=None) -> None:  # type: ignore[no-untyped-def]
 
 @socketio.on("read_receipt")
 @socket_errors
+@socket_throttle(RATELIMIT_SOCKET_READ)
 def on_read_receipt(payload=None) -> None:  # type: ignore[no-untyped-def]
     user_id = _require_user()
     data = _payload_dict(payload)
@@ -214,6 +230,7 @@ def on_read_receipt(payload=None) -> None:  # type: ignore[no-untyped-def]
 
 @socketio.on("delivery_status")
 @socket_errors
+@socket_throttle(RATELIMIT_SOCKET_READ)
 def on_delivery_status(payload=None) -> None:  # type: ignore[no-untyped-def]
     user_id = _require_user()
     data = _payload_dict(payload)
@@ -228,22 +245,3 @@ def on_delivery_status(payload=None) -> None:  # type: ignore[no-untyped-def]
         from app.extensions import db
 
         db.session.commit()
-
-
-def _check_spam(user_id: str) -> None:
-    """Token bucket: 30 messages / 30 s. Excess increments a strike counter."""
-    from app.utils.redis_utils import get_redis
-
-    MESSAGE_BUDGET = 30
-    MESSAGE_WINDOW_SECONDS = 30
-
-    redis = get_redis()
-    key = f"chat:rate:{user_id}:{MESSAGE_WINDOW_SECONDS}s"
-    count = redis.incr(key)
-    if count == 1:
-        redis.expire(key, MESSAGE_WINDOW_SECONDS)
-    if count > MESSAGE_BUDGET:
-        strike_key = f"chat:strikes:{user_id}"
-        redis.incr(strike_key)
-        redis.expire(strike_key, 300)
-        raise ForbiddenError("Sending too fast. Please slow down.")
