@@ -119,7 +119,11 @@ def cv_rate_limit(limit_string: str) -> Callable:
     """
 
     def decorator(f: Callable) -> Callable:
-        wrapped = limiter.limit(limit_string)(f)
+        # Lazy import to avoid a circular import (extensions.py imports this
+        # module, and this module needs the limiter instance).
+        from app.extensions import limiter as _limiter
+
+        wrapped = _limiter.limit(limit_string)(f)
         setattr(wrapped, _RATE_LIMITED_ATTR, True)
         setattr(wrapped, _LIMIT_STRING_ATTR, limit_string)
         return wrapped
