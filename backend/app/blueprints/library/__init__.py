@@ -7,13 +7,19 @@ from uuid import UUID
 from flask import Blueprint, current_app, request
 from marshmallow import Schema, fields, validate
 
-from app.extensions import db, limiter
+from app.extensions import db
 from app.middleware.auth import ensure_authenticated
 from app.models.resource import Resource
 from app.repositories.resource_repository import resource_repository
 from app.schemas.resource_schema import ResourceQuerySchema, ResourceUploadSchema
 from app.services.role_service import role_service
 from app.services.upload import UploadService
+from app.utils.rate_limit import (
+    RATELIMIT_DOWNLOAD,
+    RATELIMIT_SEARCH,
+    RATELIMIT_UPLOAD,
+    cv_rate_limit,
+)
 from app.utils.responses import error_response, success_response
 from app.utils.validation import get_json_body, load_schema
 
@@ -33,7 +39,7 @@ class FinalizeUploadSchema(Schema):
 # ---- Phase A: Upload request -------------------------------------------- #
 
 @bp.post("/upload-request")
-@limiter.limit("5/minute")  # per-user rate limit enforced by blueprint guard
+@cv_rate_limit(RATELIMIT_UPLOAD)
 def request_upload():
     """Create a pending upload row and return a signed URL."""
     try:
@@ -81,7 +87,7 @@ def request_upload():
 # ---- Phase B: Finalize upload ----------------------------------------- #
 
 @bp.post("/upload-finalize")
-@limiter.limit("10/minute")
+@cv_rate_limit(RATELIMIT_UPLOAD)
 def finalize_upload():
     """Verify the uploaded object, run the scanner, update state."""
     try:
@@ -97,6 +103,7 @@ def finalize_upload():
     svc = current_app.extensions.get("upload_service")
     if svc is None:
         from app.services.upload import UploadService
+
         svc = UploadService()
 
     try:
@@ -110,6 +117,7 @@ def finalize_upload():
 # ---- Browse ----------------------------------------------------------- #
 
 @bp.get("")
+@cv_rate_limit(RATELIMIT_SEARCH)
 def browse_resources():
     """Browse resources with hierarchy filters, search, sort, pagination."""
     try:
@@ -164,6 +172,7 @@ def browse_resources():
 # ---- Download --------------------------------------------------------- #
 
 @bp.get("/<resource_id>/download")
+@cv_rate_limit(RATELIMIT_DOWNLOAD)
 def download_resource(resource_id: str):
     """Return a short‑lived signed URL for the resource file."""
     rid = UUID(resource_id)
@@ -196,6 +205,7 @@ def download_resource(resource_id: str):
 # ---- My Uploads ------------------------------------------------------- #
 
 @bp.get("/my")
+@cv_rate_limit(RATELIMIT_SEARCH)
 def my_uploads():
     """List resources uploaded by the current user."""
     from app.repositories.resource_repository import resource_repository as rr
