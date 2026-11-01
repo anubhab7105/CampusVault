@@ -28,7 +28,7 @@ jwt = JWTManager()
 cors = CORS()
 
 # --- Rate limiting -------------------------------------------------------------- #
-limiter = Limiter(key_func=get_remote_address)  # storage URI comes from Flask config
+limiter = Limiter(key_func=rate_limit_key)  # storage URI comes from Flask config
 
 # --- Email (Gmail SMTP, development only) ----------------------------------------- #
 mail = Mail()
