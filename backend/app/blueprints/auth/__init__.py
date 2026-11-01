@@ -8,8 +8,7 @@ import uuid
 from flask import Blueprint
 from flask_jwt_extended import jwt_required
 
-from app.constants import DEFAULT_AUTH_RATE_LIMIT
-from app.extensions import limiter
+from app.extensions import limiter  # noqa: F401  (re-exported for blueprint decorators)
 from app.middleware.auth import ensure_authenticated, require_csrf_token
 from app.schemas.auth_schema import (
     OAuthExchangeSchema,
@@ -18,6 +17,10 @@ from app.schemas.auth_schema import (
 )
 from app.services.auth_service import auth_service
 from app.services.token_service import TokenService
+from app.utils.rate_limit import (
+    RATELIMIT_AUTH,
+    cv_rate_limit,
+)
 from app.utils.responses import success_response
 from app.utils.validation import get_json_body, load_schema
 
@@ -25,7 +28,7 @@ bp = Blueprint("auth", __name__, url_prefix="/api/v1/auth")
 
 
 @bp.get("/google/authorize")
-@limiter.limit(DEFAULT_AUTH_RATE_LIMIT)
+@cv_rate_limit(RATELIMIT_AUTH)
 def google_authorize():
     """Return the Google consent-screen URL for the SPA to open."""
     state = secrets.token_urlsafe(16)
@@ -36,7 +39,7 @@ def google_authorize():
 
 
 @bp.post("/google")
-@limiter.limit(DEFAULT_AUTH_RATE_LIMIT)
+@cv_rate_limit(RATELIMIT_AUTH)
 def google_callback():
     """Exchange the consent-screen code for CampusVault tokens."""
     body = load_schema(OAuthExchangeSchema(), get_json_body())
@@ -45,7 +48,7 @@ def google_callback():
 
 
 @bp.post("/teachers/otp/request")
-@limiter.limit(DEFAULT_AUTH_RATE_LIMIT)
+@cv_rate_limit(RATELIMIT_AUTH)
 def teacher_request_otp():
     """Phase 1 — queue the OTP email (same response shape for all emails)."""
     body = load_schema(TeacherRequestOtpSchema(), get_json_body())
@@ -56,7 +59,7 @@ def teacher_request_otp():
 
 
 @bp.post("/teachers/otp/verify")
-@limiter.limit(DEFAULT_AUTH_RATE_LIMIT)
+@cv_rate_limit(RATELIMIT_AUTH)
 def teacher_verify_otp():
     """Phase 2 — exchange the OTP for a token pair."""
     body = load_schema(TeacherVerifyOtpSchema(), get_json_body())
@@ -66,6 +69,7 @@ def teacher_verify_otp():
 
 @bp.post("/refresh")
 @jwt_required(refresh=True)
+@cv_rate_limit(RATELIMIT_AUTH)
 def refresh():
     """Rotate the refresh token; returns a fresh access + refresh pair."""
     # CSRF protection for state-changing refresh endpoint.
@@ -76,6 +80,7 @@ def refresh():
 
 @bp.post("/logout")
 @jwt_required(refresh=True)
+@cv_rate_limit(RATELIMIT_AUTH)
 def logout():
     """Revoke the presented refresh token (jti blocklist)."""
     TokenService.revoke_current_refresh()
@@ -83,6 +88,7 @@ def logout():
 
 
 @bp.get("/me")
+@cv_rate_limit(RATELIMIT_AUTH)
 def me():
     """Echo the authenticated identity + role claims from the access token."""
     user_id = ensure_authenticated()
