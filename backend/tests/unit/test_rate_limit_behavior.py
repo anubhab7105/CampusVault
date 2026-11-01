@@ -139,11 +139,13 @@ class TestRateLimitChatHttp:
     """HTTP chat message send (user-ID keyed)."""
 
     def test_chat_send_normal_and_burst(self, auth_client, make_jwt_token):
-        token = make_jwt_token(user_id="rl-chat-user", role="Student")
+        token = make_jwt_token(
+            user_id="dddddddd-dddd-dddd-dddd-dddddddddddd", role="Student"
+        )
         headers = {"Authorization": f"Bearer {token}"}
         # Need a conversation to send to; create a DM first.
         resp = auth_client.post(
-            "/api/v1/chat/conversations/dm/00000000-0000-0000-0000-000000000002",
+            "/api/v1/chat/conversations/dm/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
             headers=headers,
         )
         assert resp.status_code == 200, resp.get_json()
