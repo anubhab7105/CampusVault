@@ -20,9 +20,8 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Final
 
-from flask import current_app, request
+from flask import request
 from flask_jwt_extended import get_jwt_identity
-
 
 # --------------------------------------------------------------------------- #
 # Policy constants (all configurable via environment variables)
@@ -85,7 +84,7 @@ def rate_limit_key() -> str:
         identity = get_jwt_identity()
         if identity:
             return f"user:{identity}"
-    except Exception:
+    except Exception:  # noqa: S110 — JWT may be absent; fall back to IP keying
         # No valid JWT context — fall through to IP keying.
         pass
 

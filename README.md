@@ -57,5 +57,46 @@ cd ..      && npx playwright test           # E2E (under tests/)
 Coverage minimum 80% (Definition of Done); the backend ratchet starts at 40%
 for scaffolding and rises per feature.
 
+## Rate Limiting
+
+Rate limits are defined centrally in `backend/app/utils/rate_limit.py` and
+applied via the `@cv_rate_limit` decorator (a wrapper over Flask-Limiter).
+The route-coverage test
+(`tests/unit/test_rate_limit_route_coverage.py`) fails if any route in the
+required set lacks a limiter.
+
+### Keying rules
+- Authenticated routes: keyed on `user:<user_id>` from the verified JWT,
+  with IP fallback when no valid token is present.
+- Unauthenticated routes: keyed on `ip:<addr>` only.
+- When `TRUST_PROXY=true` and the immediate `remote_addr` is listed in
+  `TRUSTED_PROXIES`, the leftmost `X-Forwarded-For` entry is used.  This is
+  safe because the header is only consulted for verified proxies.
+- Socket.IO events are throttled per authenticated user via a Redis token
+  bucket (`socket_throttle`).
+
+### Error contract
+HTTP 429 responses include a `Retry-After` header and a canonical JSON
+error envelope (`{"success": false, "error": {"code": "RATE_LIMITED", ...}}`)
+that leaks no keys, internals, or other-user data. Socket events emit a
+matching `socket_error` event.
+
+### Environment variables
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `RATELIMIT_DEFAULT` | `100/minute` | Default limit for general routes |
+| `RATELIMIT_AUTH` | `5/minute` | Auth endpoints (login, OTP, refresh, logout, /me) |
+| `RATELIMIT_SEARCH` | `30/minute` | Library browse/search |
+| `RATELIMIT_CHAT_MESSAGE` | `30/minute` | HTTP chat message send |
+| `RATELIMIT_UPLOAD` | `10/minute` | File upload request/finalize/register |
+| `RATELIMIT_DOWNLOAD` | `30/minute` | Resource download |
+| `RATELIMIT_ADMIN_WRITE` | `30/minute` | Admin write operations |
+| `RATELIMIT_ADMIN_READ` | `30/minute` | Admin read operations |
+| `RATELIMIT_SOCKET_MESSAGE` | `30/30seconds` | Socket send_group_message |
+| `RATELIMIT_SOCKET_JOIN` | `60/minute` | Socket join_group |
+| `RATELIMIT_SOCKET_TYPING` | `20/10seconds` | Socket typing |
+| `TRUST_PROXY` | `false` | Enable X-Forwarded-For IP keying |
+| `TRUSTED_PROXIES` | `127.0.0.1,::1` | Trusted proxy IPs (only used when TRUST_PROXY=true) |
+
 See `docs/00_PROJECT_MEMORY.md` for phase status and `docs/api/` for the API
 contract.

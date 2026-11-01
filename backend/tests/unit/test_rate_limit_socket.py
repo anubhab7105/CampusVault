@@ -38,8 +38,8 @@ def fake_redis():
 
 class TestSocketThrottle:
     def test_socket_throttle_normal_traffic(self, app, fake_redis):
-        from app.utils.rate_limit import socket_throttle, RATELIMIT_SOCKET_MESSAGE
         from app.errors.exceptions import ForbiddenError
+        from app.utils.rate_limit import RATELIMIT_SOCKET_MESSAGE, socket_throttle
 
         calls = []
 
@@ -66,8 +66,8 @@ class TestSocketThrottle:
                     handler(payload={"i": 30})
 
     def test_socket_throttle_users_independent(self, app, fake_redis):
-        from app.utils.rate_limit import socket_throttle, RATELIMIT_SOCKET_JOIN
         from app.errors.exceptions import ForbiddenError
+        from app.utils.rate_limit import RATELIMIT_SOCKET_JOIN, socket_throttle
 
         @socket_throttle(RATELIMIT_SOCKET_JOIN)  # 60 / minute
         def handler(payload=None):
@@ -99,7 +99,7 @@ class TestSocketThrottle:
                     assert result == "ok"
 
     def test_socket_throttle_unauthenticated_passthrough(self, app, fake_redis):
-        from app.utils.rate_limit import socket_throttle, RATELIMIT_SOCKET_READ
+        from app.utils.rate_limit import RATELIMIT_SOCKET_READ, socket_throttle
 
         @socket_throttle(RATELIMIT_SOCKET_READ)
         def handler(payload=None):

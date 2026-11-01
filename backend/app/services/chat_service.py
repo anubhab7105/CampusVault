@@ -61,6 +61,7 @@ class ChatService(BaseService):
                 conversation_type="direct",
                 created_by=user_a,
             )
+            db.session.flush()  # generate client-side UUID default
             self.conversations.add_participant(conversation.id, user_a)
             self.conversations.add_participant(conversation.id, user_b)
             db.session.commit()
@@ -71,6 +72,7 @@ class ChatService(BaseService):
             conversation_type="direct",
             created_by=user_a,
         )
+        db.session.flush()  # generate client-side UUID default
         self.conversations.add_participant(conversation.id, user_a)
         self.conversations.add_participant(conversation.id, user_b)
         db.session.commit()

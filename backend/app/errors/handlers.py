@@ -8,14 +8,17 @@ masked as INTERNAL_ERROR on the wire.
 
 from __future__ import annotations
 
-import marshmallow
 import re
+
+import marshmallow
 import sqlalchemy.exc
-import time
 import werkzeug.exceptions
 from flask import Flask
 from flask_limiter.errors import RateLimitExceeded
 from jwt import PyJWTError  # type: ignore[import-not-found]
+
+from app.errors.exceptions import AppError
+from app.utils.responses import error_response
 
 
 def _retry_after_from_limit(err: RateLimitExceeded) -> int | None:
@@ -51,9 +54,6 @@ def _retry_after_from_limit(err: RateLimitExceeded) -> int | None:
         multipliers = {"second": 1, "minute": 60, "hour": 3600}
         return count * multipliers[unit]
     return None
-
-from app.errors.exceptions import AppError
-from app.utils.responses import error_response
 
 
 def _register_framework_handlers(app: Flask) -> None:

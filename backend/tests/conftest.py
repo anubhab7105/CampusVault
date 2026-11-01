@@ -11,10 +11,10 @@ os.environ.setdefault("APP_SECRET_KEY", "test-app-secret-key")
 os.environ.setdefault("JWT_SECRET_KEY", "test-jwt-secret-key")
 
 import pytest  # noqa: E402
+import sqlalchemy as sa
 from flask import request
 from flask.testing import FlaskClient  # noqa: E402
 from flask_jwt_extended import verify_jwt_in_request
-import sqlalchemy as sa
 
 from app import create_app  # noqa: E402
 from app import models as all_models  # noqa: E402,F401 — entity registration
@@ -55,7 +55,7 @@ def auth_client(app, client):
         if request.path.startswith("/api/v1/"):
             try:
                 verify_jwt_in_request(optional=True)
-            except Exception:
+            except Exception:  # noqa: S110 — optional JWT verification, failures ignored
                 pass
     return client
 
@@ -69,7 +69,8 @@ def make_jwt_token(app):
               permissions: list[str] | None = None):
         with app.app_context():
             from flask_jwt_extended import create_access_token
-            from app.models import User, Role, UserRole
+
+            from app.models import Role, User, UserRole
             # Ensure the user row exists (FK constraints on conversations, etc.)
             user = _db.session.get(User, uuid.UUID(user_id))
             if user is None:
