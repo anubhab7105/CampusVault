@@ -6,7 +6,7 @@ around their own authorization.
 
 from __future__ import annotations
 
-from flask import request
+from flask import current_app, request
 from flask_jwt_extended import get_jwt, get_jwt_identity, verify_jwt_in_request
 
 from app.errors.exceptions import CSRFTokenMissingError, UnauthorizedError
@@ -54,6 +54,11 @@ def register_jwt_blocklist(jwt_ext) -> None:
     def _check_if_revoked(_header: dict, jwt_payload: dict) -> bool:
         jti = jwt_payload.get("jti")
         if not jti:
+            return False
+        # The test environment intentionally has no Redis service. Revocation
+        # behavior is tested with a mocked Redis client; ordinary request tests
+        # should not perform network I/O. All other environments fail closed.
+        if not current_app.config.get("JWT_BLOCKLIST_ENABLED", True):
             return False
         return get_redis().exists(f"jwt:blocklist:{jti}") > 0
 
