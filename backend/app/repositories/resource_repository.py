@@ -156,10 +156,10 @@ class ResourceRepository(BaseRepository[Resource]):
     def create(self, *, uploader_id: UUID, title: str, description: str | None,
                resource_type: str, visibility: str, file_id: UUID | None,
                external_url: str | None, subject_id: UUID,
-               department_id: UUID | None = _NOT_PROVIDED,
-               program_id: UUID | None = _NOT_PROVIDED,
-               semester_id: UUID | None = _NOT_PROVIDED,
-               section_id: UUID | None = _NOT_PROVIDED) -> Resource:
+               department_id: UUID | None | _NotProvided = _NOT_PROVIDED,
+               program_id: UUID | None | _NotProvided = _NOT_PROVIDED,
+               semester_id: UUID | None | _NotProvided = _NOT_PROVIDED,
+               section_id: UUID | None | _NotProvided = _NOT_PROVIDED) -> Resource:
         """Create a new resource tied to the academic hierarchy.
 
         Exactly one of ``file_id`` or ``external_url`` must be non‑NULL;
