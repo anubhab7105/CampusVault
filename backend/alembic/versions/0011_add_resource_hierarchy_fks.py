@@ -21,10 +21,11 @@ Create Date: 2026-11-02
 
 from __future__ import annotations
 
+import logging
+
 import sqlalchemy as sa
 
-from alembic import op
-from app.models import UUIDType
+from alembic import context, op
 
 # revision identifiers, used by Alembic.
 revision = "0011"
@@ -33,6 +34,10 @@ branch_labels = None
 depends_on = None
 
 TABLE = "resources"
+
+# Locally-defined UUID type so this migration is independent of application
+# model imports (preserves the same UUID semantics as the app models).
+UUID_TYPE = sa.Uuid(as_uuid=True)
 
 # Constraint / index names (explicit, matching project convention).
 FK_DEPARTMENT = "fk_resources_department_id"
@@ -52,16 +57,16 @@ def upgrade() -> None:
     # with constraints) and on PostgreSQL.
     with op.batch_alter_table(TABLE, schema=None) as batch_op:
         batch_op.add_column(
-            sa.Column("department_id", UUIDType, nullable=True)
+            sa.Column("department_id", UUID_TYPE, nullable=True)
         )
         batch_op.add_column(
-            sa.Column("program_id", UUIDType, nullable=True)
+            sa.Column("program_id", UUID_TYPE, nullable=True)
         )
         batch_op.add_column(
-            sa.Column("semester_id", UUIDType, nullable=True)
+            sa.Column("semester_id", UUID_TYPE, nullable=True)
         )
         batch_op.add_column(
-            sa.Column("section_id", UUIDType, nullable=True)
+            sa.Column("section_id", UUID_TYPE, nullable=True)
         )
         batch_op.create_foreign_key(
             FK_DEPARTMENT, "departments", ["department_id"], ["id"],
@@ -123,11 +128,16 @@ def upgrade() -> None:
     # Report the count of rows still NULL on department_id after backfill.
     # A non-zero count indicates broken hierarchy data (subject without a
     # complete chain). Columns are nullable so this is informational, not fatal.
-    result = op.execute(
-        sa.text("SELECT COUNT(*) FROM resources WHERE department_id IS NULL")
-    )
-    null_count = result.scalar() if result is not None else 0
-    print(f"[0011] resources with NULL department_id after backfill: {null_count}")
+    # Skip in offline mode (no connection available); report via Alembic logging.
+    if not context.is_offline_mode():
+        connection = op.get_bind()
+        result = connection.execute(
+            sa.text("SELECT COUNT(*) FROM resources WHERE department_id IS NULL")
+        )
+        null_count = result.scalar() or 0
+        logging.getLogger("alembic").info(
+            "[0011] resources with NULL department_id after backfill: %s", null_count
+        )
 
 
 def downgrade() -> None:
