@@ -93,4 +93,4 @@ class Subject(BaseModel, SoftDeleteMixin):
         sa.UniqueConstraint("semester_id", "code", name="uq_subjects_semester_code"),
         sa.Index("ix_subjects_semester_name", "semester_id", "name"),
     )
-    resources = db.relationship("Resource", back_populates="subject", lazy="selectin", viewonly=True)
+    resources = db.relationship("Resource", back_populates="subject", viewonly=True)

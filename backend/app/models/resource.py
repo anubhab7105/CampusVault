@@ -79,19 +79,19 @@ class Resource(BaseModel, SoftDeleteMixin):
     # --- ORM relationships (academic hierarchy) --------------------------- #
 
     department = db.relationship(
-        "Department", foreign_keys=[department_id], lazy="selectin"
+        "Department", foreign_keys=[department_id], lazy="select"
     )
     program = db.relationship(
-        "Program", foreign_keys=[program_id], lazy="selectin"
+        "Program", foreign_keys=[program_id], lazy="select"
     )
     semester = db.relationship(
-        "Semester", foreign_keys=[semester_id], lazy="selectin"
+        "Semester", foreign_keys=[semester_id], lazy="select"
     )
     section = db.relationship(
-        "Section", foreign_keys=[section_id], lazy="selectin"
+        "Section", foreign_keys=[section_id], lazy="select"
     )
     subject = db.relationship(
-        "Subject", foreign_keys=[subject_id], lazy="selectin"
+        "Subject", foreign_keys=[subject_id], lazy="select"
     )
 
     __table_args__ = (
