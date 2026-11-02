@@ -36,8 +36,8 @@ INDEX_NAMES = (
     "ix_resources_section_id",
 )
 
-VENV_PYTHON = "/tmp/opencode/cv-venv/bin/python"  # noqa: S108
-BACKEND_DIR = "/home/babai/Desktop/codeing/CampusVault/backend"
+VENV_PYTHON = sys.executable
+BACKEND_DIR = str(Path(__file__).resolve().parents[2])
 
 
 def _alembic_env(db_url):
