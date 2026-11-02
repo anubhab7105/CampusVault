@@ -44,6 +44,7 @@ ENV = {
 def _alembic(db_url):
     env = dict(ENV)
     env["TEST_DATABASE_URL"] = db_url
+    os.environ["TEST_DATABASE_URL"] = db_url  # also set for create_app() in main proc
     return env
 
 
