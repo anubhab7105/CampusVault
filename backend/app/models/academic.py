@@ -41,7 +41,7 @@ class Program(BaseModel, SoftDeleteMixin):
         sa.UniqueConstraint("department_id", "code", name="uq_programs_dept_code"),
         sa.Index("ix_programs_dept_name", "department_id", "name"),
     )
-    resources = db.relationship("Resource", back_populates="program", lazy="selectin", viewonly=True)
+    resources = db.relationship("Resource", back_populates="program", viewonly=True)
 
 
 class Semester(BaseModel, SoftDeleteMixin):
