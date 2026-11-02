@@ -7,6 +7,7 @@ connections share the same schema and each alembic invocation is clean.
 
 from __future__ import annotations
 
+import glob as _glob
 import os
 import subprocess
 
