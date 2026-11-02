@@ -11,6 +11,7 @@ import uuid
 
 from alembic import command
 from alembic.config import Config
+from alembic.operations import Operations
 from sqlalchemy import inspect, text
 
 from app import create_app
