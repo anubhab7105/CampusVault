@@ -54,22 +54,44 @@ def _alembic_config():
 
 
 def _drop_hierarchy_objects(session):
-    """Manually drop the 0011 columns/FKs/indexes to simulate pre-migration state.
+    """Recreate the resources table without the 0011 columns/FKs/indexes.
 
-    Alembic cannot rebuild the DB from scratch (pre-existing 0001/0005
-    overlap), so we create everything via create_all() then strip back the
-    0011-specific objects before stamping to 0010.
+    SQLite cannot drop a column that participates in a foreign key, so we
+    drop and recreate the resources table using the pre-0011 schema (matching
+    migration 0001). All other tables are untouched.
     """
-    session.execute(text('DROP INDEX IF EXISTS ix_resources_department_id'))
-    session.execute(text('DROP INDEX IF EXISTS ix_resources_program_id'))
-    session.execute(text('DROP INDEX IF EXISTS ix_resources_semester_id'))
-    session.execute(text('DROP INDEX IF EXISTS ix_resources_section_id'))
-    # SQLite: drop FKs by recreating table without them. Simpler: use
-    # batch_alter_table via SQL is not possible; instead we drop columns
-    # after removing dependent indexes (already done).  FK columns can be
-    # dropped directly on SQLite if no index depends on them.
-    for col in HIERARCHY_COLUMNS:
-        session.execute(text(f'ALTER TABLE resources DROP COLUMN {col}'))
+    session.execute(text("DROP TABLE IF EXISTS resources"))
+    session.execute(
+        text(
+            """
+            CREATE TABLE resources (
+                id BLOB PRIMARY KEY,
+                subject_id BLOB NOT NULL REFERENCES subjects(id) ON DELETE RESTRICT,
+                file_id BLOB UNIQUE REFERENCES files(id) ON DELETE SET NULL,
+                uploaded_by BLOB NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+                title VARCHAR(160) NOT NULL,
+                description VARCHAR(2000),
+                resource_type VARCHAR(24) NOT NULL,
+                visibility VARCHAR(16) NOT NULL DEFAULT 'college',
+                external_url VARCHAR(2048),
+                share_token VARCHAR(64),
+                is_published BOOLEAN NOT NULL DEFAULT 1,
+                download_count INTEGER NOT NULL DEFAULT 0,
+                view_count INTEGER NOT NULL DEFAULT 0,
+                deleted_at DATETIME,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT ck_resources_type CHECK (resource_type IN ('note','book','past_paper','slide','link')),
+                CONSTRAINT ck_resources_visibility CHECK (visibility IN ('section','subject','department','college','private')),
+                CONSTRAINT ck_resources_title_min_length CHECK (length(title) >= 3)
+            )
+            """
+        )
+    )
+    session.execute(text("CREATE INDEX ix_resources_subject_id ON resources (subject_id)"))
+    session.execute(text("CREATE INDEX ix_resources_uploaded_by ON resources (uploaded_by)"))
+    session.execute(text("CREATE INDEX ix_resources_resource_type ON resources (resource_type)"))
+    session.execute(text("CREATE INDEX ix_resources_subject_created ON resources (subject_id, created_at)"))
     session.commit()
 
 
