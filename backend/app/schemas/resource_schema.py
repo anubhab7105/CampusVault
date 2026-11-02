@@ -32,6 +32,10 @@ class ResourceUploadSchema(Schema):
     mime_type = fields.Str(allow_none=True)
     size = fields.Int(allow_none=True)
     subject_id = fields.UUID(required=True)
+    department_id = fields.UUID(allow_none=True)
+    program_id = fields.UUID(allow_none=True)
+    semester_id = fields.UUID(allow_none=True)
+    section_id = fields.UUID(allow_none=True)
 
 
 class ResourceResponseSchema(Schema):
@@ -42,6 +46,11 @@ class ResourceResponseSchema(Schema):
     description = fields.Str()
     resource_type = fields.Str()
     visibility = fields.Str()
+    department_id = fields.UUID(allow_none=True)
+    program_id = fields.UUID(allow_none=True)
+    semester_id = fields.UUID(allow_none=True)
+    section_id = fields.UUID(allow_none=True)
+    subject_id = fields.UUID()
     uploader_name = fields.Str()
     download_count = fields.Int()
     view_count = fields.Int()

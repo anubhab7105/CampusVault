@@ -8,12 +8,57 @@ from uuid import UUID
 import sqlalchemy as sa
 
 from app.extensions import db
-from app.models import Resource
+from app.models import Department, Program, Resource, Section, Semester, Subject
 from app.repositories.base_repository import BaseRepository
+
+# Sentinel to distinguish "not provided" from "explicitly None" for nullable
+# hierarchy fields.
+_NOT_PROVIDED = object()
 
 
 class ResourceRepository(BaseRepository[Resource]):
     model = Resource
+
+    # ----------------------------------------------------------------- #
+    # Hierarchy resolution helpers
+    # ----------------------------------------------------------------- #
+
+    def _resolve_hierarchy(self, subject_id: UUID) -> tuple[UUID, UUID, UUID]:
+        """Given a subject_id, return (department_id, program_id, semester_id).
+
+        Walks subject -> semester -> program -> department. Does NOT filter on
+        deleted_at so soft-deleted ancestors still resolve.
+        """
+        subject = db.session.get(Subject, subject_id)
+        if subject is None:
+            raise ValueError("Subject not found.")
+        semester = db.session.get(Semester, subject.semester_id)
+        if semester is None:
+            raise ValueError("Semester not found for subject.")
+        program = db.session.get(Program, semester.program_id)
+        if program is None:
+            raise ValueError("Program not found for semester.")
+        department = db.session.get(Department, program.department_id)
+        if department is None:
+            raise ValueError("Department not found for program.")
+        return department.id, program.id, semester.id
+
+    def _validate_section(
+        self, section_id: UUID | None, semester_id: UUID
+    ) -> UUID | None:
+        """Validate that section_id belongs to semester_id. Returns section_id.
+
+        Raises ValueError if the section does not exist or belongs to a
+        different semester. Returns None if section_id is None.
+        """
+        if section_id is None:
+            return None
+        section = db.session.get(Section, section_id)
+        if section is None:
+            raise ValueError("Section not found.")
+        if section.semester_id != semester_id:
+            raise ValueError("section_id does not belong to the subject's semester.")
+        return section_id
 
     # ----------------------------------------------------------------- #
     # Hierarchy lookups
