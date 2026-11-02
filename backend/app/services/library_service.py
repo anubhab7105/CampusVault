@@ -29,12 +29,20 @@ class LibraryService(BaseService):
         visibility: str = "college",
         file_id: uuid.UUID | None = None,
         external_url: str | None = None,
+        department_id: uuid.UUID | None = None,
+        program_id: uuid.UUID | None = None,
+        semester_id: uuid.UUID | None = None,
+        section_id: uuid.UUID | None = None,
     ) -> Resource:
         """Teachers/Admins create; ownership metadata is server-derived."""
         if file_id is None and not external_url:
             raise ValidationError("A file or an external URL is required.")
         resource = self.resources.create(
             subject_id=subject_id,
+            department_id=department_id,
+            program_id=program_id,
+            semester_id=semester_id,
+            section_id=section_id,
             file_id=file_id,
             uploaded_by=uploaded_by,
             title=title,
