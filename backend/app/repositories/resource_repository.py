@@ -204,7 +204,7 @@ class ResourceRepository(BaseRepository[Resource]):
         )
 
         resource = Resource(
-            uploader_id=uploader_id,
+            uploaded_by=uploader_id,
             title=title,
             description=description,
             resource_type=resource_type,
@@ -216,7 +216,6 @@ class ResourceRepository(BaseRepository[Resource]):
             program_id=derived_program_id,
             semester_id=derived_semester_id,
             section_id=resolved_section_id,
-            is_active=True,
         )
         db.session.add(resource)
         db.session.flush()
@@ -281,9 +280,10 @@ class ResourceRepository(BaseRepository[Resource]):
         kwargs["program_id"] = derived_program_id
         kwargs["semester_id"] = derived_semester_id
         kwargs["section_id"] = resolved_section_id
+        kwargs["subject_id"] = effective_subject_id
 
         for key, value in kwargs.items():
-            if hasattr(resource, key) and value is not None:
+            if hasattr(resource, key):
                 setattr(resource, key, value)
         db.session.flush()
         return resource
