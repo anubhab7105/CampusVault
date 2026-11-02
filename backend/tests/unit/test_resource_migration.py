@@ -207,13 +207,24 @@ class TestMigration0011:
         assert state1 == state3
 
     def test_no_model_migration_drift(self, db_url):
-        """upgrade head on a stamped DB is a clean no-op: models match migrations."""
+        """Build the database by upgrading through migrations to NEW_HEAD,
+        then run Alembic's check command to detect model-migration drift."""
         env = _alembic_env(db_url)
-        engine = create_engine(db_url)
 
-        _create_all_tables(engine)
-        _run_alembic(env, "stamp", NEW_HEAD)
+        # Build the schema from scratch by running all migrations up to the
+        # new head. This verifies each migration applies cleanly in order.
+        _run_alembic(env, "upgrade", NEW_HEAD)
 
-        # Upgrading an already-current DB should succeed with no ops.
-        out = _run_alembic(env, "upgrade", NEW_HEAD)
-        assert "0011" in out or out.strip() == ""
+        # Run alembic check: compares the database at head against the
+        # current SQLAlchemy model metadata; exits non-zero on drift.
+        result = subprocess.run(
+            [VENV_PYTHON, "-m", "alembic", "check"],
+            env=env,
+            capture_output=True,
+            text=True,
+            cwd=BACKEND_DIR,
+        )
+        assert result.returncode == 0, (
+            f"alembic check detected drift (rc={result.returncode})\n"
+            f"stdout: {result.stdout}\nstderr: {result.stderr}"
+        )
