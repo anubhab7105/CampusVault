@@ -1,16 +1,16 @@
 """Tests for migration 0011: add academic hierarchy FKs to Resource.
 
 These tests exercise the Alembic migration in isolation (upgrade/downgrade
-round trips) on a file-based SQLite database so that connections share the
-same schema. Backfill behaviour is covered by the repository tests
-(``test_resource_repository.py``) since the migration's backfill SQL is the
-same derive logic exercised there.
+round trips) on a file-based SQLite database via the Alembic CLI, so that
+connections share the same schema and each alembic invocation is clean.
 """
 
 from __future__ import annotations
 
-from alembic import command
-from alembic.config import Config
+import os
+import subprocess
+
+import pytest
 from sqlalchemy import inspect
 
 from app import create_app
@@ -34,22 +34,34 @@ INDEX_NAMES = (
     "ix_resources_section_id",
 )
 
-
-def _make_app(tmp_path):
-    import os
-
-    db_file = tmp_path / "test.db"
-    db_file.unlink(missing_ok=True)
-    os.environ["APP_ENV"] = "testing"
-    os.environ["APP_SECRET_KEY"] = "test-secret"
-    os.environ["JWT_SECRET_KEY"] = "test-jwt-secret"
-    os.environ["TEST_DATABASE_URL"] = f"sqlite:///{db_file}"
-    app = create_app()
-    return app
+ENV = {
+    "APP_ENV": "testing",
+    "APP_SECRET_KEY": "test-secret",
+    "JWT_SECRET_KEY": "test-jwt-secret",
+}
 
 
-def _alembic_config():
-    return Config("alembic.ini")
+def _alembic(db_url):
+    env = dict(ENV)
+    env["TEST_DATABASE_URL"] = db_url
+    return env
+
+
+def _run_alembic(env, *args):
+    """Run an alembic CLI command; raise on failure."""
+    result = subprocess.run(
+        ["python", "-m", "alembic", *args],
+        env=env,
+        capture_output=True,
+        text=True,
+        cwd="/home/babai/Desktop/codeing/CampusVault/backend",
+    )
+    if result.returncode != 0:
+        raise AssertionError(
+            f"alembic {' '.join(args)} failed (rc={result.returncode})\n"
+            f"stdout: {result.stdout}\nstderr: {result.stderr}"
+        )
+    return result.stdout
 
 
 def _schema_state(engine):
@@ -63,23 +75,26 @@ def _schema_state(engine):
 class TestMigration0011:
     """Upgrade/downgrade round-trip tests for migration 0011."""
 
-    def test_downgrade_then_upgrade_round_trip(self, tmp_path):
-        """Start with full schema (0011 columns present via create_all),
-        downgrade to 0010 (columns removed), upgrade to 0011 (columns added
-        back). Verifies both directions of the migration work."""
-        app = _make_app(tmp_path)
+    @pytest.fixture
+    def db_url(self, tmp_path):
+        db_file = tmp_path / "test.db"
+        db_file.unlink(missing_ok=True)
+        return f"sqlite:///{db_file}"
+
+    def test_downgrade_then_upgrade_round_trip(self, db_url):
+        env = _alembic(db_url)
+        app = create_app()
         with app.app_context():
             _db.create_all()
-            # Mark the DB as at the new head so we can downgrade from it.
-            command.stamp(_alembic_config(), NEW_HEAD)
+            # Stamp at new head (columns exist from create_all).
+            _run_alembic(env, "stamp", NEW_HEAD)
 
-            # Start at full schema (0011 columns present from create_all).
             cols, fks, idxs = _schema_state(_db.engine)
             for c in HIERARCHY_COLUMNS:
                 assert c in cols, f"{c} should exist after create_all"
 
             # Downgrade to previous head: columns/FKs/indexes removed.
-            command.downgrade(_alembic_config(), PREVIOUS_HEAD)
+            _run_alembic(env, "downgrade", PREVIOUS_HEAD)
             cols, fks, idxs = _schema_state(_db.engine)
             for c in HIERARCHY_COLUMNS:
                 assert c not in cols, f"{c} should be removed after downgrade"
@@ -89,7 +104,7 @@ class TestMigration0011:
                 assert ix not in idxs, f"{ix} should be removed after downgrade"
 
             # Upgrade to new head: columns/FKs/indexes added back.
-            command.upgrade(_alembic_config(), NEW_HEAD)
+            _run_alembic(env, "upgrade", NEW_HEAD)
             cols, fks, idxs = _schema_state(_db.engine)
             for c in HIERARCHY_COLUMNS:
                 assert c in cols, f"{c} should exist after upgrade"
@@ -105,24 +120,69 @@ class TestMigration0011:
             assert fk_map["fk_resources_semester_id"]["referred_table"] == "semesters"
             assert fk_map["fk_resources_section_id"]["referred_table"] == "sections"
 
-    def test_upgrade_downgrade_upgrade_triple(self, tmp_path):
-        """Upgrade → downgrade → upgrade leaves schema identical to
-        post-upgrade state (no orphan constraints/indexes)."""
-        app = _make_app(tmp_path)
+    def test_upgrade_downgrade_upgrade_triple(self, db_url):
+        env = _alembic(db_url)
+        app = create_app()
         with app.app_context():
             _db.create_all()
-            command.stamp(_alembic_config(), NEW_HEAD)
+            _run_alembic(env, "stamp", NEW_HEAD)
 
-            command.downgrade(_alembic_config(), PREVIOUS_HEAD)
-            command.upgrade(_alembic_config(), NEW_HEAD)
-            state_after_first_upgrade = _schema_state(_db.engine)
-
-            command.downgrade(_alembic_config(), PREVIOUS_HEAD)
-            state_after_downgrade = _schema_state(_db.engine)
+            _run_alembic(env, "downgrade", PREVIOUS_HEAD)
+            state1 = _schema_state(_db.engine)
             for c in HIERARCHY_COLUMNS:
-                assert c not in state_after_downgrade[0]
+                assert c not in state1[0]
 
-            command.upgrade(_alembic_config(), NEW_HEAD)
-            state_after_second_upgrade = _schema_state(_db.engine)
+            _run_alembic(env, "upgrade", NEW_HEAD)
+            state2 = _schema_state(_db.engine)
 
-            assert state_after_first_upgrade == state_after_second_upgrade
+            _run_alembic(env, "downgrade", PREVIOUS_HEAD)
+            state3 = _schema_state(_db.engine)
+            for c in HIERARCHY_COLUMNS:
+                assert c not in state3[0]
+
+            _run_alembic(env, "upgrade", NEW_HEAD)
+            state4 = _schema_state(_db.engine)
+
+            assert state2 == state4
+
+    def test_no_model_migration_drift(self, db_url):
+        """Autogenerate produces no diff: models match migrations."""
+        env = _alembic(db_url)
+        app = create_app()
+        with app.app_context():
+            _db.create_all()
+            _run_alembic(env, "stamp", NEW_HEAD)
+
+            # Autogenerate to a temp file; if there's no drift, the generated
+            # migration body is empty (only revision identifiers).
+            result = subprocess.run(
+                ["python", "-m", "alembic", "revision", "--autogenerate",
+                 "-m", "drift_check", "--head", NEW_HEAD],
+                env=env,
+                capture_output=True,
+                text=True,
+                cwd="/home/babai/Desktop/codeing/CampusVault/backend",
+            )
+            assert result.returncode == 0, (
+                f"autogenerate failed: {result.stderr}"
+            )
+            # Find the generated file and check it has no schema operations.
+            import glob as _glob
+            generated = _glob.glob(
+                "/home/babai/Desktop/codeing/CampusVault/backend/alembic/versions/*drift_check.py"
+            )
+            assert generated, "autogenerate did not produce a file"
+            content = open(generated[0]).read()
+            assert "def upgrade()" in content
+            assert "def downgrade()" in content
+            # Body should contain only `pass` (no ops) if no drift.
+            upgrade_body = content.split("def upgrade()")[1].split("def downgrade()")[0]
+            downgrade_body = content.split("def downgrade()")[1]
+            assert "pass" in upgrade_body or not any(
+                op in upgrade_body for op in ("op.create", "op.add", "op.drop", "op.alter")
+            ), f"Unexpected upgrade ops in drift check:\n{upgrade_body}"
+            assert "pass" in downgrade_body or not any(
+                op in downgrade_body for op in ("op.create", "op.add", "op.drop", "op.alter")
+            ), f"Unexpected downgrade ops in drift check:\n{downgrade_body}"
+            # Clean up generated file.
+            os.remove(generated[0])
