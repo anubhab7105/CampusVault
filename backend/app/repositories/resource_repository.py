@@ -245,9 +245,12 @@ class ResourceRepository(BaseRepository[Resource]):
         new_program_id = kwargs.pop("program_id", _NOT_PROVIDED)
         new_semester_id = kwargs.pop("semester_id", _NOT_PROVIDED)
 
-        # Determine effective subject_id.
+        # Determine effective subject_id. Treat None as "not provided" so the
+        # existing subject is preserved and _resolve_hierarchy is not called
+        # with None.
         effective_subject_id = (
-            new_subject_id if new_subject_id is not _NOT_PROVIDED
+            new_subject_id
+            if new_subject_id is not _NOT_PROVIDED and new_subject_id is not None
             else resource.subject_id
         )
 
@@ -290,8 +293,13 @@ class ResourceRepository(BaseRepository[Resource]):
         kwargs["subject_id"] = effective_subject_id
 
         for key, value in kwargs.items():
-            if hasattr(resource, key):
-                setattr(resource, key, value)
+            if not hasattr(resource, key):
+                continue
+            # Skip None for ordinary fields, but allow section_id=None to
+            # clear the section. Derived hierarchy fields are never None here.
+            if value is None and key != "section_id":
+                continue
+            setattr(resource, key, value)
         db.session.flush()
         return resource
 
