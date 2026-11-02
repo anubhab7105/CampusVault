@@ -47,10 +47,12 @@ def _alembic(db_url):
     return env
 
 
+VENV_PYTHON = "/tmp/opencode/cv-venv/bin/python"
+
 def _run_alembic(env, *args):
     """Run an alembic CLI command; raise on failure."""
     result = subprocess.run(
-        ["python", "-m", "alembic", *args],
+        [VENV_PYTHON, "-m", "alembic", *args],
         env=env,
         capture_output=True,
         text=True,
@@ -156,8 +158,8 @@ class TestMigration0011:
             # Autogenerate to a temp file; if there's no drift, the generated
             # migration body is empty (only revision identifiers).
             result = subprocess.run(
-                ["python", "-m", "alembic", "revision", "--autogenerate",
-                 "-m", "drift_check", "--head", NEW_HEAD],
+                [VENV_PYTHON, "-m", "alembic", "revision", "--autogenerate",
+                 "-m", "drift_check"],
                 env=env,
                 capture_output=True,
                 text=True,
