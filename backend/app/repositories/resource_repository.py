@@ -148,11 +148,21 @@ class ResourceRepository(BaseRepository[Resource]):
 
     def create(self, *, uploader_id: UUID, title: str, description: str | None,
                resource_type: str, visibility: str, file_id: UUID | None,
-               external_url: str | None, subject_id: UUID) -> Resource:
+               external_url: str | None, subject_id: UUID,
+               department_id: UUID | None = _NOT_PROVIDED,
+               program_id: UUID | None = _NOT_PROVIDED,
+               semester_id: UUID | None = _NOT_PROVIDED,
+               section_id: UUID | None = _NOT_PROVIDED) -> Resource:
         """Create a new resource tied to the academic hierarchy.
 
         Exactly one of ``file_id`` or ``external_url`` must be non‑NULL;
         the caller is responsible for enforcing that rule.
+
+        department_id / program_id / semester_id are derived from subject_id
+        (subject -> semester -> program -> department). If the caller supplies
+        any of these, they must match the derived values or a ValueError is
+        raised. section_id is stored independently but must belong to the
+        subject's semester.
         """
         # Validate that exactly one of file_id / external_url is set.
         if (file_id is None) == (external_url is None):
@@ -171,6 +181,28 @@ class ResourceRepository(BaseRepository[Resource]):
             if any(host.startswith(p) for p in private_prefixes):
                 raise ValueError("External URL must not point to a private IP address.")
 
+        # --- Resolve hierarchy from subject_id (authoritative) ----------- #
+        derived_department_id, derived_program_id, derived_semester_id = (
+            self._resolve_hierarchy(subject_id)
+        )
+
+        # Validate caller-supplied hierarchy IDs against derived values.
+        if department_id is not _NOT_PROVIDED and department_id is not None \
+                and department_id != derived_department_id:
+            raise ValueError("department_id does not match subject's department.")
+        if program_id is not _NOT_PROVIDED and program_id is not None \
+                and program_id != derived_program_id:
+            raise ValueError("program_id does not match subject's program.")
+        if semester_id is not _NOT_PROVIDED and semester_id is not None \
+                and semester_id != derived_semester_id:
+            raise ValueError("semester_id does not match subject's semester.")
+
+        # Validate section belongs to the subject's semester.
+        resolved_section_id = self._validate_section(
+            section_id if section_id is not _NOT_PROVIDED else None,
+            derived_semester_id,
+        )
+
         resource = Resource(
             uploader_id=uploader_id,
             title=title,
@@ -180,6 +212,10 @@ class ResourceRepository(BaseRepository[Resource]):
             file_id=file_id,
             external_url=external_url,
             subject_id=subject_id,
+            department_id=derived_department_id,
+            program_id=derived_program_id,
+            semester_id=derived_semester_id,
+            section_id=resolved_section_id,
             is_active=True,
         )
         db.session.add(resource)
@@ -187,7 +223,65 @@ class ResourceRepository(BaseRepository[Resource]):
         return resource
 
     def update(self, resource: Resource, **kwargs) -> Resource:
-        """Update resource fields (admin/teacher edit)."""
+        """Update resource fields (admin/teacher edit).
+
+        Hierarchy fields are handled specially:
+        - If subject_id changes, department_id/program_id/semester_id are
+          re-derived from the new subject and section_id is re-validated
+          (cleared if it no longer matches the new semester).
+        - department_id/program_id/semester_id supplied directly must match
+          the values derived from subject_id, otherwise ValueError is raised.
+        - section_id supplied directly must belong to the subject's semester.
+        """
+        new_subject_id = kwargs.pop("subject_id", _NOT_PROVIDED)
+        new_section_id = kwargs.pop("section_id", _NOT_PROVIDED)
+        new_department_id = kwargs.pop("department_id", _NOT_PROVIDED)
+        new_program_id = kwargs.pop("program_id", _NOT_PROVIDED)
+        new_semester_id = kwargs.pop("semester_id", _NOT_PROVIDED)
+
+        # Determine effective subject_id.
+        effective_subject_id = (
+            new_subject_id if new_subject_id is not _NOT_PROVIDED
+            else resource.subject_id
+        )
+
+        # Re-derive hierarchy from the effective subject.
+        derived_department_id, derived_program_id, derived_semester_id = (
+            self._resolve_hierarchy(effective_subject_id)
+        )
+
+        # Validate explicitly-supplied hierarchy IDs against derived values.
+        if new_department_id is not _NOT_PROVIDED and new_department_id is not None \
+                and new_department_id != derived_department_id:
+            raise ValueError("department_id does not match subject's department.")
+        if new_program_id is not _NOT_PROVIDED and new_program_id is not None \
+                and new_program_id != derived_program_id:
+            raise ValueError("program_id does not match subject's program.")
+        if new_semester_id is not _NOT_PROVIDED and new_semester_id is not None \
+                and new_semester_id != derived_semester_id:
+            raise ValueError("semester_id does not match subject's semester.")
+
+        # Handle section_id.
+        if new_section_id is not _NOT_PROVIDED:
+            resolved_section_id = self._validate_section(
+                new_section_id, derived_semester_id
+            )
+        elif new_subject_id is not _NOT_PROVIDED and resource.section_id is not None:
+            # Subject changed: clear section if it no longer matches the new semester.
+            section = db.session.get(Section, resource.section_id)
+            if section is None or section.semester_id != derived_semester_id:
+                resolved_section_id = None
+            else:
+                resolved_section_id = resource.section_id
+        else:
+            resolved_section_id = resource.section_id
+
+        # Always persist derived values (corrects any drift).
+        kwargs["department_id"] = derived_department_id
+        kwargs["program_id"] = derived_program_id
+        kwargs["semester_id"] = derived_semester_id
+        kwargs["section_id"] = resolved_section_id
+
         for key, value in kwargs.items():
             if hasattr(resource, key) and value is not None:
                 setattr(resource, key, value)
