@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from enum import Enum
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -11,9 +12,15 @@ from app.extensions import db
 from app.models import Department, Program, Resource, Section, Semester, Subject
 from app.repositories.base_repository import BaseRepository
 
-# Sentinel to distinguish "not provided" from "explicitly None" for nullable
-# hierarchy fields.
-_NOT_PROVIDED = object()
+
+class _NotProvided(Enum):
+    """Sentinel to distinguish \"not provided\" from \"explicitly None\" for
+    nullable hierarchy fields."""
+
+    value = object()
+
+
+_NOT_PROVIDED = _NotProvided.value
 
 
 class ResourceRepository(BaseRepository[Resource]):
