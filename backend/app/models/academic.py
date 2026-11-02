@@ -20,6 +20,7 @@ class Department(BaseModel, SoftDeleteMixin):
     description = sa.Column(sa.String(255), nullable=True)
 
     programs = db.relationship("Program", backref="department", lazy="selectin", viewonly=True)
+    resources = db.relationship("Resource", back_populates="department", lazy="selectin", viewonly=True)
 
 
 class Program(BaseModel, SoftDeleteMixin):

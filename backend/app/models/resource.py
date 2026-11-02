@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import sqlalchemy as sa
 
+from app.extensions import db
 from app.models.base import BaseModel, SoftDeleteMixin, UUIDType
 
 
@@ -20,6 +21,35 @@ class Resource(BaseModel, SoftDeleteMixin):
         UUIDType,
         sa.ForeignKey("subjects.id", ondelete="RESTRICT"),
         nullable=False,
+        index=True,
+    )
+    # Academic hierarchy denormalization.
+    # department_id / program_id / semester_id are derived from subject_id on
+    # write (subject -> semester -> program -> department). section_id is stored
+    # independently (not derivable from subject). All nullable to keep existing
+    # resources valid and to allow college-wide scoping.
+    department_id = sa.Column(
+        UUIDType,
+        sa.ForeignKey("departments.id", ondelete="RESTRICT"),
+        nullable=True,
+        index=True,
+    )
+    program_id = sa.Column(
+        UUIDType,
+        sa.ForeignKey("programs.id", ondelete="RESTRICT"),
+        nullable=True,
+        index=True,
+    )
+    semester_id = sa.Column(
+        UUIDType,
+        sa.ForeignKey("semesters.id", ondelete="RESTRICT"),
+        nullable=True,
+        index=True,
+    )
+    section_id = sa.Column(
+        UUIDType,
+        sa.ForeignKey("sections.id", ondelete="RESTRICT"),
+        nullable=True,
         index=True,
     )
     file_id = sa.Column(
@@ -45,6 +75,24 @@ class Resource(BaseModel, SoftDeleteMixin):
     is_published = sa.Column(sa.Boolean, nullable=False, default=True, server_default=sa.text("true"))
     download_count = sa.Column(sa.Integer, nullable=False, default=0, server_default=sa.text("0"))
     view_count = sa.Column(sa.Integer, nullable=False, default=0, server_default=sa.text("0"))
+
+    # --- ORM relationships (academic hierarchy) --------------------------- #
+
+    department = db.relationship(
+        "Department", foreign_keys=[department_id], lazy="selectin"
+    )
+    program = db.relationship(
+        "Program", foreign_keys=[program_id], lazy="selectin"
+    )
+    semester = db.relationship(
+        "Semester", foreign_keys=[semester_id], lazy="selectin"
+    )
+    section = db.relationship(
+        "Section", foreign_keys=[section_id], lazy="selectin"
+    )
+    subject = db.relationship(
+        "Subject", foreign_keys=[subject_id], lazy="selectin"
+    )
 
     __table_args__ = (
         # Primary browse path: filter by subject, order by recency.
