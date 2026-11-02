@@ -36,23 +36,23 @@ INDEX_NAMES = (
 
 
 def _make_app(tmp_path):
-    db_file = tmp_path / "test.db"
-    db_file.unlink(missing_ok=True)
     import os
 
+    db_file = tmp_path / "test.db"
+    db_file.unlink(missing_ok=True)
     os.environ["APP_ENV"] = "testing"
     os.environ["APP_SECRET_KEY"] = "test-secret"
     os.environ["JWT_SECRET_KEY"] = "test-jwt-secret"
     os.environ["TEST_DATABASE_URL"] = f"sqlite:///{db_file}"
     app = create_app()
-    return app, db_file
+    return app
 
 
 def _alembic_config():
     return Config("alembic.ini")
 
 
-def _drop_hierarchy_objects(session):
+def _strip_to_pre_0011(session):
     """Recreate the resources table without the 0011 columns/FKs/indexes.
 
     SQLite cannot drop a column that participates in a foreign key, so we
@@ -102,79 +102,53 @@ def _schema_state(engine):
     return cols, fks, idxs
 
 
+def _fk_map(engine):
+    insp = inspect(engine)
+    return {fk["name"]: fk for fk in insp.get_foreign_keys("resources")}
+
+
 def _insert_hierarchy_and_resource(session):
     """Insert a full department→program→semester→section→subject chain and a
-    resource referencing the subject. Returns the resource row id."""
-    dept_id = uuid.uuid4()
-    prog_id = uuid.uuid4()
-    sem_id = uuid.uuid4()
-    sec_id = uuid.uuid4()
-    subj_id = uuid.uuid4()
-    user_id = uuid.uuid4()
-    res_id = uuid.uuid4()
+    resource referencing the subject. Returns the resource row id and the
+    expected derived hierarchy IDs."""
+    from app.models import Department, Program, Section, Semester, Subject, User
 
-    session.execute(
-        text(
-            "INSERT INTO departments (id, name, code, created_at, updated_at) "
-            "VALUES (:id,'Computer Science','CS', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
-        ),
-        {"id": str(dept_id)},
+    dept = Department(id=uuid.uuid4(), name="Computer Science", code="CS")
+    prog = Program(id=uuid.uuid4(), department_id=dept.id, name="B.Tech CS", code="BTCS")
+    sem = Semester(id=uuid.uuid4(), program_id=prog.id, number=1)
+    sec = Section(id=uuid.uuid4(), semester_id=sem.id, name="A")
+    subj = Subject(id=uuid.uuid4(), semester_id=sem.id, name="Data Structures", code="DS101")
+    user = User(id=uuid.uuid4(), email="a@b.c", full_name="User", auth_provider="otp")
+    res = ResourceRow(
+        id=uuid.uuid4(), subject_id=subj.id, uploaded_by=user.id,
+        title="Test Resource", resource_type="note", visibility="college",
     )
-    session.execute(
-        text(
-            "INSERT INTO programs (id, department_id, name, code, created_at, updated_at) "
-            "VALUES (:id,:dept,'B.Tech CS','BTCS', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
-        ),
-        {"id": str(prog_id), "dept": str(dept_id)},
-    )
-    session.execute(
-        text(
-            "INSERT INTO semesters (id, program_id, number, created_at, updated_at) "
-            "VALUES (:id,:prog,1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
-        ),
-        {"id": str(sem_id), "prog": str(prog_id)},
-    )
-    session.execute(
-        text(
-            "INSERT INTO sections (id, semester_id, name, created_at, updated_at) "
-            "VALUES (:id,:sem,'A', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
-        ),
-        {"id": str(sec_id), "sem": str(sem_id)},
-    )
-    session.execute(
-        text(
-            "INSERT INTO subjects (id, semester_id, name, code, created_at, updated_at) "
-            "VALUES (:id,:sem,'Data Structures','DS101', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
-        ),
-        {"id": str(subj_id), "sem": str(sem_id)},
-    )
-    session.execute(
-        text(
-            "INSERT INTO users (id, email, full_name, auth_provider, created_at, updated_at) "
-            "VALUES (:id,'a@b.c','User','otp', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
-        ),
-        {"id": str(user_id)},
-    )
-    session.execute(
-        text(
-            "INSERT INTO resources (id, subject_id, uploaded_by, title, resource_type, "
-            "visibility, created_at, updated_at) VALUES (:id,:subj,:user,'Test "
-            "Resource','note','college', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
-        ),
-        {"id": str(res_id), "subj": str(subj_id), "user": str(user_id)},
-    )
+    session.add_all([dept, prog, sem, sec, subj, user, res])
     session.commit()
-    return str(res_id), str(dept_id), str(prog_id), str(sem_id), str(sec_id)
+    return (
+        str(res.id), str(dept.id), str(prog.id), str(sem.id), str(sec.id), str(subj.id)
+    )
+
+
+class ResourceRow(_db.Model):
+    """Minimal Resource mapping for pre-0011 inserts (no hierarchy columns)."""
+    __tablename__ = "resources"
+    id = _db.Column(_db.BLOB, primary_key=True)
+    subject_id = _db.Column(_db.BLOB, nullable=False)
+    uploaded_by = _db.Column(_db.BLOB, nullable=False)
+    title = _db.Column(_db.String(160), nullable=False)
+    resource_type = _db.Column(_db.String(24), nullable=False)
+    visibility = _db.Column(_db.String(16), nullable=False, default="college")
 
 
 class TestMigration0011:
     """Upgrade/downgrade + backfill tests for migration 0011."""
 
     def test_clean_upgrade_adds_columns_fks_indexes(self, tmp_path):
-        app, _ = _make_app(tmp_path)
+        app = _make_app(tmp_path)
         with app.app_context():
             _db.create_all()
-            _drop_hierarchy_objects(_db.session)
+            _strip_to_pre_0011(_db.session)
             command.stamp(_alembic_config(), PREVIOUS_HEAD)
 
             cols, fks, idxs = _schema_state(_db.engine)
@@ -195,22 +169,20 @@ class TestMigration0011:
             for ix in INDEX_NAMES:
                 assert ix in idxs, f"{ix} should exist after upgrade"
 
-            # Verify FK targets
-            insp = inspect(_db.engine)
-            fk_map = {fk["name"]: fk for fk in insp.get_foreign_keys("resources")}
+            fk_map = _fk_map(_db.engine)
             assert fk_map["fk_resources_department_id"]["referred_table"] == "departments"
             assert fk_map["fk_resources_program_id"]["referred_table"] == "programs"
             assert fk_map["fk_resources_semester_id"]["referred_table"] == "semesters"
             assert fk_map["fk_resources_section_id"]["referred_table"] == "sections"
 
     def test_upgrade_backfills_existing_rows(self, tmp_path):
-        app, _ = _make_app(tmp_path)
+        app = _make_app(tmp_path)
         with app.app_context():
             _db.create_all()
-            _drop_hierarchy_objects(_db.session)
+            _strip_to_pre_0011(_db.session)
             command.stamp(_alembic_config(), PREVIOUS_HEAD)
 
-            res_id, dept_id, prog_id, sem_id, sec_id = _insert_hierarchy_and_resource(
+            res_id, dept_id, prog_id, sem_id, sec_id, subj_id = _insert_hierarchy_and_resource(
                 _db.session
             )
 
@@ -231,10 +203,10 @@ class TestMigration0011:
             assert rows.section_id is None
 
     def test_downgrade_removes_columns_fks_indexes(self, tmp_path):
-        app, _ = _make_app(tmp_path)
+        app = _make_app(tmp_path)
         with app.app_context():
             _db.create_all()
-            _drop_hierarchy_objects(_db.session)
+            _strip_to_pre_0011(_db.session)
             command.stamp(_alembic_config(), PREVIOUS_HEAD)
             command.upgrade(_alembic_config(), NEW_HEAD)
 
@@ -249,10 +221,10 @@ class TestMigration0011:
                 assert ix not in idxs, f"{ix} should be removed after downgrade"
 
     def test_upgrade_downgrade_upgrade_round_trip(self, tmp_path):
-        app, _ = _make_app(tmp_path)
+        app = _make_app(tmp_path)
         with app.app_context():
             _db.create_all()
-            _drop_hierarchy_objects(_db.session)
+            _strip_to_pre_0011(_db.session)
             command.stamp(_alembic_config(), PREVIOUS_HEAD)
             res_id, *_ = _insert_hierarchy_and_resource(_db.session)
 
