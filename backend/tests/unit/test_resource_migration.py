@@ -11,7 +11,7 @@ import os
 import subprocess
 
 import pytest
-from sqlalchemy import inspect
+from sqlalchemy import inspect, text
 
 from app import create_app
 from app import models as all_models  # noqa: F401 — register all tables
@@ -34,21 +34,21 @@ INDEX_NAMES = (
     "ix_resources_section_id",
 )
 
-ENV = {
-    "APP_ENV": "testing",
-    "APP_SECRET_KEY": "test-secret",
-    "JWT_SECRET_KEY": "test-jwt-secret",
-}
+VENV_PYTHON = "/tmp/opencode/cv-venv/bin/python"
 
 
 def _alembic(db_url):
-    env = dict(ENV)
-    env["TEST_DATABASE_URL"] = db_url
-    os.environ["TEST_DATABASE_URL"] = db_url  # also set for create_app() in main proc
+    env = dict(os.environ)
+    env.update(
+        {
+            "APP_ENV": "testing",
+            "APP_SECRET_KEY": "test-secret",
+            "JWT_SECRET_KEY": "test-jwt-secret",
+            "TEST_DATABASE_URL": db_url,
+        }
+    )
     return env
 
-
-VENV_PYTHON = "/tmp/opencode/cv-venv/bin/python"
 
 def _run_alembic(env, *args):
     """Run an alembic CLI command; raise on failure."""
@@ -75,6 +75,49 @@ def _schema_state(engine):
     return cols, fks, idxs
 
 
+def _reset_resources_to_pre_0011(session):
+    """Drop and recreate the resources table with the pre-0011 schema (no
+    hierarchy columns, matching migration 0001). Other tables are untouched.
+
+    This simulates a DB at revision 0010 so migration 0011 can be tested in
+    isolation (alembic cannot rebuild from scratch due to a pre-existing
+    0001/0005 overlap in the repo).
+    """
+    session.execute(text("DROP TABLE IF EXISTS resources"))
+    session.execute(
+        text(
+            """
+            CREATE TABLE resources (
+                id BLOB PRIMARY KEY,
+                subject_id BLOB NOT NULL REFERENCES subjects(id) ON DELETE RESTRICT,
+                file_id BLOB UNIQUE REFERENCES files(id) ON DELETE SET NULL,
+                uploaded_by BLOB NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+                title VARCHAR(160) NOT NULL,
+                description VARCHAR(2000),
+                resource_type VARCHAR(24) NOT NULL,
+                visibility VARCHAR(16) NOT NULL DEFAULT 'college',
+                external_url VARCHAR(2048),
+                share_token VARCHAR(64),
+                is_published BOOLEAN NOT NULL DEFAULT 1,
+                download_count INTEGER NOT NULL DEFAULT 0,
+                view_count INTEGER NOT NULL DEFAULT 0,
+                deleted_at DATETIME,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT ck_resources_type CHECK (resource_type IN ('note','book','past_paper','slide','link')),
+                CONSTRAINT ck_resources_visibility CHECK (visibility IN ('section','subject','department','college','private')),
+                CONSTRAINT ck_resources_title_min_length CHECK (length(title) >= 3)
+            )
+            """
+        )
+    )
+    session.execute(text("CREATE INDEX ix_resources_subject_id ON resources (subject_id)"))
+    session.execute(text("CREATE INDEX ix_resources_uploaded_by ON resources (uploaded_by)"))
+    session.execute(text("CREATE INDEX ix_resources_resource_type ON resources (resource_type)"))
+    session.execute(text("CREATE INDEX ix_resources_subject_created ON resources (subject_id, created_at)"))
+    session.commit()
+
+
 class TestMigration0011:
     """Upgrade/downgrade round-trip tests for migration 0011."""
 
@@ -90,24 +133,18 @@ class TestMigration0011:
         app.config["SQLALCHEMY_DATABASE_URI"] = db_url
         with app.app_context():
             _db.create_all()
-            # Stamp at new head (columns exist from create_all).
-            _run_alembic(env, "stamp", NEW_HEAD)
+            _reset_resources_to_pre_0011(_db.session)
+            _run_alembic(env, "stamp", PREVIOUS_HEAD)
 
             cols, fks, idxs = _schema_state(_db.engine)
             for c in HIERARCHY_COLUMNS:
-                assert c in cols, f"{c} should exist after create_all"
-
-            # Downgrade to previous head: columns/FKs/indexes removed.
-            _run_alembic(env, "downgrade", PREVIOUS_HEAD)
-            cols, fks, idxs = _schema_state(_db.engine)
-            for c in HIERARCHY_COLUMNS:
-                assert c not in cols, f"{c} should be removed after downgrade"
+                assert c not in cols, f"{c} should not exist before upgrade"
             for fk in FK_NAMES:
-                assert fk not in fks, f"{fk} should be removed after downgrade"
+                assert fk not in fks, f"{fk} should not exist before upgrade"
             for ix in INDEX_NAMES:
-                assert ix not in idxs, f"{ix} should be removed after downgrade"
+                assert ix not in idxs, f"{ix} should not exist before upgrade"
 
-            # Upgrade to new head: columns/FKs/indexes added back.
+            # Upgrade to new head: columns/FKs/indexes added.
             _run_alembic(env, "upgrade", NEW_HEAD)
             cols, fks, idxs = _schema_state(_db.engine)
             for c in HIERARCHY_COLUMNS:
@@ -117,12 +154,31 @@ class TestMigration0011:
             for ix in INDEX_NAMES:
                 assert ix in idxs, f"{ix} should exist after upgrade"
 
-            # Verify FK targets.
             fk_map = {fk["name"]: fk for fk in inspect(_db.engine).get_foreign_keys("resources")}
             assert fk_map["fk_resources_department_id"]["referred_table"] == "departments"
             assert fk_map["fk_resources_program_id"]["referred_table"] == "programs"
             assert fk_map["fk_resources_semester_id"]["referred_table"] == "semesters"
             assert fk_map["fk_resources_section_id"]["referred_table"] == "sections"
+
+    def test_downgrade_removes_columns_fks_indexes(self, db_url):
+        env = _alembic(db_url)
+        app = create_app()
+        app.config["SQLALCHEMY_DATABASE_URI"] = db_url
+        with app.app_context():
+            _db.create_all()
+            _reset_resources_to_pre_0011(_db.session)
+            _run_alembic(env, "stamp", PREVIOUS_HEAD)
+            _run_alembic(env, "upgrade", NEW_HEAD)
+
+            _run_alembic(env, "downgrade", PREVIOUS_HEAD)
+
+            cols, fks, idxs = _schema_state(_db.engine)
+            for c in HIERARCHY_COLUMNS:
+                assert c not in cols, f"{c} should be removed after downgrade"
+            for fk in FK_NAMES:
+                assert fk not in fks, f"{fk} should be removed after downgrade"
+            for ix in INDEX_NAMES:
+                assert ix not in idxs, f"{ix} should be removed after downgrade"
 
     def test_upgrade_downgrade_upgrade_triple(self, db_url):
         env = _alembic(db_url)
@@ -130,25 +186,21 @@ class TestMigration0011:
         app.config["SQLALCHEMY_DATABASE_URI"] = db_url
         with app.app_context():
             _db.create_all()
-            _run_alembic(env, "stamp", NEW_HEAD)
+            _reset_resources_to_pre_0011(_db.session)
+            _run_alembic(env, "stamp", PREVIOUS_HEAD)
 
-            _run_alembic(env, "downgrade", PREVIOUS_HEAD)
+            _run_alembic(env, "upgrade", NEW_HEAD)
             state1 = _schema_state(_db.engine)
-            for c in HIERARCHY_COLUMNS:
-                assert c not in state1[0]
-
-            _run_alembic(env, "upgrade", NEW_HEAD)
-            state2 = _schema_state(_db.engine)
 
             _run_alembic(env, "downgrade", PREVIOUS_HEAD)
-            state3 = _schema_state(_db.engine)
+            state2 = _schema_state(_db.engine)
             for c in HIERARCHY_COLUMNS:
-                assert c not in state3[0]
+                assert c not in state2[0]
 
             _run_alembic(env, "upgrade", NEW_HEAD)
-            state4 = _schema_state(_db.engine)
+            state3 = _schema_state(_db.engine)
 
-            assert state2 == state4
+            assert state1 == state3
 
     def test_no_model_migration_drift(self, db_url):
         """upgrade head on a stamped DB is a clean no-op: models match migrations."""
