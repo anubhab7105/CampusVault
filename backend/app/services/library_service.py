@@ -44,7 +44,7 @@ class LibraryService(BaseService):
             semester_id=semester_id,
             section_id=section_id,
             file_id=file_id,
-            uploaded_by=uploaded_by,
+            uploader_id=uploaded_by,
             title=title,
             description=description,
             resource_type=resource_type,
