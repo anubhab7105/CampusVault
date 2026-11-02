@@ -70,6 +70,8 @@ class TestMigration0011:
         app = _make_app(tmp_path)
         with app.app_context():
             _db.create_all()
+            # Mark the DB as at the new head so we can downgrade from it.
+            command.stamp(_alembic_config(), NEW_HEAD)
 
             # Start at full schema (0011 columns present from create_all).
             cols, fks, idxs = _schema_state(_db.engine)
@@ -109,6 +111,7 @@ class TestMigration0011:
         app = _make_app(tmp_path)
         with app.app_context():
             _db.create_all()
+            command.stamp(_alembic_config(), NEW_HEAD)
 
             command.downgrade(_alembic_config(), PREVIOUS_HEAD)
             command.upgrade(_alembic_config(), NEW_HEAD)
