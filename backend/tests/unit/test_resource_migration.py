@@ -87,6 +87,7 @@ class TestMigration0011:
     def test_downgrade_then_upgrade_round_trip(self, db_url):
         env = _alembic(db_url)
         app = create_app()
+        app.config["SQLALCHEMY_DATABASE_URI"] = db_url
         with app.app_context():
             _db.create_all()
             # Stamp at new head (columns exist from create_all).
@@ -126,6 +127,7 @@ class TestMigration0011:
     def test_upgrade_downgrade_upgrade_triple(self, db_url):
         env = _alembic(db_url)
         app = create_app()
+        app.config["SQLALCHEMY_DATABASE_URI"] = db_url
         with app.app_context():
             _db.create_all()
             _run_alembic(env, "stamp", NEW_HEAD)
@@ -152,6 +154,7 @@ class TestMigration0011:
         """Autogenerate produces no diff: models match migrations."""
         env = _alembic(db_url)
         app = create_app()
+        app.config["SQLALCHEMY_DATABASE_URI"] = db_url
         with app.app_context():
             _db.create_all()
             _run_alembic(env, "stamp", NEW_HEAD)
