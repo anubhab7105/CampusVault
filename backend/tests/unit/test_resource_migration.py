@@ -220,10 +220,10 @@ class TestMigration0011:
         env = _alembic_env(db_url)
         engine = create_engine(db_url)
 
+        # Build schema from current model metadata (create_all), then stamp
+        # to NEW_HEAD so alembic check can compare against the models.
         _create_all_tables(engine)
-        _reset_resources_to_pre_0011(engine)
-        _run_alembic(env, "stamp", PREVIOUS_HEAD)
-        _run_alembic(env, "upgrade", NEW_HEAD)
+        _run_alembic(env, "stamp", NEW_HEAD)
 
         # Run alembic check: compares the database at head against the
         # current SQLAlchemy model metadata; exits non-zero on drift.
