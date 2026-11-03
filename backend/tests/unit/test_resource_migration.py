@@ -223,7 +223,7 @@ class TestMigration0011:
 
         # Run alembic check: compares the database at head against the
         # current SQLAlchemy model metadata; exits non-zero on drift.
-        result = subprocess.run(
+        result = subprocess.run(  # noqa: S603, PLW1510
             [VENV_PYTHON, "-m", "alembic", "check"],
             env=env,
             capture_output=True,
