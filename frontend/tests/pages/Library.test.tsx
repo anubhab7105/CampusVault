@@ -75,7 +75,7 @@ describe("Library page", () => {
   });
 
   it("enables download for a student with library read permission", async () => {
-    mocks.currentUser = { role: "Teacher" };
+    mocks.currentUser = { role: "Student" };
     mocks.list.mockResolvedValue({ items: [resource] });
     mocks.download.mockResolvedValue({ file_id: "file-1" });
     renderLibrary();
