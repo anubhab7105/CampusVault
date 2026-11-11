@@ -11,7 +11,7 @@ export default function Library() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["library", "resources"],
     queryFn: () => libraryService.list(),
     enabled: !!user,
@@ -29,6 +29,22 @@ export default function Library() {
         {[1, 2, 3].map((i) => (
           <Card key={i} className="h-40"><Skeleton className="h-full w-full" /></Card>
         ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div role="alert" className="flex flex-col items-center justify-center py-20 text-center">
+        <EmptyState
+          title="Unable to load resources"
+          description="Check your connection and try again."
+          action={
+            <Button onClick={() => void refetch()} disabled={isFetching} size="sm">
+              {isFetching ? "Retrying…" : "Try again"}
+            </Button>
+          }
+        />
       </div>
     );
   }
