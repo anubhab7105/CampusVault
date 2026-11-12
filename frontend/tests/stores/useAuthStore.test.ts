@@ -18,7 +18,8 @@ describe("useAuthStore", () => {
   });
 
   it("starts unauthenticated and exposes no user", () => {
-    expect(useAuthStore.getState()).toMatchObject({
+    const initialState = useAuthStore.getState();
+    expect(initialState).toMatchObject({
       access_token: null,
       refresh_token: null,
       user: null,
