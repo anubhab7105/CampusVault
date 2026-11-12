@@ -1,21 +1,29 @@
 # Frontend test suite
 
-Pyramid (docs/10_TESTING_GUIDE.md): unit → integration → E2E.
+The frontend uses Vitest, jsdom, and React Testing Library. Tests are grouped by
+the boundary they exercise:
 
-| Layer     | Command                      | Notes                        |
-| --------- | ---------------------------- | ---------------------------- |
-| Unit      | `vitest run`                 | jsdom + React Testing Library|
-| E2E       | `npx playwright test`        | `/tests/e2e` (repo root)     |
+- `ui/`: reusable UI primitives and keyboard/accessibility behavior.
+- `components/`: interactive feature components such as the chat composer.
+- `pages/`: page-level integration with query state, permissions, and services.
+- `hooks/`: query and mutation behavior for persisted chat history.
+- `services/`: request construction, filter serialization, and error propagation.
+- `stores/`: authentication state and persistence.
+- Root-level tests cover shared permission rules.
 
-Run:
+From the repository root, change into the frontend package root (`frontend/`) before running the commands:
 
 ```bash
 cd frontend
 npm ci
-npm test            # vitest run
-npm run lint        # eslint
-npm run build       # tsc + vite build
+npm test
+npm run lint
+npm run build
 ```
 
-Coverage gate: 80% lines/functions/statements, 70% branches
-(see `vitest` section of `vite.config.ts`).
+For the broader coverage report, run `npm run coverage`. The thresholds in
+`vite.config.ts` are a repository-wide gate and should be increased only when
+new code is accompanied by meaningful tests.
+
+Frontend permission checks are presentation affordances only. The backend must
+continue to authorize every protected API request independently.

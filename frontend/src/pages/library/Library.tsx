@@ -1,17 +1,20 @@
 /** Library placeholder — browse + download accounting. */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { libraryService } from "@services/libraryService";
 import { useAuthStore } from "@stores/useAuthStore";
 import { Card, Button, Skeleton, EmptyState } from "@components/ui/index";
 import { PERMISSIONS } from "@constants/permissions";
 import { hasPermission } from "@constants/permissions";
 
+/** Browse resources while preserving cached results and retry feedback. */
 export default function Library() {
   const { user } = useAuthStore();
+  const [isRetrying, setIsRetrying] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["library", "resources"],
     queryFn: () => libraryService.list(),
     enabled: !!user,
@@ -22,7 +25,15 @@ export default function Library() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["library", "resources"] }),
   });
 
-  if (isLoading) {
+  const items = data?.items ?? [];
+  const showBlockingError = (isError || isRetrying) && items.length === 0;
+  /** Retry the library query while preserving any resources already cached. */
+  const retry = () => {
+    setIsRetrying(true);
+    void refetch().finally(() => setIsRetrying(false));
+  };
+
+  if (isLoading && !isRetrying) {
     return (
       <div className="space-y-4">
         <Card className="h-12"><Skeleton className="h-full w-1/3" /></Card>
@@ -33,11 +44,38 @@ export default function Library() {
     );
   }
 
-  const items = data?.items ?? [];
+  if (showBlockingError) {
+    return (
+      <div role="alert" className="flex flex-col items-center justify-center py-20 text-center">
+        <EmptyState
+          title="Unable to load resources"
+          description="Check your connection and try again."
+          action={
+            <Button onClick={retry} disabled={isFetching || isRetrying} size="sm">
+              {isFetching ? "Retrying…" : isRetrying ? "Retry paused" : "Try again"}
+            </Button>
+          }
+        />
+      </div>
+    );
+  }
+
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <EmptyState title="No resources yet" description="Ask your teacher to publish notes and past papers." />
+        {isError ? (
+          <EmptyState
+            title="Unable to load resources"
+            description="Check your connection and try again."
+            action={
+              <Button onClick={() => void refetch()} disabled={isFetching} size="sm">
+                {isFetching ? "Retrying…" : isRetrying ? "Retry paused" : "Try again"}
+              </Button>
+            }
+          />
+        ) : (
+          <EmptyState title="No resources yet" description="Ask your teacher to publish notes and past papers." />
+        )}
       </div>
     );
   }
@@ -45,6 +83,17 @@ export default function Library() {
   return (
     <div className="space-y-6">
       <h1 className="text-heading-lg font-semibold text-ink-default">Library</h1>
+      {(isError || isRetrying) && (
+        <div role="alert" className="rounded-md border border-amber-500/50 bg-amber-50 p-3 text-sm text-amber-900">
+          {isError ? "Unable to refresh resources. Showing previously loaded resources." : "Refreshing previously loaded resources."}
+          <Button onClick={retry} disabled={isFetching || isRetrying} size="sm" className="ml-3">
+            {isFetching ? "Retrying…" : isRetrying ? "Retry paused" : "Try again"}
+          </Button>
+        </div>
+      )}
+      {isFetching && (
+        <p role="status" className="text-sm text-ink-secondary">{isError || isRetrying ? (isFetching ? "Retrying…" : "Retry paused") : "Refreshing resources…"}</p>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {items.map((resource) => (
           <Card key={resource.id}>
