@@ -50,7 +50,7 @@ export default function Library() {
           description="Check your connection and try again."
           action={
             <Button onClick={retry} disabled={isFetching || isRetrying} size="sm">
-              {isFetching || isRetrying ? "Retrying…" : "Try again"}
+              {isFetching ? "Retrying…" : isRetrying ? "Retry paused" : "Try again"}
             </Button>
           }
         />
@@ -67,7 +67,7 @@ export default function Library() {
             description="Check your connection and try again."
             action={
               <Button onClick={() => void refetch()} disabled={isFetching} size="sm">
-                {isFetching ? "Retrying…" : "Try again"}
+                {isFetching ? "Retrying…" : isRetrying ? "Retry paused" : "Try again"}
               </Button>
             }
           />
@@ -90,7 +90,7 @@ export default function Library() {
         </div>
       )}
       {isFetching && (
-        <p role="status" className="text-sm text-ink-secondary">{isError ? "Retrying…" : "Refreshing resources…"}</p>
+        <p role="status" className="text-sm text-ink-secondary">{isError || isRetrying ? (isFetching ? "Retrying…" : "Retry paused") : "Refreshing resources…"}</p>
       )}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {items.map((resource) => (
