@@ -1,6 +1,7 @@
 /** Library placeholder — browse + download accounting. */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { libraryService } from "@services/libraryService";
 import { useAuthStore } from "@stores/useAuthStore";
 import { Card, Button, Skeleton, EmptyState } from "@components/ui/index";
@@ -9,6 +10,7 @@ import { hasPermission } from "@constants/permissions";
 
 export default function Library() {
   const { user } = useAuthStore();
+  const [isRetrying, setIsRetrying] = useState(false);
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
@@ -23,9 +25,13 @@ export default function Library() {
   });
 
   const items = data?.items ?? [];
-  const showBlockingError = isError && items.length === 0;
+  const showBlockingError = (isError || isRetrying) && items.length === 0;
+  const retry = () => {
+    setIsRetrying(true);
+    void refetch().finally(() => setIsRetrying(false));
+  };
 
-  if (isLoading && !isFetching) {
+  if (isLoading && !isRetrying) {
     return (
       <div className="space-y-4">
         <Card className="h-12"><Skeleton className="h-full w-1/3" /></Card>
@@ -43,8 +49,8 @@ export default function Library() {
           title="Unable to load resources"
           description="Check your connection and try again."
           action={
-            <Button onClick={() => void refetch()} disabled={isFetching} size="sm">
-              {isFetching ? "Retrying…" : "Try again"}
+            <Button onClick={retry} disabled={isFetching || isRetrying} size="sm">
+              {isFetching || isRetrying ? "Retrying…" : "Try again"}
             </Button>
           }
         />
@@ -75,10 +81,10 @@ export default function Library() {
   return (
     <div className="space-y-6">
       <h1 className="text-heading-lg font-semibold text-ink-default">Library</h1>
-      {isError && (
+      {(isError || isRetrying) && (
         <div role="alert" className="rounded-md border border-amber-500/50 bg-amber-50 p-3 text-sm text-amber-900">
-          Unable to refresh resources. Showing previously loaded resources.
-          <Button onClick={() => void refetch()} disabled={isFetching} size="sm" className="ml-3">
+          {isError ? "Unable to refresh resources. Showing previously loaded resources." : "Refreshing previously loaded resources."}
+          <Button onClick={retry} disabled={isFetching || isRetrying} size="sm" className="ml-3">
             {isFetching ? "Retrying…" : "Try again"}
           </Button>
         </div>
