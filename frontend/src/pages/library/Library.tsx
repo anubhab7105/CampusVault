@@ -8,6 +8,7 @@ import { Card, Button, Skeleton, EmptyState } from "@components/ui/index";
 import { PERMISSIONS } from "@constants/permissions";
 import { hasPermission } from "@constants/permissions";
 
+/** Browse resources while preserving cached results and retry feedback. */
 export default function Library() {
   const { user } = useAuthStore();
   const [isRetrying, setIsRetrying] = useState(false);
@@ -85,7 +86,7 @@ export default function Library() {
         <div role="alert" className="rounded-md border border-amber-500/50 bg-amber-50 p-3 text-sm text-amber-900">
           {isError ? "Unable to refresh resources. Showing previously loaded resources." : "Refreshing previously loaded resources."}
           <Button onClick={retry} disabled={isFetching || isRetrying} size="sm" className="ml-3">
-            {isFetching ? "Retrying…" : "Try again"}
+            {isFetching ? "Retrying…" : isRetrying ? "Retry paused" : "Try again"}
           </Button>
         </div>
       )}
