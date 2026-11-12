@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -52,11 +52,11 @@ describe("Composer", () => {
     const field = screen.getByRole("textbox", { name: "Message" });
 
     await user.type(field, "Keyboard message");
-    fireEvent.keyDown(field, { key: "Enter", shiftKey: true });
+    await user.keyboard("{Shift>}{Enter}{/Shift}");
     expect(mocks.mutate).not.toHaveBeenCalled();
-    expect(field).toHaveValue("Keyboard message");
+    expect(field).toHaveValue("Keyboard message\n");
 
-    fireEvent.keyDown(field, { key: "Enter", shiftKey: false });
+    await user.keyboard("{Enter}");
     await waitFor(() => expect(mocks.mutate).toHaveBeenCalledTimes(1));
   });
 
