@@ -27,6 +27,7 @@ export default function Library() {
 
   const items = data?.items ?? [];
   const showBlockingError = (isError || isRetrying) && items.length === 0;
+  /** Retry the library query while preserving any resources already cached. */
   const retry = () => {
     setIsRetrying(true);
     void refetch().finally(() => setIsRetrying(false));
