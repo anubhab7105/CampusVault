@@ -22,7 +22,10 @@ export default function Library() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["library", "resources"] }),
   });
 
-  if (isLoading) {
+  const items = data?.items ?? [];
+  const showBlockingError = isError && items.length === 0;
+
+  if (isLoading && !isFetching) {
     return (
       <div className="space-y-4">
         <Card className="h-12"><Skeleton className="h-full w-1/3" /></Card>
@@ -33,7 +36,7 @@ export default function Library() {
     );
   }
 
-  if (isError) {
+  if (showBlockingError) {
     return (
       <div role="alert" className="flex flex-col items-center justify-center py-20 text-center">
         <EmptyState
@@ -49,11 +52,22 @@ export default function Library() {
     );
   }
 
-  const items = data?.items ?? [];
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <EmptyState title="No resources yet" description="Ask your teacher to publish notes and past papers." />
+        {isError ? (
+          <EmptyState
+            title="Unable to load resources"
+            description="Check your connection and try again."
+            action={
+              <Button onClick={() => void refetch()} disabled={isFetching} size="sm">
+                {isFetching ? "Retrying…" : "Try again"}
+              </Button>
+            }
+          />
+        ) : (
+          <EmptyState title="No resources yet" description="Ask your teacher to publish notes and past papers." />
+        )}
       </div>
     );
   }
@@ -61,6 +75,17 @@ export default function Library() {
   return (
     <div className="space-y-6">
       <h1 className="text-heading-lg font-semibold text-ink-default">Library</h1>
+      {isError && (
+        <div role="alert" className="rounded-md border border-amber-500/50 bg-amber-50 p-3 text-sm text-amber-900">
+          Unable to refresh resources. Showing previously loaded resources.
+          <Button onClick={() => void refetch()} disabled={isFetching} size="sm" className="ml-3">
+            {isFetching ? "Retrying…" : "Try again"}
+          </Button>
+        </div>
+      )}
+      {isFetching && (
+        <p role="status" className="text-sm text-ink-secondary">{isError ? "Retrying…" : "Refreshing resources…"}</p>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {items.map((resource) => (
           <Card key={resource.id}>
