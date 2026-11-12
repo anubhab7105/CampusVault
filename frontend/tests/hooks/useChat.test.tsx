@@ -36,13 +36,16 @@ vi.mock("@stores/useAuthStore", () => ({
 
 import { useChatMessages, useSendMessage } from "@hooks/useChat";
 
-function createWrapper() {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  });
+function createWrapper(client: QueryClient) {
   return ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   );
+}
+
+function createQueryClient() {
+  return new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
 }
 
 describe("useChatMessages", () => {
@@ -57,7 +60,7 @@ describe("useChatMessages", () => {
     });
     const { result } = renderHook(
       () => useChatMessages({ conversationId: "conversation-1", pageSize: 10 }),
-      { wrapper: createWrapper() },
+      { wrapper: createWrapper(createQueryClient()) },
     );
 
     await waitFor(() => expect(result.current.status).toBe("success"));
@@ -71,7 +74,7 @@ describe("useChatMessages", () => {
     mocks.get.mockResolvedValueOnce({ data: { data: { items: [] } } });
     const { result } = renderHook(
       () => useChatMessages({ conversationId: "conversation-empty" }),
-      { wrapper: createWrapper() },
+      { wrapper: createWrapper(createQueryClient()) },
     );
 
     await waitFor(() => expect(result.current.status).toBe("success"));
@@ -83,7 +86,7 @@ describe("useChatMessages", () => {
     mocks.get.mockRejectedValueOnce(new Error("Request failed"));
     const { result } = renderHook(
       () => useChatMessages({ conversationId: "conversation-error" }),
-      { wrapper: createWrapper() },
+      { wrapper: createWrapper(createQueryClient()) },
     );
 
     await waitFor(() => expect(result.current.isError).toBe(true));
@@ -91,8 +94,10 @@ describe("useChatMessages", () => {
   });
 
   it("sends a message and invalidates that conversation history after success", async () => {
+    const client = createQueryClient();
+    const invalidateQueries = vi.spyOn(client, "invalidateQueries");
     mocks.post.mockResolvedValueOnce({ data: { success: true } });
-    const { result } = renderHook(() => useSendMessage(), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useSendMessage(), { wrapper: createWrapper(client) });
 
     await act(async () => {
       await result.current.sendMutation.mutateAsync({
@@ -107,11 +112,12 @@ describe("useChatMessages", () => {
       { conversation_id: "conversation-1", content: "Hello", reply_to_id: null },
       { headers: { "Idempotency-Key": "test" } },
     );
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["messages", "conversation-1"] });
   });
 
   it("preserves failed sends as mutation errors", async () => {
     mocks.post.mockRejectedValueOnce(new Error("Offline"));
-    const { result } = renderHook(() => useSendMessage(), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useSendMessage(), { wrapper: createWrapper(createQueryClient()) });
 
     await act(async () => {
       await expect(result.current.sendMutation.mutateAsync({
