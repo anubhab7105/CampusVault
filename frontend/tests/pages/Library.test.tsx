@@ -23,10 +23,9 @@ vi.mock("@stores/useAuthStore", () => ({
 
 import Library from "@pages/library/Library";
 
-function renderLibrary() {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false, gcTime: 0 } },
-  });
+function renderLibrary(client = new QueryClient({
+  defaultOptions: { queries: { retry: false, gcTime: 0 } },
+})) {
   return {
     client,
     ...render(
@@ -91,6 +90,7 @@ describe("Library page", () => {
   it("shows a distinct error state and retries successfully", async () => {
     const user = userEvent.setup();
     mocks.list.mockRejectedValueOnce(new Error("Temporary network failure"));
+    mocks.list.mockResolvedValueOnce({ items: [resource] });
     renderLibrary();
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Unable to load resources");
@@ -98,6 +98,31 @@ describe("Library page", () => {
 
     expect(await screen.findByText("Cryptography Notes")).toBeInTheDocument();
     expect(mocks.list).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps cached resources and download controls visible after a failed background refetch", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    client.setQueryData(["library", "resources"], { items: [resource] });
+    mocks.list.mockRejectedValueOnce(new Error("Background refresh failed"));
+    renderLibrary(client);
+
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("previously loaded resources"));
+    expect(screen.getByText("Cryptography Notes")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Download" })).toBeEnabled();
+  });
+
+  it("keeps retry feedback visible while a retry is pending", async () => {
+    const user = userEvent.setup();
+    let rejectRequest!: (error: Error) => void;
+    mocks.list.mockRejectedValueOnce(new Error("Temporary network failure"));
+    mocks.list.mockImplementationOnce(() => new Promise((_, reject) => { rejectRequest = reject; }));
+    renderLibrary();
+
+    await user.click(await screen.findByRole("button", { name: "Try again" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("Retrying…");
+    expect(screen.getByRole("button", { name: "Retrying…" })).toBeDisabled();
+    rejectRequest(new Error("Still offline"));
+    expect(await screen.findByRole("button", { name: "Try again" })).toBeInTheDocument();
   });
 
   it("does not fetch the library before a user is available", () => {
