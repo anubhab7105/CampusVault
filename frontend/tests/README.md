@@ -11,7 +11,7 @@ the boundary they exercise:
 - `stores/`: authentication state and persistence.
 - Root-level tests cover shared permission rules.
 
-Run these commands from the frontend package root (`frontend/`), not from `frontend/tests/`:
+From the repository root, change into the frontend package root (`frontend/`) before running the commands:
 
 ```bash
 cd frontend
