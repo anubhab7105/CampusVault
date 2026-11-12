@@ -11,9 +11,10 @@ the boundary they exercise:
 - `stores/`: authentication state and persistence.
 - Root-level tests cover shared permission rules.
 
-Run from this directory:
+Run these commands from the frontend package root (`frontend/`), not from `frontend/tests/`:
 
 ```bash
+cd frontend
 npm ci
 npm test
 npm run lint
