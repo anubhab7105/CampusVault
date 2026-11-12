@@ -55,15 +55,15 @@ describe("Login page", () => {
 
   it("starts Google authorization and navigates to the returned authorization URL", async () => {
     const user = userEvent.setup();
-    mocks.googleAuthorize.mockResolvedValueOnce({
-      authorize_url: "https://accounts.example.test/authorize?client=campus",
-    });
+    const authorizeUrl = "https://accounts.example.test/authorize?client=campus&prompt=consent";
+    mocks.googleAuthorize.mockResolvedValueOnce({ authorize_url: authorizeUrl });
     renderLogin();
 
     await user.click(screen.getByRole("button", { name: "Continue with Google" }));
 
     await waitFor(() => {
-      expect(screen.getByTestId("location").textContent).toContain("google_authorize_url=");
+      const location = new URL(screen.getByTestId("location").textContent ?? "", "https://campusvault.test");
+      expect(location.searchParams.get("google_authorize_url")).toBe(authorizeUrl);
     });
     expect(mocks.googleAuthorize).toHaveBeenCalledWith("init");
   });
