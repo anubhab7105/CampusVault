@@ -27,6 +27,7 @@ export const Composer = ({ conversationId }: ComposerProps) => {
   });
   const content = form.watch("content");
 
+  /** Dispatch validated message content and clear the composer after submission. */
   const onSubmit = (values: ComposerValues) => {
     sendMutation.mutate({
       conversationId,
