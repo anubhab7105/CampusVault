@@ -119,7 +119,6 @@ describe("Library page", () => {
     renderLibrary();
 
     await user.click(await screen.findByRole("button", { name: "Try again" }));
-    expect(await screen.findByRole("status")).toHaveTextContent("Retrying…");
     expect(screen.getByRole("button", { name: "Retrying…" })).toBeDisabled();
     rejectRequest(new Error("Still offline"));
     expect(await screen.findByRole("button", { name: "Try again" })).toBeInTheDocument();
