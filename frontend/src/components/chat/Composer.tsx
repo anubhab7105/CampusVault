@@ -18,6 +18,7 @@ interface ComposerProps {
 
 type ComposerValues = z.infer<typeof composerSchema>;
 
+/** Compose and submit a validated message in the selected conversation. */
 export const Composer = ({ conversationId }: ComposerProps) => {
   const { sendMutation, isPending } = useSendMessage();
   const form = useForm<ComposerValues>({
