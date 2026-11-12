@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useAuthStore } from "@stores/useAuthStore";
 import type { User } from "@/types/auth";
 
@@ -17,8 +17,11 @@ describe("useAuthStore", () => {
     useAuthStore.getState().clear();
   });
 
-  it("starts unauthenticated and exposes no user", () => {
-    const initialState = useAuthStore.getState();
+  it("starts unauthenticated and exposes no user", async () => {
+    vi.resetModules();
+    sessionStorage.clear();
+    const { useAuthStore: freshStore } = await import("@stores/useAuthStore");
+    const initialState = freshStore.getState();
     expect(initialState).toMatchObject({
       access_token: null,
       refresh_token: null,
